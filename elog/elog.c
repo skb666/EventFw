@@ -19,7 +19,7 @@ extern "C" {
 Define
 ----------------------------------------------------------------------------- */
 #define ELOG_MUTEX                      "mutex_elog"
-#define ELOG_MUTEX_EN                   1
+#define ELOG_MUTEX_EN                   0
 
 // data struct -----------------------------------------------------------------
 typedef struct elog_time_tag

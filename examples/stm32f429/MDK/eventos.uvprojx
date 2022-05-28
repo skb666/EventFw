@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F429_439xx, EOS_MCU,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\3rd</IncludePath>
+              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\3rd;..\..\..\ecp;..\..\..\elog;..\..\..\esh</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -406,22 +406,22 @@
             <File>
               <FileName>ecp.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\eventos\ecp.c</FilePath>
+              <FilePath>..\..\..\ecp\ecp.c</FilePath>
             </File>
             <File>
               <FileName>elog.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\eventos\elog.c</FilePath>
+              <FilePath>..\..\..\elog\elog.c</FilePath>
             </File>
             <File>
               <FileName>esh.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\eventos\esh.c</FilePath>
+              <FilePath>..\..\..\esh\esh.c</FilePath>
             </File>
             <File>
               <FileName>esh_port.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\eventos\esh_port.c</FilePath>
+              <FilePath>..\..\..\esh\esh_port.c</FilePath>
             </File>
           </Files>
         </Group>

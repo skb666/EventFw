@@ -26,12 +26,10 @@ Output
 Debug
 Exe
 Obj
-fusiondata
-mapdata
 cmake-build-debug
 
 # File
 JLinkLog.txt
-imxrt105x.uvguix.*
+setting.ini
 .sconsign.dblite
 __pycache__

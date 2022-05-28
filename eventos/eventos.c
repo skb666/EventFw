@@ -83,7 +83,6 @@ eos_task_t *volatile eos_current;
 eos_task_t *volatile eos_next;
 
 /* **eos** --------------------------------------------------------------------- */
-/* TODO 优化。重新考虑以下枚举是否还有价值。 */
 enum
 {
     EosRun_OK                               = 0,
@@ -127,8 +126,6 @@ typedef uint32_t (* hash_algorithm_t)(const char *string);
 #define EOS_MS_NUM_30DAY                    (2592000000U)
 #define EOS_MS_NUM_15DAY                    (1296000000U)
 
-/* TODO 优化。定时器考虑使用uint64_t，并以微秒为单位。以增强时间的精确度。 */
-/* TODO 优化。内存充分的前提下，不再搞这个东西。 */
 enum
 {
     EosTimerUnit_Ms                         = 0,    /* 60S, ms */
@@ -139,7 +136,6 @@ enum
     EosTimerUnit_Max
 };
 
-/* TODO 优化。内存充分的前提下，不再搞这个东西。 */
 static const uint32_t timer_threshold[EosTimerUnit_Max] =
 {
     60000,                                          /* 60 S */
@@ -148,7 +144,6 @@ static const uint32_t timer_threshold[EosTimerUnit_Max] =
     1296000000,                                     /* 15 days */
 };
 
-/* TODO 优化。内存充分的前提下，不再搞这个东西。 */
 static const uint32_t timer_unit[EosTimerUnit_Max] =
 {
     1, 100, 1000, 60000
@@ -179,7 +174,6 @@ typedef struct eos_heap_tag
     uint32_t error_id                           : 3;
 } eos_heap_t;
 
-/* TODO 优化。删除next和last指针。同时，heap库也不在有必要。 */
 typedef struct eos_event_data
 {
     struct eos_event_data *next;
@@ -231,11 +225,8 @@ typedef struct eos_object
     const char *key;                                    /* Key */
     eos_ocb_t ocb;                                      /* object block */
     uint32_t type                   : 8;                /* Object type */
-    /* TODO 优化。attribute优化进入ocb */
     uint32_t attribute              : 8;
-    /* TODO 优化。放进ocb。 */
     uint32_t size                   : 16;               /* Value size */
-    /* TODO 优化。放进OCB。 */
     union
     {
         void *value;                                    /* for value-event */
@@ -252,10 +243,7 @@ typedef struct eos_tag
 
     /* Task */
     eos_object_t *task[EOS_MAX_TASKS];
-    /* TODO 优化。将此处优化到OCB里去。 */
     const char *event_wait[EOS_MAX_TASKS];                 /* 等待的事件ID */
-    /* TODO 优化。如果支持无限任务，就支持如下格式的标志位。同时，任务数必须为8的倍数。 */
-    uint8_t flag[EOS_MAX_TASKS / 8];
     uint32_t task_exist;
     uint32_t task_enabled;
     uint32_t task_delay;
@@ -270,7 +258,6 @@ typedef struct eos_tag
     uint32_t timer_out_min;
 
     /* Time event */
-    /* TODO 优化。将此处优化到哈希表里去，最好是跟Timer合为一体。 */
 #if (EOS_USE_TIME_EVENT != 0)
     eos_event_timer_t etimer[EOS_MAX_TIME_EVENT];
     uint32_t time;
@@ -280,19 +267,15 @@ typedef struct eos_tag
 #endif
 
     /* Heap */
-    /* TODO 优化。删除heap。 */
 #if (EOS_USE_EVENT_DATA != 0)
     eos_heap_t heap;
     uint8_t heap_data[EOS_SIZE_HEAP];
 #endif
     eos_heap_t db;
-    /* TODO 优化。e-queue改为全静态管理。 */
     eos_event_data_t *e_queue;
 
     uint32_t owner_global;
 
-    /* TODO 优化。用于支持无限任务。 */
-    uint32_t id_count;
     uint32_t cpu_usage_count;
 
     /* flag */

@@ -117,10 +117,7 @@ extern volatile int32_t critical_count;
 void eos_init(void);
 // Run EventOS.
 void eos_run(void);
-// TODO 优化。修改为毫秒和微秒两个获取时间的函数。System time.
 uint64_t eos_time(void);
-// uint64_t eos_time_ms(void)；
-// uint64_t eos_time_us(void);
 // System tick function.
 void eos_tick(void);
 // // Disable the global interrupt.
@@ -345,8 +342,6 @@ Database
 
 // 数据库的初始化
 void eos_db_init(void *const memory, uint32_t size);
-// TODO 实现。增加持久化设备。
-void eos_db_add_device_persistence(const char *device);
 // 数据库的注册。
 void eos_db_register(const char *key, uint32_t size, uint8_t attribute);
 // 数据属性的获取
