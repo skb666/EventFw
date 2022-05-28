@@ -65,6 +65,9 @@
 //   <o>  use ASSERT or not (0 or 1) <0-1>
 #define EOS_USE_ASSERT                          1
 
+//   <o>  use LOG or not (0 or 1) <0-1>
+#define EOS_USE_LOG                             1
+
 // </h>
 
 /* State Machine Function Configuration ------------------------------------- */

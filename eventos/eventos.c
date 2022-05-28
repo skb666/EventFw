@@ -990,12 +990,6 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
 /* -----------------------------------------------------------------------------
 Mutex
 ----------------------------------------------------------------------------- */
-// TODO 实现。以事件实现锁机制。
-void eos_mutex_set_global(const char *name)
-{
-    (void)name;
-}
-
 void eos_mutex_take(const char *name)
 {
     if (eos.running != 0)
@@ -1540,13 +1534,13 @@ static void eos_sm_enter(eos_sm_t *const me)
 /* -----------------------------------------------------------------------------
 Event
 ----------------------------------------------------------------------------- */
-// TODO 实现。考虑那种情况，线程内此函数执行了一半，有中断进入。
 static int8_t __eos_event_give( const char *task,
                                 uint8_t give_type,
                                 const char *topic)
 {
     /* TODO 这个功能还是要实现。 */
     /* EOS_ASSERT(eos.running == true); */
+
     if (eos.running == false) {
         return 0;
     }

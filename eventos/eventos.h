@@ -28,9 +28,6 @@
  * 
  */
 
-// TODO 实现。将断言分为两级，测试断言和运行断言。测试断言，在发布时关闭。这样的话，测
-//            试断言可以加入很多很多。
-
 #ifndef EVENTOS_H_
 #define EVENTOS_H_
 
@@ -136,58 +133,6 @@ void eos_sheduler_unlock(void);
 #endif
 
 /* -----------------------------------------------------------------------------
-Shell
------------------------------------------------------------------------------ */
-typedef int32_t (* eos_shell_func_t)(int32_t argc, char *agrv[]);
-
-void eos_shell_init(void);
-void eos_shell_cmd_register(const char *cmd, eos_shell_func_t func);
-
-/* -----------------------------------------------------------------------------
-Log & Assert
------------------------------------------------------------------------------ */
-
-#include "elog.h"
-
-#define EOS_PRINT(...)            elog_printf(__VA_ARGS__)
-#define EOS_DEBUG(...)            elog_debug(___tag_name, __VA_ARGS__)
-#define EOS_INFO(...)             elog_info(___tag_name, __VA_ARGS__)
-#define EOS_WARN(...)             elog_warn(___tag_name, __VA_ARGS__)
-#define EOS_ERROR(...)            elog_error(___tag_name, __VA_ARGS__)
-
-#ifndef EOS_USE_ASSERT
-
-#define EOS_TAG(name_)
-#define EOS_ASSERT(test_)                       ((void)0)
-#define EOS_ASSERT_ID(id_, test_)               ((void)0)
-#define EOS_ASSERT_NAME(id_, test_)             ((void)0)
-#define EOS_ASSERT_INFO(test_, ...)             ((void)0)
-
-#else
-
-/* User defined module name. */
-#define EOS_TAG(name_)                                                         \
-    static char const ___tag_name[] = name_;
-
-/* General assert */
-#define EOS_ASSERT(test_) ((test_)                                               \
-    ? (void)0 : elog_assert(___tag_name, EOS_NULL, (int)__LINE__))
-
-/* General assert with ID */
-#define EOS_ASSERT_ID(id_, test_) ((test_)                                       \
-    ? (void)0 : elog_assert(___tag_name, EOS_NULL, (int)(id_)))
-
-/* General assert with name string or event topic. */
-#define EOS_ASSERT_NAME(test_, name_) ((test_)                                     \
-    ? (void)0 : elog_assert(___tag_name, name_, (int)(__LINE__)))
-        
-/* Assert with printed information. */
-#define EOS_ASSERT_INFO(test_, ...) ((test_)                                     \
-    ? (void)0 : elog_assert_info(___tag_name, __VA_ARGS__))
-
-#endif
-
-/* -----------------------------------------------------------------------------
 Task
 ----------------------------------------------------------------------------- */
 /*
@@ -255,8 +200,6 @@ bool eos_task_wait_event(eos_event_t * const e_out, uint32_t time_ms);
 /* -----------------------------------------------------------------------------
 Mutex
 ----------------------------------------------------------------------------- */
-// TODO 实现。以事件实现锁机制。
-void eos_mutex_set_global(const char *name);
 void eos_mutex_lock(const char *name);
 void eos_mutex_unlock(const char *name);
 
@@ -427,6 +370,56 @@ eos_ret_t eos_state_top(eos_sm_t * const me, eos_event_t const * const e);
 #define EOS_TRAN(target)            eos_tran((eos_sm_t * )me, (eos_state_handler)target)
 #define EOS_SUPER(super)            eos_super((eos_sm_t * )me, (eos_state_handler)super)
 #define EOS_STATE_CAST(state)       ((eos_state_handler)(state))
+#endif
+
+/* -----------------------------------------------------------------------------
+Assert
+----------------------------------------------------------------------------- */
+#ifndef EOS_USE_ASSERT
+
+#define EOS_TAG(name_)
+#define EOS_ASSERT(test_)                       ((void)0)
+#define EOS_ASSERT_ID(id_, test_)               ((void)0)
+#define EOS_ASSERT_NAME(id_, test_)             ((void)0)
+#define EOS_ASSERT_INFO(test_, ...)             ((void)0)
+
+#else
+
+#include "elog.h"
+
+/* User defined module name. */
+#define EOS_TAG(name_)                                                         \
+    static char const ___tag_name[] = name_;
+
+/* General assert */
+#define EOS_ASSERT(test_) ((test_)                                             \
+    ? (void)0 : elog_assert(___tag_name, EOS_NULL, (int)__LINE__))
+
+/* General assert with ID */
+#define EOS_ASSERT_ID(id_, test_) ((test_)                                     \
+    ? (void)0 : elog_assert(___tag_name, EOS_NULL, (int)(id_)))
+
+/* General assert with name string or event topic. */
+#define EOS_ASSERT_NAME(test_, name_) ((test_)                                 \
+    ? (void)0 : elog_assert(___tag_name, name_, (int)(__LINE__)))
+        
+/* Assert with printed information. */
+#define EOS_ASSERT_INFO(test_, ...) ((test_)                                   \
+    ? (void)0 : elog_assert_info(___tag_name, __VA_ARGS__))
+
+#endif
+
+/* -----------------------------------------------------------------------------
+Log
+----------------------------------------------------------------------------- */
+#ifdef EOS_USE_LOG
+#include "elog.h"
+
+#define EOS_PRINT(...)            elog_printf(__VA_ARGS__)
+#define EOS_DEBUG(...)            elog_debug(___tag_name, __VA_ARGS__)
+#define EOS_INFO(...)             elog_info(___tag_name, __VA_ARGS__)
+#define EOS_WARN(...)             elog_warn(___tag_name, __VA_ARGS__)
+#define EOS_ERROR(...)            elog_error(___tag_name, __VA_ARGS__)
 #endif
 
 /* -----------------------------------------------------------------------------

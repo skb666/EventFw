@@ -4,6 +4,7 @@
 #include "eos_led.h"                                // LED灯闪烁状态机
 #include "system.h"
 #include "esh.h"
+#include "elog.h"
 #include <string.h>
 
 EOS_TAG("main")
