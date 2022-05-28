@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F429_439xx, EOS_MCU,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\3rd;..\..\..\ecp;..\..\..\elog;..\..\..\esh</IncludePath>
+              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\3rd;..\..\..\ecp;..\..\..\elog;..\..\..\esh;..\..\..\test</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -387,16 +387,6 @@
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\main.c</FilePath>
-            </File>
-            <File>
-              <FileName>eos_led_reactor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\User\eos_led_reactor.c</FilePath>
-            </File>
-            <File>
-              <FileName>eos_led_sm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\User\eos_led_sm.c</FilePath>
             </File>
             <File>
               <FileName>hook.c</FileName>
@@ -452,6 +442,26 @@
               <FileName>port_cortex_m.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\eos_port\port_cortex_m.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Test</GroupName>
+          <Files>
+            <File>
+              <FileName>eos_led_reactor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\eos_led_reactor.c</FilePath>
+            </File>
+            <File>
+              <FileName>eos_led_sm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\eos_led_sm.c</FilePath>
+            </File>
+            <File>
+              <FileName>test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test.c</FilePath>
             </File>
           </Files>
         </Group>

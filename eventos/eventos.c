@@ -324,7 +324,7 @@ static const eos_event_t eos_event_table[Event_User] =
 };
 #endif
 
-/* macro ----------------------------------------------------------------------- */
+/* macro -------------------------------------------------------------------- */
 #if (EOS_USE_SM_MODE != 0)
 #define HSM_TRIG_(state_, topic_)                                              \
     ((*(state_))(me, &eos_event_table[topic_]))
@@ -1390,17 +1390,17 @@ static uint16_t eos_task_init(  eos_task_t *const me,
     EOS_ASSERT(eos.running == EOS_False);
 
     /* Check all arguments are valid. */
-    EOS_ASSERT(me != (eos_task_t *)0);
-    EOS_ASSERT(priority < EOS_MAX_TASKS);
+    EOS_ASSERT_NAME(me != (eos_task_t *)0, name);
+    EOS_ASSERT_NAME(priority < EOS_MAX_TASKS, name);
 
     /* Prevent the task starts for the second time. */
-    EOS_ASSERT(me->enabled == EOS_False);
+    EOS_ASSERT_NAME(me->enabled == EOS_False, name);
 
     /* Check the task is registered for the second time. */
-    EOS_ASSERT((eos.task_exist & (1 << priority)) == 0);
+    EOS_ASSERT_NAME((eos.task_exist & (1 << priority)) == 0, name);
 
     /* Prevent duplication of name. */
-    EOS_ASSERT(eos_hash_get_index(name) == EOS_MAX_OBJECTS);
+    EOS_ASSERT_NAME(eos_hash_get_index(name) == EOS_MAX_OBJECTS, name);
 
     /* Get the position of the hash table. */
     uint16_t index = eos_hash_insert(name);
@@ -1606,7 +1606,7 @@ static int8_t __eos_event_give( const char *task,
     {
         /* Get the task id in the object hash table. */
         uint16_t t_id = eos_hash_get_index(task);
-        EOS_ASSERT(t_id != EOS_MAX_OBJECTS);
+        EOS_ASSERT_NAME(t_id != EOS_MAX_OBJECTS, topic);
         EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
         eos_task_t *tcb = eos.object[t_id].ocb.task;
 
