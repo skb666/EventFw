@@ -308,6 +308,7 @@ void eos_set_time(uint32_t time_ms);
 void eos_set_hash(hash_algorithm_t hash);
 
 /* **eos end** ----------------------------------------------------------------- */
+uint32_t eeee[1024];
 eos_t eos;
 
 volatile int8_t eos_interrupt_nest = 0;
@@ -2083,6 +2084,7 @@ static inline void __eos_db_write(uint8_t type,
         }
     }
 
+    uint32_t size_remain;
     /* Value type event key. */
     if (type == EOS_EVENT_ATTRIBUTE_VALUE)
     {
@@ -2097,7 +2099,7 @@ static inline void __eos_db_write(uint8_t type,
     {
         /* Check if the remaining memory is enough or not. */
         eos_stream_t *queue = eos.object[e_id].data.stream;
-        uint32_t size_remain = eos_stream_empty_size(queue);
+        size_remain = eos_stream_empty_size(queue);
         EOS_ASSERT(size_remain >= size);
         /* Push all data to the queue. */
         eos_stream_push(queue, (void *)memory, size);
@@ -2290,7 +2292,7 @@ void eos_db_register(const char *key, uint32_t size, uint8_t attribute)
         eos.object[e_id].size = size;
 
         eos_stream_init(eos.object[e_id].data.stream,
-                        data,
+                        (void *)((uint32_t)data + sizeof(eos_stream_t)),
                         eos.object[e_id].size);
 
         uint16_t t_id = eos_hash_get_index(key);
@@ -2942,11 +2944,12 @@ static int32_t eos_stream_push(eos_stream_t *const me, void * data, uint32_t siz
         return Stream_NotEnough;
     }
 
+    uint8_t *stream = (uint8_t *)me->data;
     for (int i = 0; i < size; i ++)
     {
-        ((uint8_t *)me->data)[(me->head + i) % me->capacity] = ((uint8_t *)data)[i];
+        stream[me->head] = ((uint8_t *)data)[i];
+        me->head = ((me->head + 1) % me->capacity);
     }
-    me->head = (me->head + size) % me->capacity;
     me->empty = false;
 
     return Stream_OK;
@@ -2962,12 +2965,13 @@ static int32_t eos_stream_pull_pop(eos_stream_t *const me, void * data, uint32_t
     uint32_t size_stream = eos_stream_size(me);
     size = (size_stream < size) ? size_stream : size;
 
+    uint8_t *stream = (uint8_t *)me->data;
     for (int i = 0; i < size; i ++)
     {
-        ((uint8_t *)data)[i] = ((uint8_t *)me->data)[(me->tail + i) % me->capacity];
+        ((uint8_t *)data)[i] = stream[me->tail];
+        me->tail = (me->tail + 1) % me->capacity;
     }
     
-    me->tail = (me->tail + size) % me->capacity;
     if (me->tail == me->head)
     {
         me->tail = 0;

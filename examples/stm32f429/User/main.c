@@ -155,6 +155,8 @@ void task_func_e_specific_test(void *parameter)
 static char buff_stream[32];
 void task_func_e_stream_test(void *parameter)
 {
+    eos_event_sub("Event_Stream_Link");
+    
     while (1) {
         eos_event_t e;
         if (eos_task_wait_event(&e, 10000) == false) {
@@ -187,7 +189,7 @@ void task_func_e_stream_test(void *parameter)
     }
 }
 
-uint8_t db_memory[512];
+uint8_t db_memory[5120];
 uint32_t count_tick = 0;
 
 elog_device_t dev_esh;
@@ -221,14 +223,14 @@ int main(void)
     
     eos_init();                                     // EventOS初始化
     
-    eos_db_init(db_memory, 5120);
+    eos_db_init(db_memory, sizeof(db_memory));
     
     eos_db_register("Event_Value", sizeof(e_value_t), EOS_DB_ATTRIBUTE_VALUE);
     eos_db_register("Event_Value_Link", sizeof(e_value_t),
                     (EOS_DB_ATTRIBUTE_VALUE | EOS_DB_ATTRIBUTE_LINK_EVENT));
     
-    eos_db_register("Event_Stream", 1024, EOS_DB_ATTRIBUTE_STREAM);
-    eos_db_register("Event_Stream_Link", 1024,
+    eos_db_register("Event_Stream", 256, EOS_DB_ATTRIBUTE_STREAM);
+    eos_db_register("Event_Stream_Link", 256,
                     (EOS_DB_ATTRIBUTE_STREAM | EOS_DB_ATTRIBUTE_LINK_EVENT));
     
     eos_sm_led_init();                              // LED状态机初始化

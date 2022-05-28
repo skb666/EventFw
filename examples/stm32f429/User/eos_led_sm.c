@@ -20,7 +20,7 @@ static eos_ret_t state_on(eos_sm_led_t * const me, eos_event_t const * const e);
 static eos_ret_t state_off(eos_sm_led_t * const me, eos_event_t const * const e);
 
 /* api ---------------------------------------------------- */
-uint8_t stack_sm[256];
+uint8_t stack_sm[1024];
 void eos_sm_led_init(void)
 {
     eos_sm_init(&sm_led.super, "sm_led", TaskPriority_SmLed, stack_sm, sizeof(stack_sm));
