@@ -143,7 +143,7 @@ static void task_func_e_give(void *parameter)
         
         eos_event_send("TaskValue", "Event_One");
         eos_event_send("TaskSpecific", "Event_Two");
-//        eos_event_broadcast("Event_Broadcast");
+        eos_event_broadcast("Event_Broadcast");
         
         e_value_t e_value;
         e_value.count = eos_test.send_count;

@@ -108,14 +108,14 @@ enum
 #define EK_ERROR(...)                       ((void)0)
 #endif
 
-/* Event atrribute ------------------------------------------------------------- */
+/* Event atrribute ---------------------------------------------------------- */
 #define EOS_EVENT_ATTRIBUTE_GLOBAL          ((uint8_t)0x80U)
 #define EOS_EVENT_ATTRIBUTE_UNBLOCKED       ((uint8_t)0x20U)
 #define EOS_EVENT_ATTRIBUTE_TOPIC           ((uint8_t)0x00U)
 #define EOS_EVENT_ATTRIBUTE_VALUE           EOS_DB_ATTRIBUTE_VALUE
 #define EOS_EVENT_ATTRIBUTE_STREAM          EOS_DB_ATTRIBUTE_STREAM
 
-/* Task attribute -------------------------------------------------------------- */
+/* Task attribute ----------------------------------------------------------- */
 #define EOS_TASK_ATTRIBUTE_TASK             ((uint8_t)0x00U)
 #define EOS_TASK_ATTRIBUTE_REACTOR          ((uint8_t)0x01U)
 #define EOS_TASK_ATTRIBUTE_SM               ((uint8_t)0x02U)
@@ -252,6 +252,7 @@ typedef struct eos_tag
     uint32_t task_wait_event;
     uint32_t task_wait_specific_event;
     uint32_t task_mutex;
+    uint32_t task_recieve_event;
     
     /* Timer */
     eos_timer_t *timers;
@@ -794,10 +795,11 @@ void eos_task_resume(const char *task)
 bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
 {
     eos_interrupt_disable();
+    uint8_t priority = eos_current->priority;
+    eos.task_recieve_event |= (1 << priority);
+    
     do
     {
-        uint8_t priority = eos_current->priority;
-        
         if ((eos.owner_global & (1 << priority)) != 0)
         {
             EOS_ASSERT(eos.e_queue != EOS_NULL);
@@ -1624,6 +1626,7 @@ static int8_t __eos_event_give( const char *task,
     else if (give_type == EosEventGiveType_Broadcast)
     {
         owner = eos.task_exist;
+        owner = (eos.task_recieve_event & eos.task_exist);
     }
     /* The publish-type event. */
     else if (give_type == EosEventGiveType_Publish)
@@ -1726,7 +1729,7 @@ static int8_t __eos_event_give( const char *task,
             eos_interrupt_disable();
             data = eos_heap_malloc(&eos.heap, sizeof(eos_event_data_t));
             eos_interrupt_enable();
-            EOS_ASSERT(data != EOS_NULL);
+            EOS_ASSERT_NAME(data != EOS_NULL, topic);
             data->owner = owner;
             data->id = e_id;
             eos.object[e_id].ocb.event.e_item = data;
