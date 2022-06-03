@@ -29,6 +29,7 @@ typedef struct eos_test
 
     uint32_t send_count;
     uint32_t e_one;
+    uint32_t e_delay;
     uint32_t e_two;
     uint32_t e_specific;
     uint32_t e_value;
@@ -43,6 +44,9 @@ typedef struct eos_test
     e_value_t e_value_recv;
     e_value_t e_value_link_recv;
     e_value_t e_value_broadcast;
+    
+    uint8_t flag_send_delay;
+    uint8_t flag_send;
 
     char buffer[32];
 } eos_test_t;
@@ -149,6 +153,18 @@ static void task_func_e_give(void *parameter)
         eos_event_send("TaskValue", "Event_One");
         eos_event_send("TaskSpecific", "Event_Two");
         eos_event_broadcast("Event_Broadcast");
+
+        if (eos_test.flag_send_delay != 0) {
+            eos_test.flag_send_delay = 0;
+            EOS_DEBUG("Send Delay");
+            eos_event_send_delay("TaskValue", "Event_Delay", 50);
+        }
+        
+        if (eos_test.flag_send != 0) {
+            eos_test.flag_send = 0;
+            EOS_DEBUG("Publish event Delay");
+            eos_event_publish("Event_Delay");
+        }
         
         e_value_t e_value;
         e_value.count = eos_test.send_count;
@@ -197,6 +213,11 @@ static void task_func_e_value(void *parameter)
 
         if (eos_event_topic(&e, "Event_One")) {
             eos_test.e_one ++;
+        }
+
+        if (eos_event_topic(&e, "Event_Delay")) {
+            EOS_DEBUG("Receive event Delay");
+            eos_test.e_delay ++;
         }
         
         if (eos_event_topic(&e, "Event_Specific")) {

@@ -552,7 +552,6 @@ void eos_init(void)
 
 void eos_run(void)
 {
-    EK_INFO("EventOS start to run.");
     eos_hook_start();
     eos.running = true;
     
@@ -631,7 +630,7 @@ static void eos_sheduler(void)
     }
     
     eos_interrupt_disable();
-    EK_INFO("eos_sheduler enter.");
+
     /* eos_next = ... */
     task_idle.state = EosTaskState_Ready;
     eos_next = &task_idle;
@@ -664,8 +663,8 @@ static void eos_sheduler(void)
         }
     }
     EOS_ASSERT(eos_next != EOS_NULL);
-    if (eos.object[eos_next->id].key == EOS_NULL) {
-        EK_ERROR("eos_next->id: %u.", eos_next->id);
+    if (eos.object[eos_next->id].key == EOS_NULL)
+    {
         EOS_ASSERT(eos.object[eos_next->id].key != EOS_NULL);
     }
 
@@ -674,14 +673,7 @@ static void eos_sheduler(void)
     {
         eos_next->state = EosTaskState_Running;
         eos_port_task_switch();
-        EK_DEBUG("eos_sheduler task switch. Current: %s, Next: %s.",
-                  eos.object[eos_current->id].key,
-                  eos.object[eos_next->id].key);
-        EK_DEBUG("eos_sheduler task switch. Current: %d, Next: %d.",
-                  eos_current->id,
-                  eos_next->id);
     }
-    EK_INFO("eos_sheduler exit.");
     eos_interrupt_enable();
 }
 
@@ -809,8 +801,7 @@ void eos_task_resume(const char *task)
 bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
 {
     eos_interrupt_disable();
-    EK_WARN("eos_task_wait_event Current: %s ...",
-                eos.object[eos_current->id].key);
+
     uint8_t priority = eos_current->priority;
     eos.task_recieve_event |= (1 << priority);
     
@@ -864,8 +855,6 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
                     __eos_owner_global();
                 }
 
-                EK_WARN("eos_task_wait_event %s. global: %u", e_out->topic,
-                        (eos.owner_global & (1 << priority)));
                 eos_interrupt_enable();
                 
                 return true;
@@ -1258,10 +1247,6 @@ void eos_event_attribute_unblocked(const char *topic)
 
 void eos_event_broadcast(const char *topic)
 {
-    EK_ERROR("eos_event_broadcast. Current: %s, Topic: %s.",
-                eos.object[eos_current->id].key,
-                topic);
-    
     __eos_event_give(EOS_NULL, EosEventGiveType_Broadcast, topic);
     
 #if (EOS_USE_PREEMPTIVE == 0)
@@ -1605,6 +1590,7 @@ static int8_t __eos_event_give( const char *task,
         e_id = eos_hash_insert(topic);
         eos.object[e_id].type = EosObj_Event;
         eos.object[e_id].ocb.event.t_id = EOS_MAX_OBJECTS;
+        eos.object[e_id].attribute &= (~0x03);
         e_type = EOS_EVENT_ATTRIBUTE_TOPIC;
 
         eos_interrupt_enable();
@@ -1832,9 +1818,6 @@ __EXIT:
 
 void eos_event_send(const char *task, const char *topic)
 {
-    EK_ERROR("eos_event_send. Current: %s, Task: %s, Topic: %s.",
-                eos.object[eos_current->id].key,
-                task, topic);
     __eos_event_give(task, EosEventGiveType_Send, topic);
 
 #if (EOS_USE_PREEMPTIVE == 0)
@@ -1847,10 +1830,6 @@ void eos_event_send(const char *task, const char *topic)
 
 void eos_event_publish(const char *topic)
 {
-    EK_ERROR("eos_event_publish. Current: %s, Topic: %s.",
-                eos.object[eos_current->id].key,
-                topic);
-    
     __eos_event_give(EOS_NULL, EosEventGiveType_Publish, topic);
     
 #if (EOS_USE_PREEMPTIVE == 0)
@@ -1980,10 +1959,23 @@ void eos_event_send_delay(const char *task,
     EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
 
     /* Ensure the event is topic-type. */
-    uint16_t index = eos_hash_get_index(topic);
-    EOS_ASSERT(index != EosObj_Event);
-    EOS_ASSERT(eos.object[index].type == EosObj_Event);
-    EOS_ASSERT((eos.object[index].attribute & 0x03) != EOS_EVENT_ATTRIBUTE_TOPIC);
+    uint16_t e_id = eos_hash_get_index(topic);
+    uint8_t e_type;
+    if (e_id == EOS_MAX_OBJECTS)
+    {
+        e_id = eos_hash_insert(topic);
+        eos.object[e_id].type = EosObj_Event;
+        eos.object[e_id].ocb.event.t_id = EOS_MAX_OBJECTS;
+        e_type = EOS_EVENT_ATTRIBUTE_TOPIC;
+    }
+    else
+    {
+        EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
+
+        /* The stream event can only be subscribed by one task. */
+        e_type = eos.object[e_id].attribute & 0x03;
+        EOS_ASSERT(e_type == EOS_EVENT_ATTRIBUTE_TOPIC);
+    }
 
     /* Subscribe the event. */
     eos_task_t *tcb = eos.object[t_id].ocb.task;
