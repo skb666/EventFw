@@ -41,6 +41,9 @@ typedef struct eos_test
     uint32_t e_broadcast_value;
     uint32_t e_sm;
     uint32_t e_reactor;
+    uint32_t e_timer_oneshoot;
+    uint32_t e_timer_period;
+    uint32_t timer_test;
 
     e_value_t e_value_recv;
     e_value_t e_value_link_recv;
@@ -48,6 +51,11 @@ typedef struct eos_test
     
     uint8_t flag_send_delay;
     uint8_t flag_send;
+
+    uint8_t flag_timer_pause;
+    uint8_t flag_timer_continue;
+    uint8_t flag_timer_reset;
+    uint8_t flag_timer_delete;
 
     char buffer[32];
 } eos_test_t;
@@ -68,6 +76,9 @@ static void task_func_e_value(void *parameter);
 static void task_func_e_specific(void *parameter);
 static void task_func_e_stream(void *parameter);
 static void task_func_e_broadcast(void *parameter);
+static void timer_func_oneshoot(void *parameter);
+static void timer_func_peroid(void *parameter);
+static void timer_func_test(void *parameter);
 
 /* private data ------------------------------------------------------------- */
 static uint64_t stack_e_give[64];
@@ -80,6 +91,10 @@ static uint64_t stack_e_stream[64];
 static eos_task_t task_e_stream;
 static uint64_t stack_e_broadcast[64];
 static eos_task_t task_e_broadcast;
+
+static eos_timer_t timer_oneshoot;
+static eos_timer_t timer_peroid;
+static eos_timer_t timer_test;
 
 eos_test_t eos_test;
 
@@ -138,6 +153,10 @@ void test_init(void)
     eos_sm_led_init();
     eos_reactor_led_init();
 
+    eos_timer_start(&timer_oneshoot, "TimerOneshoot", 100, true, timer_func_oneshoot);
+    eos_timer_start(&timer_peroid, "TimerPeroid", 100, false, timer_func_peroid);
+    eos_timer_start(&timer_test, "TimerTest", 5000, false, timer_func_test);
+
     // eos_task_exit();
 }
 
@@ -173,6 +192,30 @@ static void task_func_e_give(void *parameter)
             EOS_DEBUG("Publish event Delay");
             eos_event_publish("Event_Delay");
         }
+
+        if (eos_test.flag_timer_pause != 0)
+        {
+            eos_test.flag_timer_pause = 0;
+            eos_timer_pause("TimerTest");
+        }
+
+        if (eos_test.flag_timer_continue != 0)
+        {
+            eos_test.flag_timer_continue = 0;
+            eos_timer_continue("TimerTest");
+        }
+
+        if (eos_test.flag_timer_reset != 0)
+        {
+            eos_test.flag_timer_reset = 0;
+            eos_timer_reset("TimerTest");
+        }
+
+        if (eos_test.flag_timer_delete != 0)
+        {
+            eos_test.flag_timer_delete = 0;
+            eos_timer_delete("TimerTest");
+        }
         
         e_value_t e_value;
         e_value.count = eos_test.send_count;
@@ -203,6 +246,7 @@ static void task_func_e_give(void *parameter)
             eos_task_resume("sm_led");
         }
         
+        
         eos_delay_ms(100);
     }
 }
@@ -227,6 +271,14 @@ static void task_func_e_value(void *parameter)
         if (eos_event_topic(&e, "Event_Delay")) {
             EOS_DEBUG("Receive event Delay");
             eos_test.e_delay ++;
+        }
+
+        if (eos_event_topic(&e, "Event_Timer_Oneshoot")) {
+            eos_test.e_timer_oneshoot ++;
+        }
+
+        if (eos_event_topic(&e, "Event_TimerPeroid")) {
+            eos_test.e_timer_period ++;
         }
         
         if (eos_event_topic(&e, "Event_Period")) {
@@ -335,3 +387,21 @@ static void task_func_e_broadcast(void *parameter)
     }
 }
 
+static void timer_func_oneshoot(void *parameter)
+{
+    (void)parameter;
+
+    eos_event_send("TaskValue", "Event_Timer_Oneshoot");
+}
+
+static void timer_func_peroid(void *parameter)
+{
+    (void)parameter;
+    
+    eos_event_send("TaskValue", "Event_TimerPeroid");
+}
+
+static void timer_func_test(void *parameter)
+{
+    eos_test.timer_test ++;
+}

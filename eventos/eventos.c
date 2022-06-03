@@ -351,6 +351,7 @@ static void eos_reactor_enter(eos_reactor_t *const me);
 static inline void __eos_event_sub(eos_task_t *const me, const char *topic);
 static void eos_sm_enter(eos_sm_t *const me);
 static void eos_sheduler(void);
+static void eos_timer_poll(void);
 static int32_t eos_evttimer(void);
 static uint32_t eos_hash_time33(const char *string);
 static uint16_t eos_hash_insert(const char *string);
@@ -445,7 +446,9 @@ static void task_func_idle(void *parameter)
 #if (EOS_USE_PREEMPTIVE == 0)
         eos_task_delay_handle();
 #endif
-        
+
+        eos_timer_poll();
+
         eos_interrupt_disable();
 #if (EOS_USE_TIME_EVENT != 0)
         eos_evttimer();
@@ -1207,6 +1210,44 @@ void eos_timer_reset(const char *name)
     eos_timer_t *timer = eos.object[index].ocb.timer;
     timer->running = 1;
     timer->time_out = eos.time + timer->time;
+    eos_interrupt_enable();
+}
+
+static void eos_timer_poll(void)
+{
+    eos_interrupt_disable();
+    if (eos.timer_out_min > eos_time())
+    {
+        eos_interrupt_enable();
+        return;
+    }
+    eos_timer_t *timer = eos.timers;
+    uint32_t time_out_min = UINT32_MAX;
+    while (timer != EOS_NULL)
+    {
+        if (timer->running && timer->time_out <= eos_time())
+        {
+            eos_interrupt_enable();
+            timer->callback(NULL);
+            eos_interrupt_disable();
+            if (timer->oneshoot)
+            {
+                timer->running = false;
+            }
+            else
+            {
+                timer->time_out += timer->time;
+            }
+        }
+        if (time_out_min > timer->time_out)
+        {
+            time_out_min = timer->time_out;
+        }
+
+        timer = timer->next;
+    }
+
+    eos.timer_out_min = time_out_min;
     eos_interrupt_enable();
 }
 
