@@ -150,9 +150,14 @@ static void task_func_e_give(void *parameter)
         eos_test.time = eos_time();
         eos_test.send_count ++;
         
+        eos_sheduler_lock();
+        EOS_WARN("Send Event_One to TaskValue");
         eos_event_send("TaskValue", "Event_One");
+        EOS_WARN("Send Event_Two to TaskSpecific");
         eos_event_send("TaskSpecific", "Event_Two");
+        EOS_WARN("Event_Broadcast");
         eos_event_broadcast("Event_Broadcast");
+        eos_sheduler_unlock();
 
         if (eos_test.flag_send_delay != 0) {
             eos_test.flag_send_delay = 0;
@@ -212,6 +217,7 @@ static void task_func_e_value(void *parameter)
         }
 
         if (eos_event_topic(&e, "Event_One")) {
+            EOS_WARN("Receive Event_One to TaskValue");
             eos_test.e_one ++;
         }
 
