@@ -11,7 +11,7 @@ typedef struct eos_reactor_led_tag {
     uint8_t status;
 } eos_reactor_led_t;
 
-uint8_t stack_led[512];
+uint8_t stack_led[2048];
 eos_reactor_led_t actor_led;
 
 EOS_TAG("ReactorLed")

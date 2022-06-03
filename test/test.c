@@ -24,6 +24,8 @@ typedef struct e_value
 typedef struct eos_test
 {
     uint32_t error;
+    
+    uint32_t time;
 
     uint32_t send_count;
     uint32_t e_one;
@@ -116,7 +118,9 @@ void test_init(void)
     eos_db_register("Event_Stream_Link", 256,
                     (EOS_DB_ATTRIBUTE_STREAM | EOS_DB_ATTRIBUTE_LINK_EVENT));
 
-    for (uint32_t i = 0; i < (sizeof(task_test_info) / sizeof(task_test_info_t)); i ++)
+    for (uint32_t i = 0;
+         i < (sizeof(task_test_info) / sizeof(task_test_info_t));
+         i ++)
     {
         eos_task_start(task_test_info[i].task,
                        task_test_info[i].name,
@@ -139,6 +143,7 @@ static void task_func_e_give(void *parameter)
 
     while (1)
     {
+        eos_test.time = eos_time();
         eos_test.send_count ++;
         
         eos_event_send("TaskValue", "Event_One");
@@ -167,14 +172,12 @@ static void task_func_e_give(void *parameter)
             eos_event_send("TaskValue", "Event_Specific");
             eos_event_send("TaskSpecific", "Event_Two");
         }
-        if (eos_test.send_count == 100) {
+        if (eos_test.send_count == 10) {
             eos_task_suspend("sm_led");
         }
-        if (eos_test.send_count == 200) {
+        if (eos_test.send_count == 20) {
             eos_task_resume("sm_led");
         }
-        
-        EOS_DEBUG("-------------------------\n");
         
         eos_delay_ms(100);
     }

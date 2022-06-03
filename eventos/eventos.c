@@ -92,7 +92,7 @@ enum
 };
 
 /* Event atrribute ------------------------------------------------------------- */
-#define EOS_KERNEL_LOG_EN                   0
+#define EOS_KERNEL_LOG_EN                   (0)
 
 #if (EOS_KERNEL_LOG_EN != 0)
 #define EK_PRINT(...)                       elog_printf(__VA_ARGS__)
@@ -292,7 +292,6 @@ void eos_set_time(uint32_t time_ms);
 void eos_set_hash(hash_algorithm_t hash);
 
 /* **eos end** ----------------------------------------------------------------- */
-uint32_t eeee[1024];
 eos_t eos;
 
 volatile int8_t eos_interrupt_nest = 0;
@@ -343,6 +342,7 @@ static int8_t __eos_event_give(const char *task,
                                uint8_t give_type,
                                const char *topic);
 static void __eos_e_queue_delete(eos_event_data_t const *item);
+static void __eos_owner_global(void);
 static uint16_t eos_task_init(eos_task_t *const me,
                               const char *name,
                               uint8_t priority,
@@ -552,6 +552,7 @@ void eos_init(void)
 
 void eos_run(void)
 {
+    EK_INFO("EventOS start to run.");
     eos_hook_start();
     eos.running = true;
     
@@ -630,6 +631,7 @@ static void eos_sheduler(void)
     }
     
     eos_interrupt_disable();
+    EK_INFO("eos_sheduler enter.");
     /* eos_next = ... */
     task_idle.state = EosTaskState_Ready;
     eos_next = &task_idle;
@@ -661,13 +663,25 @@ static void eos_sheduler(void)
             }
         }
     }
+    EOS_ASSERT(eos_next != EOS_NULL);
+    if (eos.object[eos_next->id].key == EOS_NULL) {
+        EK_ERROR("eos_next->id: %u.", eos_next->id);
+        EOS_ASSERT(eos.object[eos_next->id].key != EOS_NULL);
+    }
 
     /* Trigger PendSV, if needed */
     if (eos_next != eos_current)
     {
         eos_next->state = EosTaskState_Running;
         eos_port_task_switch();
+        EK_DEBUG("eos_sheduler task switch. Current: %s, Next: %s.",
+                  eos.object[eos_current->id].key,
+                  eos.object[eos_next->id].key);
+        EK_DEBUG("eos_sheduler task switch. Current: %d, Next: %d.",
+                  eos_current->id,
+                  eos_next->id);
     }
+    EK_INFO("eos_sheduler exit.");
     eos_interrupt_enable();
 }
 
@@ -795,6 +809,8 @@ void eos_task_resume(const char *task)
 bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
 {
     eos_interrupt_disable();
+    EK_WARN("eos_task_wait_event Current: %s ...",
+                eos.object[eos_current->id].key);
     uint8_t priority = eos_current->priority;
     eos.task_recieve_event |= (1 << priority);
     
@@ -843,9 +859,15 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
                     /* Delete the event data from the e-queue. */
                     __eos_e_queue_delete(e_item);
                 }
+                else
+                {
+                    __eos_owner_global();
+                }
 
+                EK_WARN("eos_task_wait_event %s. global: %u", e_out->topic,
+                        (eos.owner_global & (1 << priority)));
                 eos_interrupt_enable();
-
+                
                 return true;
             }
         }
@@ -1236,7 +1258,18 @@ void eos_event_attribute_unblocked(const char *topic)
 
 void eos_event_broadcast(const char *topic)
 {
+    EK_ERROR("eos_event_broadcast. Current: %s, Topic: %s.",
+                eos.object[eos_current->id].key,
+                topic);
+    
     __eos_event_give(EOS_NULL, EosEventGiveType_Broadcast, topic);
+    
+#if (EOS_USE_PREEMPTIVE == 0)
+    if (eos_current == &task_idle)
+#endif
+    {
+        eos_sheduler();
+    }
 }
 
 #if (EOS_USE_TIME_EVENT != 0)
@@ -1371,6 +1404,11 @@ static void __eos_e_queue_delete(eos_event_data_t const *item)
     eos_heap_free(&eos.heap, (void *)item);
     eos_interrupt_enable();
     
+    __eos_owner_global();
+}
+
+static void __eos_owner_global(void)
+{
     /* Calculate the owner_global. */
     eos.owner_global = 0;
     eos_event_data_t *e_item = eos.e_queue;
@@ -1625,8 +1663,7 @@ static int8_t __eos_event_give( const char *task,
     /* The broadcast-type event. */
     else if (give_type == EosEventGiveType_Broadcast)
     {
-        owner = eos.task_exist;
-        owner = (eos.task_recieve_event & eos.task_exist);
+        owner = (eos.task_recieve_event & eos.task_exist & (~eos.task_suspend));
     }
     /* The publish-type event. */
     else if (give_type == EosEventGiveType_Publish)
@@ -1795,6 +1832,9 @@ __EXIT:
 
 void eos_event_send(const char *task, const char *topic)
 {
+    EK_ERROR("eos_event_send. Current: %s, Task: %s, Topic: %s.",
+                eos.object[eos_current->id].key,
+                task, topic);
     __eos_event_give(task, EosEventGiveType_Send, topic);
 
 #if (EOS_USE_PREEMPTIVE == 0)
@@ -1807,6 +1847,10 @@ void eos_event_send(const char *task, const char *topic)
 
 void eos_event_publish(const char *topic)
 {
+    EK_ERROR("eos_event_publish. Current: %s, Topic: %s.",
+                eos.object[eos_current->id].key,
+                topic);
+    
     __eos_event_give(EOS_NULL, EosEventGiveType_Publish, topic);
     
 #if (EOS_USE_PREEMPTIVE == 0)

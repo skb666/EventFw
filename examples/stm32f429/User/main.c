@@ -44,13 +44,17 @@ int main(void)
 
     test_init();
 
+    EOS_INFO("EventOS start to run.");
     eos_run();                                      // EventOS启动
 
     return 0;
 }
 
+uint32_t time_ms = 0;
 void SysTick_Handler(void)
 {
+    time_ms ++;
+    
     eos_interrupt_enter();
     eos_tick();
     eos_interrupt_exit();

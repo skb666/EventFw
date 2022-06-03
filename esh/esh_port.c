@@ -5,7 +5,7 @@
 #include "ecp.h"
 #include "ecp_def.h"
 
-#define ELOG_BUFFER_TX_SIZE                        102400
+#define ELOG_BUFFER_TX_SIZE                        10240
 #define ELOG_BUFFER_RX_SIZE                        4
 
 static uint8_t buff_tx[ELOG_BUFFER_TX_SIZE];
