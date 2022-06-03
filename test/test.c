@@ -30,6 +30,7 @@ typedef struct eos_test
     uint32_t send_count;
     uint32_t e_one;
     uint32_t e_delay;
+    uint32_t e_peroid;
     uint32_t e_two;
     uint32_t e_specific;
     uint32_t e_value;
@@ -144,6 +145,8 @@ void test_init(void)
 static void task_func_e_give(void *parameter)
 {
     (void)parameter;
+    
+    eos_event_send_period("TaskValue", "Event_Period", 100);
 
     while (1)
     {
@@ -224,6 +227,11 @@ static void task_func_e_value(void *parameter)
         if (eos_event_topic(&e, "Event_Delay")) {
             EOS_DEBUG("Receive event Delay");
             eos_test.e_delay ++;
+        }
+        
+        if (eos_event_topic(&e, "Event_Period")) {
+            EOS_DEBUG("Receive event Period");
+            eos_test.e_peroid ++;
         }
         
         if (eos_event_topic(&e, "Event_Specific")) {

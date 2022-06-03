@@ -1994,10 +1994,23 @@ void eos_event_send_period(const char *task,
     EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
 
     /* Ensure the event is topic-type. */
-    uint16_t index = eos_hash_get_index(topic);
-    EOS_ASSERT(index != EosObj_Event);
-    EOS_ASSERT(eos.object[index].type == EosObj_Event);
-    EOS_ASSERT((eos.object[index].attribute & 0x03) != EOS_EVENT_ATTRIBUTE_TOPIC);
+    uint16_t e_id = eos_hash_get_index(topic);
+    uint8_t e_type;
+    if (e_id == EOS_MAX_OBJECTS)
+    {
+        e_id = eos_hash_insert(topic);
+        eos.object[e_id].type = EosObj_Event;
+        eos.object[e_id].ocb.event.t_id = EOS_MAX_OBJECTS;
+        e_type = EOS_EVENT_ATTRIBUTE_TOPIC;
+    }
+    else
+    {
+        EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
+
+        /* The stream event can only be subscribed by one task. */
+        e_type = eos.object[e_id].attribute & 0x03;
+        EOS_ASSERT(e_type == EOS_EVENT_ATTRIBUTE_TOPIC);
+    }
 
     /* Subscribe the event. */
     eos_task_t *tcb = eos.object[t_id].ocb.task;
