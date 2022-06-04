@@ -39,6 +39,7 @@ typedef struct eos_test
     uint32_t e_stream_link;
     uint32_t e_broadcast;
     uint32_t e_broadcast_value;
+    uint32_t e_broadcast_exit;
     uint32_t e_sm;
     uint32_t e_reactor;
     uint32_t e_timer_oneshoot;
@@ -79,6 +80,7 @@ static void task_func_e_broadcast(void *parameter);
 static void timer_func_oneshoot(void *parameter);
 static void timer_func_peroid(void *parameter);
 static void timer_func_test(void *parameter);
+static void task_func_exit(void *parameter);
 
 /* private data ------------------------------------------------------------- */
 static uint64_t stack_e_give[64];
@@ -91,6 +93,8 @@ static uint64_t stack_e_stream[64];
 static eos_task_t task_e_stream;
 static uint64_t stack_e_broadcast[64];
 static eos_task_t task_e_broadcast;
+static uint64_t stack_exit[64];
+static eos_task_t task_exit;
 
 static eos_timer_t timer_oneshoot;
 static eos_timer_t timer_peroid;
@@ -124,6 +128,11 @@ static const task_test_info_t task_test_info[] =
         &task_e_broadcast, "TaskBroadcast", TaskPrio_Broadcast,
         stack_e_broadcast, sizeof(stack_e_broadcast),
         task_func_e_broadcast
+    },
+    { 
+        &task_exit, "TaskExit", TaskPrio_Exit,
+        stack_exit, sizeof(stack_exit),
+        task_func_exit
     },
 };
 
@@ -385,6 +394,31 @@ static void task_func_e_broadcast(void *parameter)
             eos_test.e_broadcast_value ++;
         }
     }
+}
+
+static void task_func_exit(void *parameter)
+{
+    (void)parameter;
+    eos_event_t e;
+
+    while (1)
+    {
+        if (eos_task_wait_event(&e, 10000) == false) {
+            eos_test.error = 1;
+            continue;
+        }
+        
+        if (eos_event_topic(&e, "Event_Broadcast")) {
+            eos_test.e_broadcast_exit ++;
+        }
+        
+        if (eos_test.e_broadcast_exit >= 20)
+        {
+            break;
+        }
+    }
+
+    eos_task_exit();
 }
 
 static void timer_func_oneshoot(void *parameter)

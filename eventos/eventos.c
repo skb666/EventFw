@@ -82,7 +82,7 @@ enum
 eos_task_t *volatile eos_current;
 eos_task_t *volatile eos_next;
 
-/* **eos** --------------------------------------------------------------------- */
+/* **eos** ------------------------------------------------------------------ */
 enum
 {
     EosRun_OK                               = 0,
@@ -91,7 +91,7 @@ enum
     EosTimer_ChangeToEmpty,
 };
 
-/* Event atrribute ------------------------------------------------------------- */
+/* Event atrribute ---------------------------------------------------------- */
 #define EOS_KERNEL_LOG_EN                   (0)
 
 #if (EOS_KERNEL_LOG_EN != 0)
@@ -1197,7 +1197,7 @@ void eos_timer_continue(const char *name)
     eos_timer_t *timer = eos.object[index].ocb.timer;
     timer->running = 1;
     timer->time_out += eos_time();
-    
+
     if (eos.timer_out_min > timer->time_out)
     {
         eos.timer_out_min = timer->time_out;
@@ -2381,18 +2381,6 @@ void eos_db_register(const char *key, uint32_t size, uint8_t attribute)
 void eos_db_block_read(const char *key, void * const data)
 {
     __eos_db_read(EOS_DB_ATTRIBUTE_VALUE, key, data, 0);
-}
-
-void eos_db_block_read_isr(const char *key, void * const data)
-{
-    eos_interrupt_disable();
-    uint16_t e_id = eos_hash_get_index(key);
-    EOS_ASSERT(e_id != EOS_MAX_OBJECTS);
-
-    eos_object_t *object = &eos.object[e_id];
-    memcpy(data, object->data.value, object->size);
-
-    eos_interrupt_enable();
 }
 
 void eos_db_block_write(const char *key, void * const data)

@@ -189,19 +189,11 @@ void eos_task_suspend(const char *task);
 void eos_task_delete(const char *task);
 // 恢复某任务
 void eos_task_resume(const char *task);
-// 切换任务
-void eos_task_yield(void);
 // 任务等待某特定事件
 bool eos_task_wait_specific_event(  eos_event_t * const e_out,
                                     const char *topic, uint32_t time_ms);
 // 任务阻塞式等待事件
 bool eos_task_wait_event(eos_event_t * const e_out, uint32_t time_ms);
-
-/* -----------------------------------------------------------------------------
-Mutex
------------------------------------------------------------------------------ */
-void eos_mutex_lock(const char *name);
-void eos_mutex_unlock(const char *name);
 
 /* -----------------------------------------------------------------------------
 Timer
@@ -238,8 +230,6 @@ void eos_timer_reset(const char *name);
 Event
 ----------------------------------------------------------------------------- */
 // 事件的属性设置 -----------------------------------------
-// 设置事件为全局事件，可以发送到事件桥与事件域，进而形成跨CPU的事件总线。
-void eos_event_attribute_global(const char *topic);
 // 设置不可阻塞事件。在延时时，此类事件进入，延时结束，对此类事件进行立即响应。
 void eos_event_attribute_unblocked(const char *topic);
 

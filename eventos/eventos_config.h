@@ -40,10 +40,10 @@
 
 // <h> EventOS Nano's basic configuration
 //   <o>  The maximum number of tasks: 8 - 64
-#define EOS_MAX_TASKS                           8
+#define EOS_MAX_TASKS                           16
 
 //   <o>  The maximum number of objects: 16 - 65536
-#define EOS_MAX_OBJECTS                         32
+#define EOS_MAX_OBJECTS                         64
 #define EOS_MAX_HASH_SEEK_TIMES                 5
 
 //   <o>  The platform type: 32 ort 64 bits.
