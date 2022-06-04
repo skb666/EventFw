@@ -1112,6 +1112,7 @@ void eos_timer_start(   eos_timer_t *const me,
     /* Add in the hash table. */
     index = eos_hash_insert(name);
     eos.object[index].type = EosObj_Timer;
+    eos.object[index].ocb.timer = me;
     /* Add the timer to the list. */
     me->next = eos.timers;
     eos.timers = me;
@@ -1169,6 +1170,7 @@ void eos_timer_pause(const char *name)
     EOS_ASSERT(index != EOS_MAX_OBJECTS);
     eos_timer_t *timer = eos.object[index].ocb.timer;
     timer->running = 0;
+    timer->time_out -= eos_time();
 
     /* Recalculate the minimum value of the timers. */
     eos_timer_t *list = eos.timers;
@@ -1194,6 +1196,8 @@ void eos_timer_continue(const char *name)
     EOS_ASSERT(index != EOS_MAX_OBJECTS);
     eos_timer_t *timer = eos.object[index].ocb.timer;
     timer->running = 1;
+    timer->time_out += eos_time();
+    
     if (eos.timer_out_min > timer->time_out)
     {
         eos.timer_out_min = timer->time_out;
