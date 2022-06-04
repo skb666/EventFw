@@ -337,9 +337,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>STM32F429_439xx, EOS_MCU,</Define>
+              <Define>STM32F429_439xx, EOS_MCU, USE_STDPERIPH_DRIVER,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\3rd;..\..\..\ecp;..\..\..\elog;..\..\..\esh;..\..\..\test;..\..\..\3rd\RTT</IncludePath>
+              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\3rd;..\..\..\ecp;..\..\..\elog;..\..\..\esh;..\..\..\test;..\..\..\3rd\RTT;..\MCU\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -469,6 +469,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>bsp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\bsp.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -483,6 +488,21 @@
               <FileName>startup_stm32f429_439xx.s</FileName>
               <FileType>2</FileType>
               <FilePath>..\MCU\startup_stm32f429_439xx.s</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MCU\src\stm32f4xx_tim.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_rcc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MCU\src\stm32f4xx_rcc.c</FilePath>
+            </File>
+            <File>
+              <FileName>misc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\MCU\src\misc.c</FilePath>
             </File>
           </Files>
         </Group>

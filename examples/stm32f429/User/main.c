@@ -1,5 +1,5 @@
 /* include ------------------------------------------------------------------ */
-#include "stm32f4xx.h"
+#include "bsp.h"
 #include "eventos.h"
 #include "esh.h"
 #include "elog.h"
@@ -14,10 +14,7 @@ void esh_flush(void)
 
 int main(void)
 {
-    SystemCoreClockUpdate();
-    
-    if (SysTick_Config(SystemCoreClock / 1000) != 0)
-        while (1);
+    bsp_init();
 
     static elog_device_t dev_esh;
     dev_esh.enable = 1;
