@@ -169,6 +169,16 @@ void test_init(void)
     // eos_task_exit();
 }
 
+void eos_sm_count(void)
+{
+    eos_test.e_sm ++;
+}
+
+void eos_reactor_count(void)
+{
+    eos_test.e_reactor ++;
+}
+
 /* public function ---------------------------------------------------------- */
 static void task_func_e_give(void *parameter)
 {
@@ -189,6 +199,9 @@ static void task_func_e_give(void *parameter)
         EOS_WARN("Event_Broadcast");
         eos_event_broadcast("Event_Broadcast");
         eos_sheduler_unlock();
+        
+        eos_event_send_delay("TaskValue", "Event_Delay", 50);
+        eos_event_time_cancel("Event_Delay");
 
         if (eos_test.flag_send_delay != 0) {
             eos_test.flag_send_delay = 0;

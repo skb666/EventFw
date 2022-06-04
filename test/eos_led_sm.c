@@ -44,6 +44,7 @@ static eos_ret_t state_on(eos_sm_led_t * const me, eos_event_t const * const e)
 {
     if (eos_event_topic(e, "Event_Enter")) {
         me->status = 1;
+        eos_sm_count();
         return EOS_Ret_Handled;
     }
     
@@ -63,6 +64,7 @@ static eos_ret_t state_off(eos_sm_led_t * const me, eos_event_t const * const e)
     if (eos_event_topic(e, "Event_Enter"))
     {
         me->status = 0;
+        eos_sm_count();
         return EOS_Ret_Handled;
     }
     

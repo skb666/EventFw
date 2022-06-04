@@ -181,12 +181,8 @@ void eos_task_start(eos_task_t * const me,
 void eos_task_exit(void);
 // 任务内延时，任务函数中调用，不允许在定时器的回调函数调用，不允许在空闲回调函数中调用。
 void eos_delay_ms(uint32_t time_ms);
-// 延时，屏蔽事件的接收（毫秒级延时，释放CPU控制权），直到延时完毕。
-void eos_delay_no_event(uint32_t time_ms);
 // 挂起某任务
 void eos_task_suspend(const char *task);
-// 删除某任务
-void eos_task_delete(const char *task);
 // 恢复某任务
 void eos_task_resume(const char *task);
 // 任务等待某特定事件
@@ -229,10 +225,6 @@ void eos_timer_reset(const char *name);
 /* -----------------------------------------------------------------------------
 Event
 ----------------------------------------------------------------------------- */
-// 事件的属性设置 -----------------------------------------
-// 设置不可阻塞事件。在延时时，此类事件进入，延时结束，对此类事件进行立即响应。
-void eos_event_attribute_unblocked(const char *topic);
-
 // 事件的直接发送 -----------------------------------------
 // 直接发送主题事件。允许在中断中调用。
 void eos_event_send(const char *task, const char *topic);
@@ -277,10 +269,6 @@ Database
 void eos_db_init(void *const memory, uint32_t size);
 // 数据库的注册。
 void eos_db_register(const char *key, uint32_t size, uint8_t attribute);
-// 数据属性的获取
-uint8_t eos_db_get_attribute(const char *key);
-// 数据属性的设置
-void eos_db_set_attribute(const char *key, uint8_t attribute);
 // 块数据的读取。
 void eos_db_block_read(const char *key, void * const data);
 // 块数据的写入。

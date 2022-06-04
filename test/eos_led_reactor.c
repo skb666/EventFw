@@ -49,6 +49,7 @@ static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * cons
     if (eos_event_topic(e, "Event_Time_1000ms"))
     {
         evt_count ++;
+        eos_reactor_count();
 
         EOS_DEBUG("EventOS recieves Event_Time_1000ms.");
         

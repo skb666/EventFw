@@ -20,5 +20,7 @@ void test_init(void);
 void eos_reactor_led_init(void);
 void eos_sm_led_init(void);
 
+void eos_sm_count(void);
+void eos_reactor_count(void);
 
 #endif
