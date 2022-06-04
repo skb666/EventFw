@@ -5,7 +5,7 @@
 + 【完成】测试事件的发布，订阅在任务中的使用。
 + 【完成】测试流事件满的情况。
 + 【完成】测试事件的广播机制。
-+ eos_event_unsub
++ 【完成】eos_event_unsub
 + 【完成】eos_event_time_cancel
 + 【完成】eos_task_exit
 + 所有中断函数在中断里的测试

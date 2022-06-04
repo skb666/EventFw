@@ -268,7 +268,6 @@ static void task_func_e_give(void *parameter)
             eos_task_resume("sm_led");
         }
         
-        
         eos_delay_ms(100);
     }
 }
