@@ -1,5 +1,6 @@
 #include "bsp.h"
 #include "stm32f4xx.h"
+#include "test.h"
 
 void bsp_init(void)
 {
@@ -42,5 +43,6 @@ void TIM3_IRQHandler(void)
         TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
         
         count_timer3 ++;
+        timer_isr_1ms();
     }
 }

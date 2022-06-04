@@ -179,6 +179,17 @@ void eos_reactor_count(void)
     eos_test.e_reactor ++;
 }
 
+void timer_isr_1ms(void)
+{
+    eos_interrupt_enter();
+
+//    eos_event_send("TaskValue", "Event_One");
+//    eos_event_send("TaskSpecific", "Event_Two");
+    eos_event_broadcast("Event_Broadcast");
+
+    eos_interrupt_exit();
+}
+
 /* public function ---------------------------------------------------------- */
 static void task_func_e_give(void *parameter)
 {

@@ -23,4 +23,6 @@ void eos_sm_led_init(void);
 void eos_sm_count(void);
 void eos_reactor_count(void);
 
+void timer_isr_1ms(void);
+
 #endif
