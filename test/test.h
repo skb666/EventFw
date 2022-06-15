@@ -5,13 +5,8 @@ enum
 {
     TaskPrio_Give = 1,
     TaskPrio_Value,
-    TaskPrio_Specific,
-    TaskPrio_Stream,
-    TaskPrio_Broadcast,
-    TaskPrio_Exit,
     TaskPrio_SmLed,
     TaskPrio_ReacotrLed,
-    TaskPrio_Test,
 
     TaskPrio_Max
 };

@@ -185,7 +185,7 @@ void eos_delay_ms(uint32_t time_ms);
 void eos_task_suspend(const char *task);
 // 恢复某任务
 void eos_task_resume(const char *task);
-// 任务等待某特定事件
+// 任务等待某特定事件，其他事件均忽略。
 bool eos_task_wait_specific_event(  eos_event_t * const e_out,
                                     const char *topic, uint32_t time_ms);
 // 任务阻塞式等待事件
@@ -226,23 +226,19 @@ void eos_timer_reset(const char *name);
 Event
 ----------------------------------------------------------------------------- */
 // 事件的直接发送 -----------------------------------------
-// 直接发送主题事件。允许在中断中调用。
+// 直接发送事件。允许在中断中调用。
 void eos_event_send(const char *task, const char *topic);
 // 延迟发送事件。
 void eos_event_send_delay(const char *task, const char *topic, uint32_t time_delay_ms);
 // 周期发送事件。
 void eos_event_send_period(const char *task, const char *topic, uint32_t time_period_ms);
 
-// 事件的广播 --------------------------------------------
-// 广播发布某主题事件。允许在中断中调用。
-void eos_event_broadcast(const char *topic);
-
 // 事件的发布 --------------------------------------------
 // 发布主题事件。允许在中断中调用。
 void eos_event_publish(const char *topic);
-// 延时发布某主题事件。允许在中断中调用。
+// 延时发布某事件。允许在中断中调用。
 void eos_event_publish_delay(const char *topic, uint32_t time_delay_ms);
-// 周期发布某主题事件。允许在中断中调用。
+// 周期发布某事件。允许在中断中调用。
 void eos_event_publish_period(const char *topic, uint32_t time_period_ms);
 // 取消某延时或者周期事件的发布。允许在中断中调用。
 void eos_event_time_cancel(const char *topic);
@@ -254,7 +250,7 @@ void eos_event_sub(const char *topic);
 void eos_event_unsub(const char *topic);
 
 // 事件的接收 --------------------------------------------
-// 主题事件接收。仅在任务函数、状态函数或者事件回调函数中使用。
+// 事件接收。仅在任务函数、状态函数或者事件回调函数中使用。
 bool eos_event_topic(eos_event_t const * const e, const char *topic);
 
 /* -----------------------------------------------------------------------------
@@ -265,18 +261,18 @@ Database
 #define EOS_DB_ATTRIBUTE_VALUE           ((uint8_t)0x01U)
 #define EOS_DB_ATTRIBUTE_STREAM          ((uint8_t)0x02U)
 
-// 数据库的初始化
+// 事件数据库的初始化
 void eos_db_init(void *const memory, uint32_t size);
-// 数据库的注册。
-void eos_db_register(const char *key, uint32_t size, uint8_t attribute);
+// 事件数据库的注册。
+void eos_db_register(const char *topic, uint32_t size, uint8_t attribute);
 // 块数据的读取。
-void eos_db_block_read(const char *key, void * const data);
-// 块数据的写入。
-void eos_db_block_write(const char *key, void * const data);
+void eos_db_block_read(const char *topic, void * const data);
+// 块数据的写入。允许在中断中调用。
+void eos_db_block_write(const char *topic, void * const data);
 // 流数据的读取。
-int32_t eos_db_stream_read(const char *key, void *const buffer, uint32_t size);
-// 流数据的写入。
-void eos_db_stream_write(const char *key, void *const buffer, uint32_t size);
+int32_t eos_db_stream_read(const char *topic, void *const buffer, uint32_t size);
+// 流数据的写入。允许在中断中调用。
+void eos_db_stream_write(const char *topic, void *const buffer, uint32_t size);
 
 /* -----------------------------------------------------------------------------
 Reactor

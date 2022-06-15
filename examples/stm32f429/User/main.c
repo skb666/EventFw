@@ -41,7 +41,6 @@ int main(void)
 
     test_init();
 
-    EOS_INFO("EventOS start to run.");
     eos_run();                                      // EventOS启动
 
     return 0;
@@ -59,8 +58,6 @@ void SysTick_Handler(void)
 
 void HardFault_Handler(void)
 {
-    EOS_ERROR("HardFault_Handler.");
-    
     while (1) {
     }
 }

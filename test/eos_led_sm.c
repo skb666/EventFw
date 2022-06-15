@@ -20,9 +20,9 @@ static eos_ret_t state_on(eos_sm_led_t * const me, eos_event_t const * const e);
 static eos_ret_t state_off(eos_sm_led_t * const me, eos_event_t const * const e);
 
 /* api ---------------------------------------------------- */
-uint8_t stack_sm[2048];
 void eos_sm_led_init(void)
 {
+    static uint8_t stack_sm[2048];
     eos_sm_init(&sm_led.super, "sm_led", TaskPrio_SmLed, stack_sm, sizeof(stack_sm));
     sm_led.status = 0;
     
@@ -36,7 +36,7 @@ static eos_ret_t state_init(eos_sm_led_t * const me, eos_event_t const * const e
     eos_event_sub("Event_Time_500ms");
 #endif
     eos_event_publish_period("Event_Time_500ms", 500);
-    eos_event_unsub("Event_Time_500ms");
+//    eos_event_unsub("Event_Time_500ms");
 
     return EOS_TRAN(state_off);
 }
