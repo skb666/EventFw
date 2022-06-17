@@ -138,12 +138,14 @@ static void task_func_e_value(void *parameter)
     int32_t ret = 0;
     while (1)
     {
-        if (eos_task_wait_event(&e, 10000) == false) {
+        if (eos_task_wait_event(&e, 10000) == false)
+        {
             eos_test.error = 1;
             continue;
         }
         
-        if (eos_event_topic(&e, "Event_One")) {
+        if (eos_event_topic(&e, "Event_One"))
+        {
             eos_test.e_one ++;
             eos_db_block_read("Event_One", &eos_test.value);
         }

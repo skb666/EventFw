@@ -30,6 +30,7 @@ typedef struct eos_test
     uint32_t send_speed;
 
     uint32_t send_count;
+    uint32_t high_count;
     uint32_t e_one;
     uint32_t e_sm;
     uint32_t e_reactor;
@@ -47,12 +48,15 @@ typedef struct task_test
 
 static void task_func_e_give(void *parameter);
 static void task_func_e_value(void *parameter);
+static void task_func_high(void *parameter);
 
 /* private data ------------------------------------------------------------- */
 static uint64_t stack_e_give[64];
 static eos_task_t task_e_give;
 static uint64_t stack_e_value[64];
 static eos_task_t task_e_value;
+static uint64_t stack_high[64];
+static eos_task_t task_high;
 
 eos_test_t eos_test;
 
@@ -67,6 +71,11 @@ static const task_test_info_t task_test_info[] =
         &task_e_value, "TaskValue", TaskPrio_Value,
         stack_e_value, sizeof(stack_e_value),
         task_func_e_value
+    },
+    {
+        &task_high, "TaskHigh", TaskPrio_High,
+        stack_high, sizeof(stack_high),
+        task_func_high
     },
 };
 
@@ -137,13 +146,28 @@ static void task_func_e_value(void *parameter)
     
     while (1) {
         eos_event_t e;
-        if (eos_task_wait_event(&e, 10000) == false) {
+        if (eos_task_wait_event(&e, 10000) == false)
+        {
             eos_test.error = 1;
             continue;
         }
 
-        if (eos_event_topic(&e, "Event_One")) {
+        if (eos_event_topic(&e, "Event_One"))
+        {
             eos_test.e_one ++;
         }
+    }
+}
+
+static void task_func_high(void *parameter)
+{
+    (void)parameter;
+    
+    while (1)
+    {
+        eos_test.send_count ++;
+        eos_test.high_count ++;
+        eos_event_publish("Event_One");
+        eos_delay_ms(1);
     }
 }

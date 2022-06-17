@@ -137,9 +137,11 @@ static void task_func_e_value(void *parameter)
     int32_t ret = 0;
     while (1)
     {
-        while (1) {
+        while (1)
+        {
             ret = eos_db_stream_read("Event_One", buffer, 32);
-            if (ret > 0) {
+            if (ret > 0)
+            {
                 eos_test.stream_count += ret;
             }
             else

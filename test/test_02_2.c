@@ -136,14 +136,17 @@ static void task_func_e_value(void *parameter)
         eos_event_sub("Event_Time_500ms");
     }
     
-    while (1) {
+    while (1)
+    {
         eos_event_t e;
-        if (eos_task_wait_event(&e, 10000) == false) {
+        if (eos_task_wait_event(&e, 10000) == false)
+        {
             eos_test.error = 1;
             continue;
         }
 
-        if (eos_event_topic(&e, "Event_Time_500ms")) {
+        if (eos_event_topic(&e, "Event_Time_500ms"))
+        {
             eos_test.e_one ++;
         }
     }

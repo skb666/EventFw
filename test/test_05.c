@@ -136,18 +136,22 @@ static void task_func_e_value(void *parameter)
 {
     (void)parameter;
     
-    while (1) {
+    while (1)
+    {
         eos_event_t e;
-        if (eos_task_wait_specific_event(&e, "Event_One", 10000) == false) {
+        if (eos_task_wait_specific_event(&e, "Event_One", 10000) == false)
+        {
             eos_test.error = 1;
             continue;
         }
 
-        if (eos_event_topic(&e, "Event_One")) {
+        if (eos_event_topic(&e, "Event_One"))
+        {
             eos_test.e_one ++;
         }
 
-        if (eos_event_topic(&e, "Event_Two")) {
+        if (eos_event_topic(&e, "Event_Two"))
+        {
             eos_test.e_two ++;
         }
     }
