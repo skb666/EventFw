@@ -937,7 +937,8 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
     uint8_t priority = eos_current->priority;
     uint32_t bits = (1 << priority);
     
-    do {
+    do
+    {
         eos_interrupt_disable();
         uint16_t e_id = eos_hash_get_index(topic);
         /* If the topic is not existed in hash table. */
@@ -1001,6 +1002,10 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
                 else
                 {
                     __eos_e_queue_delete(e_item);
+                    if (eos.e_queue == NULL)
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -1724,24 +1729,22 @@ static int8_t __eos_event_give( const char *task,
     wait_specific_event = owner & eos.task_wait_specific_event;
     for (uint8_t i = 1; i < EOS_MAX_TASKS; i ++)
     {
-        if (strcmp(topic, eos.event_wait[i]) != 0)
-        {
-            wait_specific_event &= (1 << i);
-            if (wait_specific_event == 0)
-            {
-                break;
-            }
-            else
-            {
-                continue;
-            }
-        }
         if ((wait_specific_event & (1 << i)) != 0)
         {
-            eos.task[i]->ocb.task->state = EosTaskState_Ready;
-            eos.task_delay &=~ (1 << i);
-            eos.task_wait_event &=~ (1 << i);
-            eos.task_wait_specific_event &=~ (1 << i);
+            if (strcmp(topic, eos.event_wait[i]) == 0)
+            {
+                wait_specific_event &=~ (1 << i);
+                
+                eos.task[i]->ocb.task->state = EosTaskState_Ready;
+                eos.task_delay &=~ (1 << i);
+                eos.task_wait_event &=~ (1 << i);
+                eos.task_wait_specific_event &=~ (1 << i);
+                
+                if (wait_specific_event == 0)
+                {
+                    break;
+                }
+            }
         }
     }
     
@@ -1764,7 +1767,6 @@ static int8_t __eos_event_give( const char *task,
         eos_interrupt_disable();
         eos_event_data_t *data
             = eos_heap_malloc(&eos.heap, sizeof(eos_event_data_t));
-        eos_interrupt_enable();
         EOS_ASSERT(data != EOS_NULL);
         data->id = e_id;
         data->owner = owner;
@@ -1788,6 +1790,7 @@ static int8_t __eos_event_give( const char *task,
             edata->next = data;
             data->last = edata;
         }
+        eos_interrupt_enable();
     }
     /* If the event is value-type or stream-type. */
     else if (e_type == EOS_EVENT_ATTRIBUTE_VALUE ||
@@ -1800,7 +1803,6 @@ static int8_t __eos_event_give( const char *task,
             /* Apply one data for the event. */
             eos_interrupt_disable();
             data = eos_heap_malloc(&eos.heap, sizeof(eos_event_data_t));
-            eos_interrupt_enable();
             EOS_ASSERT_NAME(data != EOS_NULL, topic);
             data->owner = owner;
             data->id = e_id;
@@ -1825,6 +1827,7 @@ static int8_t __eos_event_give( const char *task,
                 edata->next = data;
                 data->last = edata;
             }
+            eos_interrupt_enable();
         }
         else
         {

@@ -30,7 +30,7 @@ typedef struct eos_test
 
     uint32_t send_count;
     uint32_t e_one;
-    uint32_t e_two;
+    uint32_t value;
     uint32_t e_sm;
     uint32_t e_reactor;
 } eos_test_t;
@@ -44,7 +44,6 @@ typedef struct task_test
     uint32_t stack_size;
     void (* func)(void *parameter);
 } task_test_info_t;
-
 
 static void task_func_e_give(void *parameter);
 static void task_func_e_value(void *parameter);
@@ -74,6 +73,8 @@ static const task_test_info_t task_test_info[] =
 /* public function ---------------------------------------------------------- */
 void test_init(void)
 {
+    eos_db_register("Event_One", sizeof(uint32_t), EOS_DB_ATTRIBUTE_VALUE);
+
     for (uint32_t i = 0;
          i < (sizeof(task_test_info) / sizeof(task_test_info_t));
          i ++)
@@ -99,18 +100,14 @@ void eos_reactor_count(void)
     eos_test.e_reactor ++;
 }
 
-uint32_t test_count = 0;
 void timer_isr_1ms(void)
 {
     eos_interrupt_enter();
     
     if (eos_test.isr_func_enable != 0)
     {
-        test_count ++;
+        eos_db_block_write("Event_One", &eos_test.send_count);
         eos_event_send("TaskValue", "Event_One");
-        test_count ++;
-        eos_event_send("TaskValue", "Event_Two");
-        test_count ++;
     }
     
     eos_interrupt_exit();
@@ -127,28 +124,28 @@ static void task_func_e_give(void *parameter)
         eos_test.send_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
         
+        eos_db_block_write("Event_One", &eos_test.send_count);
         eos_event_send("TaskValue", "Event_One");
-        eos_event_send("TaskValue", "Event_Two");
     }
 }
 
+uint32_t count_time = 0;
 static void task_func_e_value(void *parameter)
 {
+    eos_event_t e;
     (void)parameter;
     
-    while (1) {
-        eos_event_t e;
-        if (eos_task_wait_specific_event(&e, "Event_One", 10000) == false) {
+    int32_t ret = 0;
+    while (1)
+    {
+        if (eos_task_wait_event(&e, 10000) == false) {
             eos_test.error = 1;
             continue;
         }
-
+        
         if (eos_event_topic(&e, "Event_One")) {
             eos_test.e_one ++;
-        }
-
-        if (eos_event_topic(&e, "Event_Two")) {
-            eos_test.e_two ++;
+            eos_db_block_read("Event_One", &eos_test.value);
         }
     }
 }

@@ -108,6 +108,7 @@ void timer_isr_1ms(void)
     if (eos_test.isr_func_enable != 0)
     {
         eos_db_stream_write("Event_One", "1", 1);
+        eos_event_send("TaskValue", "Event_One");
     }
     
     eos_interrupt_exit();
