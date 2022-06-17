@@ -5,6 +5,7 @@ enum
 {
     TaskPrio_Give = 1,
     TaskPrio_Value,
+    TaskPrio_High,
     TaskPrio_SmLed,
     TaskPrio_ReacotrLed,
 

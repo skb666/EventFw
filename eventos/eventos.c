@@ -757,7 +757,9 @@ void eos_task_exit(void)
 
 static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
 {
-    /* Never call eos_delay_ms and eos_delay_ticks in the idle task */
+    /* Never call eos_delay_ms and eos_delay_ticks in ISR functions. */
+    EOS_ASSERT(eos_interrupt_nest == 0);
+    /* Never call eos_delay_ms and eos_delay_ticks in the idle task. */
     EOS_ASSERT(eos_current != &task_idle);
     /* The state of current task must be running. */
     EOS_ASSERT(eos_current->state == EosTaskState_Running);
@@ -774,9 +776,9 @@ static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
     {
         eos.task_delay_no_event |= bit;
     }
-    
-    eos_sheduler();
     eos_interrupt_enable();
+
+    eos_sheduler();
 }
 
 void eos_delay_ms(uint32_t time_ms)
@@ -1613,7 +1615,6 @@ static void eos_sm_enter(eos_sm_t *const me)
 Event
 ----------------------------------------------------------------------------- */
 uint32_t count_test = 0;
-uint32_t event_give_enter = 0;
 static int8_t __eos_event_give( const char *task,
                                 uint8_t give_type,
                                 const char *topic)
@@ -1621,11 +1622,8 @@ static int8_t __eos_event_give( const char *task,
     /* TODO 这个功能还是要实现。 */
     /* EOS_ASSERT(eos.running == true); */
 
-//    EOS_ASSERT(event_give_enter == 0);
-    event_give_enter ++;
-    
-
-    if (eos.running == false) {
+    if (eos.running == false)
+    {
         return 0;
     }
     
@@ -1854,13 +1852,17 @@ __EXIT:
     else
     {
         eos.object[e_id].ocb.event.t_id = EOS_MAX_OBJECTS;
+        /* Clear the flag in event mutex and gobal mutex. */
+        eos.object[e_id].ocb.event.owner &=~ bits;
+        eos.task_mutex &=~ bits;
 
         /* The event is accessed by other higher-priority tasks. */
         if (eos.object[e_id].ocb.event.owner != 0)
         {
-            /* Clear the flag in event mutex and gobal mutex. */
-            eos.object[e_id].ocb.event.owner &=~ bits;
-            eos.task_mutex &=~ bits;
+            // Clear the highest not-zero bit and make the highest task continue.
+            uint32_t bits_mutex = (1 << (LOG2(eos.task_mutex) - 1));
+            eos.task_mutex &=~ bits_mutex;
+
             eos_sheduler();
         }
 
@@ -1872,8 +1874,6 @@ __EXIT:
         }
     }
 
-    event_give_enter --;
-    
     return (int8_t)EosRun_OK;
 }
 
