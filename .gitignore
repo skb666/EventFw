@@ -27,6 +27,7 @@ Debug
 Exe
 Obj
 cmake-build-debug
+CubeMx
 
 # File
 JLinkLog.txt

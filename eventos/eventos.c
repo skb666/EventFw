@@ -2551,7 +2551,8 @@ static void eos_sm_dispath(eos_sm_t *const me, eos_event_t const * const e)
 }
 
 #if (EOS_USE_HSM_MODE != 0)
-static int32_t eos_sm_tran(eos_sm_t *const me, eos_state_handler path[EOS_MAX_HSM_NEST_DEPTH])
+static int32_t eos_sm_tran(eos_sm_t *const me,
+                           eos_state_handler path[EOS_MAX_HSM_NEST_DEPTH])
 {
     /* transition entry path index */
     int32_t ip = -1;
