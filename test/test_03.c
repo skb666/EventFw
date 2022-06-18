@@ -185,7 +185,7 @@ static void task_func_high(void *parameter)
         eos_test.high_count ++;
         eos_db_stream_write("Event_One", "1", 1);
         eos_event_send("TaskValue", "Event_One");
-        eos_delay_ms(10);
+        eos_delay_ms(1000);
     }
 }
 

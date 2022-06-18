@@ -198,35 +198,12 @@ void eos_port_task_switch(void)
     *(uint32_t volatile *)0xE000ED04 = (1U << 28);
 }
 
-#include <stdio.h>
-#include <string.h>
-
-char buff_assert[256];
 uint32_t assert_id = 0;
 void eos_port_assert(const char *tag, const char *name, uint32_t id)
 {
     eos_interrupt_disable();
     
-    memset(buff_assert, 0, 256);
     assert_id = id;
-
-    if (name != NULL)
-    {
-        snprintf(buff_assert,
-                 256,
-                 "Module: %s, name: %s, id: %u.",
-                 tag,
-                 name,
-                 id);
-    }
-    else
-    {
-        snprintf(buff_assert,
-                 256,
-                 "Module: %s, id: %u.",
-                 tag,
-                 id);
-    }
     
     while (1);
 }

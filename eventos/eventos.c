@@ -629,6 +629,8 @@ Task
 ----------------------------------------------------------------------------- */
 static void eos_sheduler(void)
 {
+    EOS_ASSERT(critical_count == 0);
+    
 #if (EOS_USE_PREEMPTIVE != 0)
     if (eos.sheduler_lock == 1)
     {
@@ -1812,7 +1814,6 @@ static int8_t __eos_event_give( const char *task,
             eos_event_data_t *data;
 
             /* Apply one data for the event. */
-            eos_interrupt_disable();
             data = eos_heap_malloc(&eos.heap, sizeof(eos_event_data_t));
             EOS_ASSERT_NAME(data != EOS_NULL, topic);
             data->owner = owner;
@@ -1876,17 +1877,10 @@ __EXIT:
             // Clear the highest not-zero bit and make the highest task continue.
             uint32_t bits_mutex = (1 << (LOG2(eos.task_mutex) - 1));
             eos.task_mutex &=~ bits_mutex;
-
-            eos_sheduler();
-        }
-
-        if (eos_current->state == EosTaskState_WaitEvent)
-        {
-            eos.task_wait_event &=~ bits;
-            eos_current->state = EosTaskState_Ready;
-            eos_sheduler();
         }
     }
+
+    eos_sheduler();
 
     return (int8_t)EosRun_OK;
 }
@@ -1894,25 +1888,11 @@ __EXIT:
 void eos_event_send(const char *task, const char *topic)
 {
     __eos_event_give(task, EosEventGiveType_Send, topic);
-
-#if (EOS_USE_PREEMPTIVE == 0)
-    if (eos_current == &task_idle)
-#endif
-    {
-        eos_sheduler();
-    }
 }
 
 void eos_event_publish(const char *topic)
 {
     __eos_event_give(EOS_NULL, EosEventGiveType_Publish, topic);
-    
-#if (EOS_USE_PREEMPTIVE == 0)
-    if (eos_current == &task_idle)
-#endif
-    {
-        eos_sheduler();
-    }
 }
 
 static inline void __eos_event_sub(eos_task_t *const me, const char *topic)
