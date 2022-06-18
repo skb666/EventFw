@@ -51,12 +51,14 @@ typedef enum eos_bool {
 
 #define EOS_NULL                        ((void *)0)
 
-#define EOS_U32_MAX                     0xffffffff
-#define EOS_U32_MIN                     0
+#define EOS_U32_MAX                     (0xffffffffU)
+#define EOS_U32_MIN                     (0U)
 
-#define EOS_U16_MAX                     0xffff
-#define EOS_U16_MIN                     0
+#define EOS_U16_MAX                     (0xffffU)
+#define EOS_U16_MIN                     (0U)
 
-#define EOS_HEAP_MAX                    0x7fff
+#define EOS_HEAP_MAX                    (0x7fffU)
+
+#define EOS_FOR_EVER                    EOS_U32_MAX
 
 #endif

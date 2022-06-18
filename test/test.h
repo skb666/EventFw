@@ -4,10 +4,11 @@
 enum
 {
     TaskPrio_Give = 1,
+    TaskPrio_Middle,
     TaskPrio_Value,
-    TaskPrio_High,
     TaskPrio_SmLed,
     TaskPrio_ReacotrLed,
+    TaskPrio_High,
 
     TaskPrio_Max
 };

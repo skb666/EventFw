@@ -29,6 +29,8 @@ typedef struct eos_test
     uint32_t send_speed;
 
     uint32_t send_count;
+    uint32_t high_count;
+    uint32_t middle_count;
     uint32_t e_one;
     uint32_t stream_count;
     uint32_t e_sm;
@@ -45,15 +47,20 @@ typedef struct task_test
     void (* func)(void *parameter);
 } task_test_info_t;
 
-
 static void task_func_e_give(void *parameter);
 static void task_func_e_value(void *parameter);
+static void task_func_high(void *parameter);
+static void task_func_middle(void *parameter);
 
 /* private data ------------------------------------------------------------- */
 static uint64_t stack_e_give[64];
 static eos_task_t task_e_give;
 static uint64_t stack_e_value[64];
 static eos_task_t task_e_value;
+static uint64_t stack_high[64];
+static eos_task_t task_high;
+static uint64_t stack_middle[64];
+static eos_task_t task_middle;
 
 eos_test_t eos_test;
 
@@ -68,6 +75,16 @@ static const task_test_info_t task_test_info[] =
         &task_e_value, "TaskValue", TaskPrio_Value,
         stack_e_value, sizeof(stack_e_value),
         task_func_e_value
+    },
+    {
+        &task_high, "TaskHigh", TaskPrio_High,
+        stack_high, sizeof(stack_high),
+        task_func_high
+    },
+    {
+        &task_middle, "TaskMiddle", TaskPrio_Middle,
+        stack_middle, sizeof(stack_middle),
+        task_func_middle
     },
 };
 
@@ -155,5 +172,33 @@ static void task_func_e_value(void *parameter)
                 eos_test.stream_count += ret;
             }
         }
+    }
+}
+
+static void task_func_high(void *parameter)
+{
+    (void)parameter;
+    
+    while (1)
+    {
+        eos_test.send_count ++;
+        eos_test.high_count ++;
+        eos_db_stream_write("Event_One", "1", 1);
+        eos_event_send("TaskValue", "Event_One");
+        eos_delay_ms(10);
+    }
+}
+
+static void task_func_middle(void *parameter)
+{
+    (void)parameter;
+    
+    while (1)
+    {
+        eos_test.send_count ++;
+        eos_test.middle_count += 2;
+        eos_db_stream_write("Event_One", "1", 1);
+        eos_event_send("TaskValue", "Event_One");
+        eos_delay_ms(2);
     }
 }

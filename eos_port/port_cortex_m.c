@@ -205,8 +205,9 @@ char buff_assert[256];
 uint32_t assert_id = 0;
 void eos_port_assert(const char *tag, const char *name, uint32_t id)
 {
+    eos_interrupt_disable();
+    
     memset(buff_assert, 0, 256);
-
     assert_id = id;
 
     if (name != NULL)
@@ -226,4 +227,6 @@ void eos_port_assert(const char *tag, const char *name, uint32_t id)
                  tag,
                  id);
     }
+    
+    while (1);
 }
