@@ -1,37 +1,13 @@
 /* include ------------------------------------------------------------------ */
 #include "bsp.h"
 #include "eventos.h"
-#include "esh.h"
-#include "elog.h"
 #include <string.h>
 #include "test.h"
-
-EOS_TAG("Main")
-
-void esh_flush(void)
-{
-}
 
 int main(void)
 {
     bsp_init();
 
-    static elog_device_t dev_esh;
-    dev_esh.enable = 1;
-    dev_esh.level = eLogLevel_Debug;
-    dev_esh.name = "eLogDev_Esh";
-    dev_esh.out = esh_log;
-    dev_esh.flush = esh_flush;
-    dev_esh.ready = esh_ready;
-    
-    elog_init();
-    elog_set_level(eLogLevel_Debug);
-    esh_init();
-    esh_start();
-    
-    elog_device_register(&dev_esh);
-    elog_start();
-    
     // Start EventOS.
     eos_init();                                     // EventOS初始化
     

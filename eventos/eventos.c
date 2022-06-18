@@ -34,7 +34,6 @@
 /* include --------------------------------------------------------------------- */
 #include "eventos.h"
 #include <string.h>
-#include "esh.h"
 
 EOS_TAG("EventOS")
 

@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F429_439xx, EOS_MCU, USE_STDPERIPH_DRIVER,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\3rd;..\..\..\ecp;..\..\..\elog;..\..\..\esh;..\..\..\test;..\..\..\3rd\RTT;..\MCU\inc;..\User</IncludePath>
+              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\test;..\MCU\inc;..\User</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -392,26 +392,6 @@
               <FileName>hook.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\hook.c</FilePath>
-            </File>
-            <File>
-              <FileName>ecp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\ecp\ecp.c</FilePath>
-            </File>
-            <File>
-              <FileName>elog.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\elog\elog.c</FilePath>
-            </File>
-            <File>
-              <FileName>esh.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\esh\esh.c</FilePath>
-            </File>
-            <File>
-              <FileName>esh_port.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\esh\esh_port.c</FilePath>
             </File>
             <File>
               <FileName>bsp.c</FileName>

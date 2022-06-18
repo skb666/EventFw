@@ -359,23 +359,21 @@ Assert
 
 #else
 
-#include "elog.h"
-
 /* User defined module name. */
 #define EOS_TAG(name_)                                                         \
     static char const ___tag_name[] = name_;
 
 /* General assert */
 #define EOS_ASSERT(test_) ((test_)                                             \
-    ? (void)0 : elog_assert(___tag_name, EOS_NULL, (int)__LINE__))
+    ? (void)0 : eos_port_assert(___tag_name, EOS_NULL, (uint32_t)__LINE__))
 
 /* General assert with ID */
 #define EOS_ASSERT_ID(id_, test_) ((test_)                                     \
-    ? (void)0 : elog_assert(___tag_name, EOS_NULL, (int)(id_)))
+    ? (void)0 : eos_port_assert(___tag_name, EOS_NULL, (uint32_t)(id_)))
 
 /* General assert with name string or event topic. */
 #define EOS_ASSERT_NAME(test_, name_) ((test_)                                 \
-    ? (void)0 : elog_assert(___tag_name, name_, (int)(__LINE__)))
+    ? (void)0 : eos_port_assert(___tag_name, name_, (uint32_t)(__LINE__)))
         
 /* Assert with printed information. */
 #define EOS_ASSERT_INFO(test_, ...) ((test_)                                   \
@@ -386,7 +384,7 @@ Assert
 /* -----------------------------------------------------------------------------
 Log
 ----------------------------------------------------------------------------- */
-#ifdef EOS_USE_LOG
+#if (EOS_USE_LOG != 0)
 #include "elog.h"
 
 #define EOS_PRINT(...)            elog_printf(__VA_ARGS__)
@@ -415,6 +413,7 @@ void eos_cpu_usage_monitor(void);
 Port
 ----------------------------------------------------------------------------- */
 void eos_port_task_switch(void);
+void eos_port_assert(const char *tag, const char *name, uint32_t id);
 
 /* -----------------------------------------------------------------------------
 Hook

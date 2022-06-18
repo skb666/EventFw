@@ -14,8 +14,6 @@ typedef struct eos_reactor_led_tag {
 uint8_t stack_led[2048];
 eos_reactor_led_t actor_led;
 
-EOS_TAG("ReactorLed")
-
 /* static event handler ----------------------------------------------------- */
 static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * const e);
 
@@ -51,8 +49,6 @@ static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * cons
         evt_count ++;
         eos_reactor_count();
 
-        EOS_DEBUG("EventOS recieves Event_Time_1000ms.");
-        
         time1 = eos_time();
         me->status = (me->status == 0) ? 1 : 0;
         eos_delay_ms(500);
