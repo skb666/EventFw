@@ -783,11 +783,6 @@
               <FileName>test_05.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\test\test_05.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_06.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_06.c</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -839,6 +834,11 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>test_06.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test_06.c</FilePath>
             </File>
           </Files>
         </Group>

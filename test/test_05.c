@@ -3,16 +3,6 @@
 #include "eventos.h"
 #include "bsp.h"
 
-/* private defines ---------------------------------------------------------- */
-enum
-{
-    Task_EventSend = 0,
-    Task_TopicEvent,
-    Task_ValueEvent,
-    Task_StreamEvent,
-    Task_BroadcastEvent,
-};
-
 /* private data structure --------------------------------------------------- */
 typedef struct e_value
 {
