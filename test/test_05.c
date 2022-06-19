@@ -3,6 +3,8 @@
 #include "eventos.h"
 #include "bsp.h"
 
+#if (TEST_EN_05 != 0)
+
 /* private data structure --------------------------------------------------- */
 typedef struct e_value
 {
@@ -192,3 +194,5 @@ static void task_func_middle(void *parameter)
         eos_delay_ms(2);
     }
 }
+
+#endif

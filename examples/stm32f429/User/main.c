@@ -22,11 +22,8 @@ int main(void)
     return 0;
 }
 
-uint32_t time_ms = 0;
 void SysTick_Handler(void)
 {
-    time_ms ++;
-    
     eos_interrupt_enter();
     eos_tick();
     eos_interrupt_exit();

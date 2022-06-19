@@ -1,6 +1,15 @@
 #ifndef TEST_H
 #define TEST_H
 
+#define TEST_EN_01                      (1)
+#define TEST_EN_02_0                    (0)
+#define TEST_EN_02_1                    (0)
+#define TEST_EN_02_2                    (0)
+#define TEST_EN_03                      (0)
+#define TEST_EN_04                      (0)
+#define TEST_EN_05                      (0)
+#define TEST_EN_06                      (0)
+
 enum
 {
     TaskPrio_Give = 1,

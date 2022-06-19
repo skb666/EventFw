@@ -3,15 +3,7 @@
 #include "eventos.h"
 #include "bsp.h"
 
-/* private defines ---------------------------------------------------------- */
-enum
-{
-    Task_EventSend = 0,
-    Task_TopicEvent,
-    Task_ValueEvent,
-    Task_StreamEvent,
-    Task_BroadcastEvent,
-};
+#if (TEST_EN_02_0 != 0)
 
 /* private data structure --------------------------------------------------- */
 typedef struct e_value
@@ -189,3 +181,4 @@ static void task_func_middle(void *parameter)
     }
 }
 
+#endif
