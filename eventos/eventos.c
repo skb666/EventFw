@@ -964,7 +964,7 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
         /* If the topic is existed in hash table. */
         else
         {
-            /*  Read all items in e_queu and handle all other events as handled
+            /*  Read all items in e_queue and handle all other events as handled
              *  util the specific event comes out. Finally glocal owner flag will
              *  be updated.
              */ 
@@ -974,49 +974,54 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
                 if ((e_item->owner & bits) == 0)
                 {
                     e_item = e_item->next;
-                    continue;
-                }
-                
-                /* Meet the specific event. */
-                if (strcmp(eos.object[e_item->id].key, topic) == 0)
-                {
-                    eos_object_t *e_object = &eos.object[e_item->id];
-                    EOS_ASSERT(e_object->type == EosObj_Event);
-                    uint8_t type = e_object->attribute & 0x03;
-
-                    e_out->topic = topic;
-                    e_out->eid = e_item->id;
-                    if (type == EOS_EVENT_ATTRIBUTE_TOPIC)
-                    {
-                        e_out->size = 0;
-                    }
-                    else if (type == EOS_EVENT_ATTRIBUTE_VALUE)
-                    {
-                        e_out->size = e_object->size;
-                    }
-                    else if (type == EOS_EVENT_ATTRIBUTE_STREAM)
-                    {
-                        e_out->size = eos_stream_size(e_object->data.stream);
-                    }
-
-                    /* Get the event. */
-                    e_item->owner &=~ bits;
-                    if (e_item->owner == 0)
-                    {
-                        /* Delete the event data from the e-queue. */
-                        __eos_e_queue_delete(e_item);
-                    }
-
-                    eos_interrupt_enable();
-                    
-                    return true;
                 }
                 else
                 {
-                    __eos_e_queue_delete(e_item);
-                    if (eos.e_queue == NULL)
+                    /* Meet the specific event. */
+                    if (strcmp(eos.object[e_item->id].key, topic) == 0)
                     {
-                        break;
+                        eos_object_t *e_object = &eos.object[e_item->id];
+                        EOS_ASSERT(e_object->type == EosObj_Event);
+                        uint8_t type = e_object->attribute & 0x03;
+
+                        e_out->topic = topic;
+                        e_out->eid = e_item->id;
+                        if (type == EOS_EVENT_ATTRIBUTE_TOPIC)
+                        {
+                            e_out->size = 0;
+                        }
+                        else if (type == EOS_EVENT_ATTRIBUTE_VALUE)
+                        {
+                            e_out->size = e_object->size;
+                        }
+                        else if (type == EOS_EVENT_ATTRIBUTE_STREAM)
+                        {
+                            e_out->size = eos_stream_size(e_object->data.stream);
+                        }
+
+                        /* Get the event. */
+                        e_item->owner &=~ bits;
+                        if (e_item->owner == 0)
+                        {
+                            /* Delete the event data from the e-queue. */
+                            __eos_e_queue_delete(e_item);
+                        }
+
+                        eos_interrupt_enable();
+                        
+                        return true;
+                    }
+                    else
+                    {
+                        __eos_e_queue_delete(e_item);
+                        if (eos.e_queue == NULL)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            e_item = e_item->next;
+                        }
                     }
                 }
             }
@@ -1429,11 +1434,13 @@ static void __eos_e_queue_delete(eos_event_data_t const *item)
     /* If the event data is only one in queue. */
     if (item->last == EOS_NULL && item->next == EOS_NULL)
     {
+        EOS_ASSERT(eos.e_queue == item);
         eos.e_queue = EOS_NULL;
     }
     /* If the event data is the first one in queue. */
     else if (item->last == EOS_NULL && item->next != EOS_NULL)
     {
+        EOS_ASSERT(eos.e_queue == item);
         item->next->last = EOS_NULL;
         eos.e_queue = item->next;
     }
