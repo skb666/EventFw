@@ -3,15 +3,9 @@
 #include "eventos.h"
 #include "bsp.h"
 
-#if (TEST_EN_02_2 != 0)
+#if (TEST_EN_07 != 0)
 
 /* private data structure --------------------------------------------------- */
-typedef struct e_value
-{
-    uint32_t count;
-    uint32_t value;
-} e_value_t;
-
 typedef struct eos_test
 {
     uint32_t error;
@@ -125,6 +119,8 @@ void timer_isr_1ms(void)
 static void task_func_e_give(void *parameter)
 {
     (void)parameter;
+
+    eos_event_publish_period("Event_Time_500ms", 1);
     
     while (1)
     {
