@@ -469,9 +469,14 @@
               <FilePath>..\..\..\test\test_01_1.c</FilePath>
             </File>
             <File>
-              <FileName>test_05.c</FileName>
+              <FileName>test_05_0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_05.c</FilePath>
+              <FilePath>..\..\..\test\test_05_0.c</FilePath>
+            </File>
+            <File>
+              <FileName>test_05_1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test_05_1.c</FilePath>
             </File>
             <File>
               <FileName>test_02_0.c</FileName>

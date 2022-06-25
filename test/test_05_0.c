@@ -3,7 +3,7 @@
 #include "eventos.h"
 #include "bsp.h"
 
-#if (TEST_EN_05 != 0)
+#if (TEST_EN_05_0 != 0)
 
 /* private data structure --------------------------------------------------- */
 typedef struct e_value
