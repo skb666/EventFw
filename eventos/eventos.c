@@ -339,6 +339,7 @@ void eos_task_start_private(eos_task_t *const me,
                             void *stack_addr,
                             uint32_t stack_size);
 static int8_t __eos_event_give(const char *task,
+                               uint32_t task_id,
                                uint8_t give_type,
                                const char *topic);
 static void __eos_e_queue_delete(eos_event_data_t const *item);
@@ -1533,6 +1534,7 @@ void eos_reactor_start(eos_reactor_t *const me, eos_event_handler event_handler)
     eos.task_enabled |= (1 << me->super.priority);
     
     __eos_event_give(eos.task[me->super.priority]->key,
+                     EOS_MAX_OBJECTS,
                      EosEventGiveType_Send, "Event_Null");
     
     eos_actor_start(&me->super,
@@ -1561,6 +1563,7 @@ void eos_sm_start(eos_sm_t *const me, eos_state_handler state_init)
     eos.task_enabled |= (1 << me->super.priority);
     
     __eos_event_give(eos.task[me->super.priority]->key,
+                     EOS_MAX_OBJECTS,
                      EosEventGiveType_Send, "Event_Null");
 
     eos_actor_start(&me->super,
@@ -1632,7 +1635,7 @@ static void eos_sm_enter(eos_sm_t *const me)
 Event
 ----------------------------------------------------------------------------- */
 uint32_t count_test = 0;
-static int8_t __eos_event_give( const char *task,
+static int8_t __eos_event_give( const char *task, uint32_t task_id,
                                 uint8_t give_type,
                                 const char *topic)
 {
@@ -1705,9 +1708,17 @@ static int8_t __eos_event_give( const char *task,
     if (give_type == EosEventGiveType_Send)
     {
         /* Get the task id in the object hash table. */
-        uint16_t t_id = eos_hash_get_index(task);
-        EOS_ASSERT_NAME(t_id != EOS_MAX_OBJECTS, topic);
-        EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
+        uint16_t t_id;
+        if (task_id == EOS_MAX_OBJECTS)
+        {
+            t_id = eos_hash_get_index(task);
+            EOS_ASSERT_NAME(t_id != EOS_MAX_OBJECTS, topic);
+            EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
+        }
+        else
+        {
+            t_id = task_id;
+        }
         eos_task_t *tcb = eos.object[t_id].ocb.task;
 
         /* If the current task is waiting for a specific event, but not the
@@ -1892,14 +1903,28 @@ __EXIT:
     return (int8_t)EosRun_OK;
 }
 
+uint32_t eos_get_task_id(const char *task)
+{
+    uint16_t t_id = eos_hash_get_index(task);
+    EOS_ASSERT_NAME(t_id != EOS_MAX_OBJECTS, task);
+    EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
+
+    return t_id;
+}
+
 void eos_event_send(const char *task, const char *topic)
 {
-    __eos_event_give(task, EosEventGiveType_Send, topic);
+    __eos_event_give(task, EOS_MAX_OBJECTS, EosEventGiveType_Send, topic);
+}
+
+void eos_event_send_id(uint32_t task_id, const char *topic)
+{
+    __eos_event_give(NULL, task_id, EosEventGiveType_Send, topic);
 }
 
 void eos_event_publish(const char *topic)
 {
-    __eos_event_give(EOS_NULL, EosEventGiveType_Publish, topic);
+    __eos_event_give(EOS_NULL, EOS_MAX_OBJECTS, EosEventGiveType_Publish, topic);
 }
 
 static inline void __eos_event_sub(eos_task_t *const me, const char *topic)

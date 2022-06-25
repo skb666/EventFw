@@ -459,9 +459,14 @@
               <FilePath>..\..\..\test\eos_led_sm.c</FilePath>
             </File>
             <File>
-              <FileName>test_01.c</FileName>
+              <FileName>test_01_0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_01.c</FilePath>
+              <FilePath>..\..\..\test\test_01_0.c</FilePath>
+            </File>
+            <File>
+              <FileName>test_01_1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test_01_1.c</FilePath>
             </File>
             <File>
               <FileName>test_05.c</FileName>
