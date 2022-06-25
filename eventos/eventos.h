@@ -86,6 +86,8 @@ typedef enum eos_bool
 
 #define EOS_NULL                        ((void *)0)
 
+#define EOS_TIME_FOREVER                UINT32_MAX
+
 #if (EOS_TEST_PLATFORM == 32)
 typedef uint32_t                        eos_pointer_t;
 #else

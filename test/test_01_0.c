@@ -141,7 +141,7 @@ static void task_func_e_value(void *parameter)
     
     while (1) {
         eos_event_t e;
-        if (eos_task_wait_event(&e, 10000) == false)
+        if (eos_task_wait_event(&e, EOS_TIME_FOREVER) == false)
         {
             eos_test.error = 1;
             continue;

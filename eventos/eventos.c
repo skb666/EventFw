@@ -153,7 +153,7 @@ typedef struct eos_event_timer
     uint32_t oneshoot                      : 1;
     uint32_t unit                          : 2;
     uint32_t period                        : 16;
-    uint32_t timeout_ms;
+    uint32_t timeout;
 } eos_event_timer_t;
 #endif
 
@@ -395,7 +395,6 @@ static inline void eos_task_delay_handle(void)
     {
         eos_task_t *t = eos.task[LOG2(working_set) - 1]->ocb.task;
         EOS_ASSERT(t != (eos_task_t *)0);
-        EOS_ASSERT(t->timeout != 0U);
 
         bit = (1U << (t->priority));
         if (eos.time >= t->timeout)
@@ -466,7 +465,10 @@ static void task_func_idle(void *parameter)
             {
                 if (eos.task[i] != (void *)0 && ((eos.task_delay & (1 << i)) != 0))
                 {
-                    eos.task[i]->ocb.task->timeout -= eos.time;
+                    if (eos.task[i]->ocb.task->timeout != EOS_TIME_FOREVER)
+                    {
+                        eos.task[i]->ocb.task->timeout -= eos.time;
+                    }
                 }
             }
             /* Adjust all timer's timing. */
@@ -484,8 +486,8 @@ static void task_func_idle(void *parameter)
             eos.timeout_min -= eos.time;
             for (uint32_t i = 0; i < eos.timer_count; i ++)
             {
-                EOS_ASSERT(eos.etimer[i].timeout_ms >= eos.time);
-                eos.etimer[i].timeout_ms -= eos.time;
+                EOS_ASSERT(eos.etimer[i].timeout >= eos.time);
+                eos.etimer[i].timeout -= eos.time;
             }
             eos.time_offset += eos.time;
             eos.time = 0;
@@ -759,6 +761,8 @@ void eos_task_exit(void)
 
 static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
 {
+    /* Never block the current task forever. */
+    EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY);
     /* Never call eos_delay_ms and eos_delay_ticks in ISR functions. */
     EOS_ASSERT(eos_interrupt_nest == 0);
     /* Never call eos_delay_ms and eos_delay_ticks in the idle task. */
@@ -823,6 +827,8 @@ void eos_task_resume(const char *task)
 
 bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
 {
+    EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
+
     eos_interrupt_disable();
 
     uint8_t priority = eos_current->priority;
@@ -886,10 +892,23 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
         }
         else
         {
-            if (time_ms != 0)
+            if (time_ms == 0)
+            { 
+                eos_interrupt_enable();
+                return false;
+            }
+            else
             {
                 uint32_t bit;
-                ((eos_task_t *)eos_current)->timeout = eos.time + time_ms;
+                if (time_ms == EOS_TIME_FOREVER)
+                {
+                    ((eos_task_t *)eos_current)->timeout = EOS_TIME_FOREVER;
+                }
+                else
+                {
+                    ((eos_task_t *)eos_current)->timeout = eos.time + time_ms;
+                }
+                
                 eos_current->state = EosTaskState_WaitEvent;
                 bit = (1U << priority);
                 eos.task_wait_event |= bit;
@@ -897,11 +916,6 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
                 eos_interrupt_enable();
                 eos_sheduler();
                 eos_interrupt_disable();
-            }
-            else
-            {
-                eos_interrupt_enable();
-                return false;
             }
         }
     } while (eos.time < eos_current->timeout || time_ms == 0);
@@ -947,6 +961,8 @@ void eos_task_delete(const char *task)
 bool eos_task_wait_specific_event(  eos_event_t *const e_out,
                                     const char *topic, uint32_t time_ms)
 {
+    EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
+
     uint8_t priority = eos_current->priority;
     uint32_t bits = (1 << priority);
     
@@ -1028,7 +1044,14 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
             }
         }
 
-        eos_current->timeout = eos.time + time_ms;
+        if (time_ms == EOS_TIME_FOREVER)
+        {
+            ((eos_task_t *)eos_current)->timeout = EOS_TIME_FOREVER;
+        }
+        else
+        {
+            ((eos_task_t *)eos_current)->timeout = eos.time + time_ms;
+        }
         eos_current->state = EosTaskState_WaitSpecificEvent;
         eos.task_wait_specific_event |= (1U << priority);
         eos.event_wait[priority] = topic;
@@ -1348,7 +1371,7 @@ int32_t eos_evttimer(void)
     /* 若时间到达，将此事件推入事件队列，同时在etimer里删除。 */
     for (uint32_t i = 0; i < eos.timer_count; i ++)
     {
-        if (eos.etimer[i].timeout_ms > system_time)
+        if (eos.etimer[i].timeout > system_time)
             continue;
         eos_event_publish(eos.etimer[i].topic);
         /* 清零标志位 */
@@ -1366,7 +1389,7 @@ int32_t eos_evttimer(void)
         else
         {
             uint32_t period = eos.etimer[i].period * timer_unit[eos.etimer[i].unit];
-            eos.etimer[i].timeout_ms += period;
+            eos.etimer[i].timeout += period;
         }
     }
     if (eos.timer_count == 0)
@@ -1379,9 +1402,9 @@ int32_t eos_evttimer(void)
     uint32_t min_time_out_ms = UINT32_MAX;
     for (uint32_t i = 0; i < eos.timer_count; i ++)
     {
-        if (min_time_out_ms <= eos.etimer[i].timeout_ms)
+        if (min_time_out_ms <= eos.etimer[i].timeout)
             continue;
-        min_time_out_ms = eos.etimer[i].timeout_ms;
+        min_time_out_ms = eos.etimer[i].timeout;
     }
     eos.timeout_min = min_time_out_ms;
 
@@ -1985,6 +2008,7 @@ static void eos_event_pub_time(const char *topic,
                                uint32_t time_ms, bool oneshoot)
 {
     EOS_ASSERT(time_ms != 0);
+    EOS_ASSERT(time_ms < EOS_TIME_FOREVER);
     EOS_ASSERT(time_ms <= timer_threshold[EosTimerUnit_Minute]);
     EOS_ASSERT(eos.timer_count < EOS_MAX_TIME_EVENT);
 
@@ -2116,8 +2140,8 @@ void eos_event_time_cancel(const char *topic)
     {
         if (topic != eos.etimer[i].topic)
         {
-            timeout_min =   timeout_min > eos.etimer[i].timeout_ms ?
-                            eos.etimer[i].timeout_ms :
+            timeout_min =   timeout_min > eos.etimer[i].timeout ?
+                            eos.etimer[i].timeout :
                             timeout_min;
         }
         else

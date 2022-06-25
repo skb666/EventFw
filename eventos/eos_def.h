@@ -59,6 +59,6 @@ typedef enum eos_bool {
 
 #define EOS_HEAP_MAX                    (0x7fffU)
 
-#define EOS_FOR_EVER                    EOS_U32_MAX
+#define EOS_TIME_FOREVER                EOS_U32_MAX
 
 #endif
