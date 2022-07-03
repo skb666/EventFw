@@ -241,7 +241,7 @@ typedef struct eos_tag
     uint16_t prime_max;
 
     /* Task */
-    eos_object_t *task[EOS_MAX_TASKS];
+    eos_object_t *task[EOS_MAX_PRIORITY];
 
     uint32_t task_exist;
     uint32_t task_enabled;
@@ -428,7 +428,7 @@ static void task_func_idle(void *parameter)
         uint8_t usage = 0;
         uint32_t *stack;
         uint32_t size_used = 0;
-        for (uint8_t i = 0; i < EOS_MAX_TASKS; i ++)
+        for (uint8_t i = 0; i < EOS_MAX_PRIORITY; i ++)
         {
             if (eos.task[i] != (eos_object_t *)0)
             {
@@ -464,7 +464,7 @@ static void task_func_idle(void *parameter)
         if (eos.time >= EOS_MS_NUM_15DAY)
         {
             /* Adjust all task daley timing. */
-            for (uint32_t i = 1; i < EOS_MAX_TASKS; i ++)
+            for (uint32_t i = 1; i < EOS_MAX_PRIORITY; i ++)
             {
                 if (eos.task[i] != (void *)0 && ((eos.task_delay & (1 << i)) != 0))
                 {
@@ -661,7 +661,7 @@ static void eos_sheduler(void)
     /* eos_next = ... */
     task_idle.state = EosTaskState_Ready;
     eos_next = &task_idle;
-    for (int8_t i = (EOS_MAX_TASKS - 1); i >= 1; i --)
+    for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 1; i --)
     {
         /* If the task is existent. */
         if ((eos.task_exist & (1 << i)) != 0 && eos.task[i]->type == EosObj_Actor)
@@ -712,6 +712,7 @@ void eos_task_start(eos_task_t *const me,
                     uint32_t stack_size,
                     void *parameter)
 {
+    EOS_ASSERT(priority < EOS_MAX_PRIORITY);
     eos_interrupt_disable();
 
     uint16_t index = eos_task_init(me, name, priority, stack_addr, stack_size);
@@ -721,6 +722,7 @@ void eos_task_start(eos_task_t *const me,
     eos_task_start_private(me, func, me->priority,
                            stack_addr, stack_size, parameter);
     me->state = EosTaskState_Ready;
+
     
     eos_interrupt_enable();
     eos_sheduler();
@@ -1511,7 +1513,7 @@ static uint16_t eos_task_init(  eos_task_t *const me,
 
     /* Check all arguments are valid. */
     EOS_ASSERT_NAME(me != (eos_task_t *)0, name);
-    EOS_ASSERT_NAME(priority < EOS_MAX_TASKS, name);
+    EOS_ASSERT_NAME(priority < EOS_MAX_PRIORITY, name);
 
     /* Prevent the task starts for the second time. */
     EOS_ASSERT_NAME(me->enabled == EOS_False, name);
@@ -1777,7 +1779,7 @@ static int8_t __eos_event_give( const char *task, uint32_t task_id,
     eos_interrupt_disable();
     wait_specific_event = owner & eos.task_wait_specific_event;
     eos_interrupt_enable();
-    for (uint8_t i = 1; i < EOS_MAX_TASKS; i ++)
+    for (uint8_t i = 1; i < EOS_MAX_PRIORITY; i ++)
     {
         if ((wait_specific_event & (1 << i)) != 0)
         {
@@ -1799,7 +1801,7 @@ static int8_t __eos_event_give( const char *task, uint32_t task_id,
     }
     
     wait_event = owner & eos.task_wait_event;
-    for (uint8_t i = 1; i < EOS_MAX_TASKS; i ++)
+    for (uint8_t i = 1; i < EOS_MAX_PRIORITY; i ++)
     {
         if ((wait_event & (1 << i)) != 0)
         {
@@ -2754,7 +2756,7 @@ Trace
 /* 任务的堆栈使用率 */
 uint8_t eos_task_stack_usage(uint8_t priority)
 {
-    EOS_ASSERT(priority < EOS_MAX_TASKS);
+    EOS_ASSERT(priority < EOS_MAX_PRIORITY);
     EOS_ASSERT(eos.task[priority] != (eos_object_t *)0);
 
     return eos.task[priority]->ocb.task->usage;
@@ -2765,7 +2767,7 @@ uint8_t eos_task_stack_usage(uint8_t priority)
 /* 任务的CPU使用率 */
 uint8_t eos_task_cpu_usage(uint8_t priority)
 {
-    EOS_ASSERT(priority < EOS_MAX_TASKS);
+    EOS_ASSERT(priority < EOS_MAX_PRIORITY);
     EOS_ASSERT(eos.task[priority] != (eos_object_t *)0);
 
     return eos.task[priority]->ocb.task->cpu_usage;
@@ -2781,7 +2783,7 @@ void eos_cpu_usage_monitor(void)
     eos_current->cpu_usage_count ++;
     if (eos.cpu_usage_count >= 10000)
     {
-        for (uint8_t i = 0; i < EOS_MAX_TASKS; i ++)
+        for (uint8_t i = 0; i < EOS_MAX_PRIORITY; i ++)
         {
             if (eos.task[i] != (eos_object_t *)0)
             {

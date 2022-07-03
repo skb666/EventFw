@@ -40,8 +40,8 @@ extern "C" {
 /* -----------------------------------------------------------------------------
 EventOS Default Configuration
 ----------------------------------------------------------------------------- */
-#ifndef EOS_MAX_TASKS
-#define EOS_MAX_TASKS                           8       // 默认最多8个Actor
+#ifndef EOS_MAX_PRIORITY
+#define EOS_MAX_PRIORITY                        8       // 默认最多8个优先级
 #endif
 
 #ifndef EOS_MAX_OBJECTS

@@ -39,8 +39,8 @@
 /* EventOS General Configuration --------------------------------------- */
 
 // <h> EventOS Nano's basic configuration
-//   <o>  The maximum number of tasks: 8 - 64
-#define EOS_MAX_TASKS                           16
+//   <o>  The maximum number of tasks: 1 - 32
+#define EOS_MAX_PRIORITY                        32
 
 //   <o>  The maximum number of objects: 16 - 65536
 #define EOS_MAX_OBJECTS                         64
@@ -116,7 +116,7 @@
 #error The test paltform must be 32-bit or 64-bit !
 #endif
 
-#if (EOS_MAX_TASKS > 32 || EOS_MAX_TASKS <= 0)
+#if (EOS_MAX_PRIORITY > 32 || EOS_MAX_PRIORITY <= 0)
 #error The maximum number of tasks must be 1 ~ 32 !
 #endif
 

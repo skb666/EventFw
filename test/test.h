@@ -9,10 +9,10 @@
 #define TEST_EN_03                      (0)
 #define TEST_EN_04                      (0)
 #define TEST_EN_05_0                    (0)
-#define TEST_EN_05_1                    (0)
+#define TEST_EN_05_1                    (1)
 #define TEST_EN_06                      (0)
 #define TEST_EN_07                      (0)
-#define TEST_EN_08                      (1)
+#define TEST_EN_08                      (0)
 
 enum
 {
@@ -21,7 +21,7 @@ enum
     TaskPrio_Value,
     TaskPrio_SmLed,
     TaskPrio_ReacotrLed,
-    TaskPrio_High,
+    TaskPrio_High = 31,
 
     TaskPrio_Max
 };
