@@ -159,7 +159,10 @@ typedef struct eos_event
 typedef struct eos_task
 {
     uint32_t *sp;
+    struct eos_task *next;
+    struct eos_task *prev;
     void *stack;
+    const char *event_wait;
     uint32_t size;
     uint32_t timeout;
     uint32_t stack_size;              /* stack size */
@@ -178,7 +181,8 @@ void eos_task_start(eos_task_t * const me,
                     eos_func_t func,
                     uint8_t priority,
                     void *stack_addr,
-                    uint32_t stack_size);
+                    uint32_t stack_size,
+                    void *parameter);
 // 退出当前任务，任务函数中调用。
 void eos_task_exit(void);
 // 任务内延时，任务函数中调用，不允许在定时器的回调函数调用，不允许在空闲回调函数中调用。

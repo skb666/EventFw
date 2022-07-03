@@ -4,7 +4,8 @@ void eos_task_start_private(eos_task_t * const me,
                             eos_func_t func,
                             uint8_t priority,
                             void *stack_addr,
-                            uint32_t stack_size)
+                            uint32_t stack_size,
+                            void *parameter)
 {
     // Set PendSV to be the lowest priority.
     *(uint32_t volatile *)0xE000ED20 |= (0xFFU << 16U);
@@ -38,7 +39,7 @@ void eos_task_start_private(eos_task_t * const me,
     *(-- sp) = (uint32_t)0x03030303u;          /* R3 */
     *(-- sp) = (uint32_t)0x02020202u;          /* r2 */
     *(-- sp) = (uint32_t)0x01010101u;          /* R1 */
-    *(-- sp) = (uint32_t)0x00000000u;          /* r0 */
+    *(-- sp) = (uint32_t)parameter;            /* r0 */
     /* additionally, fake registers r4-r11 */
     *(-- sp) = (uint32_t)0x11111111u;          /* r11 */
     *(-- sp) = (uint32_t)0x10101010u;          /* r10 */

@@ -242,7 +242,7 @@ typedef struct eos_tag
 
     /* Task */
     eos_object_t *task[EOS_MAX_TASKS];
-    const char *event_wait[EOS_MAX_TASKS];                 /* 等待的事件ID */
+
     uint32_t task_exist;
     uint32_t task_enabled;
     uint32_t task_delay;
@@ -252,6 +252,8 @@ typedef struct eos_tag
     uint32_t task_wait_specific_event;
     uint32_t task_mutex;
     uint32_t task_recieve_event;
+
+    uint32_t t_prio_ready;
     
     /* Timer */
     eos_timer_t *timers;
@@ -337,7 +339,8 @@ void eos_task_start_private(eos_task_t *const me,
                             eos_func_t func,
                             uint8_t priority,
                             void *stack_addr,
-                            uint32_t stack_size);
+                            uint32_t stack_size,
+                            void *parameter);
 static int8_t __eos_event_give(const char *task,
                                uint32_t task_id,
                                uint8_t give_type,
@@ -558,7 +561,8 @@ void eos_init(void)
     
     eos_task_start( &task_idle,
                     "task_idle",
-                    task_func_idle, 0, stack_idle, sizeof(stack_idle));
+                    task_func_idle, 0, stack_idle, sizeof(stack_idle),
+                    NULL);
 }
 
 void eos_run(void)
@@ -705,26 +709,21 @@ void eos_task_start(eos_task_t *const me,
                     eos_func_t func,
                     uint8_t priority,
                     void *stack_addr,
-                    uint32_t stack_size)
+                    uint32_t stack_size,
+                    void *parameter)
 {
     eos_interrupt_disable();
+
     uint16_t index = eos_task_init(me, name, priority, stack_addr, stack_size);
     eos.object[index].ocb.task = me;
     eos.object[index].type = EosObj_Actor;
 
-    eos_task_start_private(me, func, me->priority, stack_addr, stack_size);
+    eos_task_start_private(me, func, me->priority,
+                           stack_addr, stack_size, parameter);
     me->state = EosTaskState_Ready;
     
-    if (eos_current == &task_idle)
-    {
-        eos_interrupt_enable();
-
-        eos_sheduler();
-    }
-    else
-    {
-        eos_interrupt_enable();
-    }
+    eos_interrupt_enable();
+    eos_sheduler();
 }
 
 static void eos_actor_start(eos_task_t *const me,
@@ -734,7 +733,7 @@ static void eos_actor_start(eos_task_t *const me,
                             uint32_t stack_size)
 {
     eos_interrupt_disable();
-    eos_task_start_private(me, func, me->priority, stack_addr, stack_size);
+    eos_task_start_private(me, func, me->priority, stack_addr, stack_size, NULL);
     me->state = EosTaskState_Ready;
     
     if (eos_current == &task_idle)
@@ -1054,7 +1053,7 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
         }
         eos_current->state = EosTaskState_WaitSpecificEvent;
         eos.task_wait_specific_event |= (1U << priority);
-        eos.event_wait[priority] = topic;
+        eos_current->event_wait = topic;
         
         eos_interrupt_enable();
 
@@ -1747,7 +1746,7 @@ static int8_t __eos_event_give( const char *task, uint32_t task_id,
         /* If the current task is waiting for a specific event, but not the
            current event. */
         if (tcb->state == EosTaskState_WaitSpecificEvent &&
-            strcmp(topic, eos.event_wait[tcb->priority]) != 0)
+            strcmp(topic, tcb->event_wait) != 0)
         {
             goto __EXIT;
         }
@@ -1782,7 +1781,7 @@ static int8_t __eos_event_give( const char *task, uint32_t task_id,
     {
         if ((wait_specific_event & (1 << i)) != 0)
         {
-            if (strcmp(topic, eos.event_wait[i]) == 0)
+            if (strcmp(topic, eos.task[i]->ocb.task->event_wait) == 0)
             {
                 wait_specific_event &=~ (1 << i);
                 
