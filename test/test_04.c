@@ -94,7 +94,8 @@ void test_init(void)
                        task_test_info[i].func,
                        task_test_info[i].prio,
                        task_test_info[i].stack,
-                       task_test_info[i].stack_size);
+                       task_test_info[i].stack_size,
+                       EOS_NULL);
     }
 
     timer_init(1);

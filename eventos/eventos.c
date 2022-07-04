@@ -426,27 +426,41 @@ static inline void eos_task_delay_handle_bkp(void)
 
 static inline void eos_task_delay_handle(void)
 {
-    eos_interrupt_disable();
-    /* check all the tasks are timeout or not */
-    uint32_t working_set, bit;
-    working_set = eos.task_delay;
     bool sheduler = false;
-    while (working_set != 0U)
+    
+    /* check all the tasks are timeout or not */
+    uint32_t bit;
+    eos_interrupt_disable();
+    for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 0; i --)
     {
-        eos_task_t *t = eos.task[LOG2(working_set) - 1]->ocb.task.tcb;
-        EOS_ASSERT(t != (eos_task_t *)0);
+        eos_object_t *list = eos.task[i];
+        bit = (1U << i);
+        eos.t_prio_ready &= ~bit;
 
-        bit = (1U << (t->priority));
-        if (eos.time >= t->timeout)
+        while (list != EOS_NULL)
         {
-            t->state = EosTaskState_Ready;
-            eos.task_delay &= ~bit;              /* remove from set */
-            eos.task_delay_no_event &= ~bit;
-            t->state = EosTaskState_Ready;
-            sheduler = true;
+            if (list->ocb.task.tcb->state == EosTaskState_Delay ||
+                list->ocb.task.tcb->state == EosTaskState_DelayNoEvent)
+            {
+                if (eos.time >= list->ocb.task.tcb->timeout)
+                {
+                    list->ocb.task.tcb->state = EosTaskState_Ready;
+                    eos.task_delay &= ~bit;              /* remove from set */
+                    eos.task_delay_no_event &= ~bit;
+                    sheduler = true;
+                }
+            }
+
+            if (list->ocb.task.tcb->state == EosTaskState_Ready ||
+                list->ocb.task.tcb->state == EosTaskState_Running)
+            {
+                eos.t_prio_ready |= (1 << i);
+            }
+
+            list = list->ocb.task.next;
         }
-        working_set &=~ bit;                /* remove from working set */
     }
+    
     eos_interrupt_enable();
     if (sheduler == true)
     {
@@ -1182,6 +1196,20 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
         eos_current->state = EosTaskState_WaitSpecificEvent;
         eos.task_wait_specific_event |= (1U << priority);
         eos_current->event_wait = topic;
+
+        uint32_t bit = (1U << priority);
+
+        eos_object_t *list = eos.task[eos_current->priority];
+        eos.t_prio_ready &= ~bit;
+        while (list != NULL)
+        {
+            if (list->ocb.task.tcb->state == EosTaskState_Ready ||
+                list->ocb.task.tcb->state == EosTaskState_Running)
+            {
+                eos.t_prio_ready |= bit;
+            }
+            list = list->ocb.task.next;
+        }
         
         eos_interrupt_enable();
 
