@@ -12,7 +12,8 @@
 #define TEST_EN_05_1                    0
 #define TEST_EN_06                      0
 #define TEST_EN_07                      0
-#define TEST_EN_08                      1
+#define TEST_EN_08                      0
+#define TEST_EN_09                      1
 
 enum
 {
