@@ -41,6 +41,7 @@
 // <h> EventOS Nano's basic configuration
 //   <o>  The maximum number of tasks: 1 - 32
 #define EOS_MAX_PRIORITY                        32
+#define EOS_MAX_TASKS                           128
 
 //   <o>  The maximum number of objects: 16 - 65536
 #define EOS_MAX_OBJECTS                         64
@@ -117,7 +118,11 @@
 #endif
 
 #if (EOS_MAX_PRIORITY > 32 || EOS_MAX_PRIORITY <= 0)
-#error The maximum number of tasks must be 1 ~ 32 !
+#error The maximum number of priority levels must be 1 ~ 32 !
+#endif
+
+#if (EOS_MAX_TASKS <= 0)
+#error The maximum number of tasks must be >= 1 !
 #endif
 
 #if (EOS_USE_SM_MODE != 0)

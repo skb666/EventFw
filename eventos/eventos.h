@@ -166,11 +166,12 @@ typedef struct eos_task
     uint32_t stack_size;              /* stack size */
     uint32_t state                  : 3;
     uint32_t priority               : 6;
-    uint32_t id                     : 6;
+    uint32_t id                     : 6;    // Object ID.
     uint32_t usage                  : 7;
     uint32_t enabled                : 1;
     uint32_t cpu_usage              : 7;
     uint32_t cpu_usage_count;
+    uint32_t t_id;                          // Task ID.
 } eos_task_t;
 
 // 启动任务，main函数或者任务函数中调用。
