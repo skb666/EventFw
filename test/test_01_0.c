@@ -92,7 +92,8 @@ void test_init(void)
                        task_test_info[i].func,
                        task_test_info[i].prio,
                        task_test_info[i].stack,
-                       task_test_info[i].stack_size);
+                       task_test_info[i].stack_size,
+                       EOS_NULL);
     }
 
     timer_init(1);
@@ -139,7 +140,8 @@ static void task_func_e_value(void *parameter)
 {
     (void)parameter;
     
-    while (1) {
+    while (1)
+    {
         eos_event_t e;
         if (eos_task_wait_event(&e, EOS_TIME_FOREVER) == false)
         {

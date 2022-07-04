@@ -159,8 +159,6 @@ typedef struct eos_event
 typedef struct eos_task
 {
     uint32_t *sp;
-    struct eos_task *next;
-    struct eos_task *prev;
     void *stack;
     const char *event_wait;
     uint32_t size;
