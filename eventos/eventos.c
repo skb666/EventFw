@@ -391,68 +391,11 @@ static int32_t eos_stream_size(eos_stream_t *me);
 static int32_t eos_stream_empty_size(eos_stream_t *me);
 static inline void eos_task_delay_handle(void);
 
-static inline bool owner_is_occupied(eos_owner_t *owner, uint32_t t_id)
-{
-    if (owner->data[t_id >> 3] & (1 << (t_id % 8)))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-static inline void owner_or(eos_owner_t *g_owner, eos_owner_t *owner)
-{
-    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
-    {
-        g_owner->data[i] |= owner->data[i];
-    }
-}
-
-static inline void owner_set_bit(eos_owner_t *owner, uint32_t t_id, bool status)
-{
-    if (status == true)
-    {
-        owner->data[t_id >> 3] |= (1 << (t_id % 8));
-    }
-    else
-    {
-        owner->data[t_id >> 3] &= ~(1 << (t_id % 8));
-    }
-}
-
-static inline bool owner_all_cleared(eos_owner_t *owner)
-{
-    bool all_cleared = true;
-    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
-    {
-        if (owner->data[i] != 0)
-        {
-            all_cleared = false;
-            break;
-        }
-    }
-
-    return all_cleared;
-}
-
-static inline bool owner_not_cleared(eos_owner_t *owner)
-{
-    bool not_cleared = false;
-    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
-    {
-        if (owner->data[i] != 0)
-        {
-            not_cleared = true;
-            break;
-        }
-    }
-
-    return not_cleared;
-}
-
+static inline bool owner_is_occupied(eos_owner_t *owner, uint32_t t_id);
+static inline void owner_or(eos_owner_t *g_owner, eos_owner_t *owner);
+static inline void owner_set_bit(eos_owner_t *owner, uint32_t t_id, bool status);
+static inline bool owner_all_cleared(eos_owner_t *owner);
+static inline bool owner_not_cleared(eos_owner_t *owner);
 
 /* -----------------------------------------------------------------------------
 EventOS
@@ -773,6 +716,10 @@ static void eos_sheduler(void)
             }
             break;
         }
+    }
+    if (eos_next == &task_idle)
+    {
+        eos_next = eos_next;
     }
 
     /* Trigger PendSV, if needed */
@@ -1953,6 +1900,18 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
                           eos_current->t_id,
                           true);
             eos_current->state = EosTaskState_WaitMutex;
+            
+            eos_object_t *list = eos.task[eos_current->priority];
+            eos.t_prio_ready &= ~bits;
+            while (list != EOS_NULL)
+            {
+                if (list->ocb.task.tcb->state == EosTaskState_Ready ||
+                    list->ocb.task.tcb->state == EosTaskState_Running)
+                {
+                    eos.t_prio_ready |= bits;
+                }
+                list = list->ocb.task.next;
+            }
 
             /* Excute eos kernel sheduler. */
             eos_sheduler();
@@ -2155,6 +2114,7 @@ __EXIT:
                         found = true;
                         break;
                     }
+                    list = list->ocb.task.next;
                 }
                 if (found)
                 {
@@ -3451,6 +3411,68 @@ static int32_t eos_stream_size(eos_stream_t *const me)
 static int32_t eos_stream_empty_size(eos_stream_t *const me)
 {
     return me->capacity - eos_stream_size(me);
+}
+
+static inline bool owner_is_occupied(eos_owner_t *owner, uint32_t t_id)
+{
+    if (owner->data[t_id >> 3] & (1 << (t_id % 8)))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static inline void owner_or(eos_owner_t *g_owner, eos_owner_t *owner)
+{
+    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    {
+        g_owner->data[i] |= owner->data[i];
+    }
+}
+
+static inline void owner_set_bit(eos_owner_t *owner, uint32_t t_id, bool status)
+{
+    if (status == true)
+    {
+        owner->data[t_id >> 3] |= (1 << (t_id % 8));
+    }
+    else
+    {
+        owner->data[t_id >> 3] &= ~(1 << (t_id % 8));
+    }
+}
+
+static inline bool owner_all_cleared(eos_owner_t *owner)
+{
+    bool all_cleared = true;
+    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    {
+        if (owner->data[i] != 0)
+        {
+            all_cleared = false;
+            break;
+        }
+    }
+
+    return all_cleared;
+}
+
+static inline bool owner_not_cleared(eos_owner_t *owner)
+{
+    bool not_cleared = false;
+    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    {
+        if (owner->data[i] != 0)
+        {
+            not_cleared = true;
+            break;
+        }
+    }
+
+    return not_cleared;
 }
 
 /* for unittest ------------------------------------------------------------- */

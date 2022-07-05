@@ -24,8 +24,8 @@ typedef struct eos_test
     uint32_t high_count;
     uint32_t middle_count;
     uint32_t e_one;
-    uint32_t e_sm;
-    uint32_t e_reactor;
+    
+    uint32_t idle_count;
 } eos_test_t;
 
 typedef struct task_test
@@ -101,12 +101,17 @@ void test_init(void)
 
 void eos_sm_count(void)
 {
-    eos_test.e_sm ++;
+
 }
 
 void eos_reactor_count(void)
 {
-    eos_test.e_reactor ++;
+
+}
+
+void eos_idle_count(void)
+{
+    eos_test.idle_count ++;
 }
 
 void timer_isr_1ms(void)
