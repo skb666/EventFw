@@ -172,6 +172,7 @@ typedef struct eos_task
     uint32_t cpu_usage              : 7;
     uint32_t cpu_usage_count;
     uint32_t t_id;                          // Task ID.
+    uint8_t timeslice_count;
 } eos_task_t;
 
 // 启动任务，main函数或者任务函数中调用。

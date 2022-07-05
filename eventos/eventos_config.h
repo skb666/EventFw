@@ -52,6 +52,7 @@
 
 //   <o>  The time of system tick.
 #define EOS_TICK_MS                             1
+#define EOS_TIMESLICE                           10
 
 //    <o>  use stack usage function (0 or 1) <0-1>
 #define EOS_USE_STACK_USAGE                     1
@@ -119,6 +120,10 @@
 
 #if (EOS_MAX_PRIORITY > 32 || EOS_MAX_PRIORITY <= 0)
 #error The maximum number of priority levels must be 1 ~ 32 !
+#endif
+
+#if (EOS_TIMESLICE > 255 || EOS_TIMESLICE <= 0)
+#error The number of time slice must be 1 ~ 255 !
 #endif
 
 #if (EOS_MAX_TASKS <= 0)
