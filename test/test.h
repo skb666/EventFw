@@ -3,7 +3,7 @@
 
 #include "eventos_config.h"
 
-#define TEST_EN_01_0                    0
+#define TEST_EN_01_0                    1
 #define TEST_EN_01_1                    0
 #define TEST_EN_02_0                    0
 #define TEST_EN_02_1                    0
@@ -16,11 +16,12 @@
 #define TEST_EN_07                      0
 #define TEST_EN_08                      0
 #define TEST_EN_09                      0
-#define TEST_EN_11                      1
+#define TEST_EN_11                      0
 
 enum
 {
-    TaskPrio_Give = 1,
+    TaskPrio_Give1 = 1,
+    TaskPrio_Give2 = TaskPrio_Give1,
     TaskPrio_Middle,
     TaskPrio_Value,
     TaskPrio_SmLed,

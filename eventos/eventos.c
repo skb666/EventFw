@@ -591,7 +591,7 @@ void eos_init(void)
         eos.task[i] = EOS_NULL;
     }
     
-    eos_current = 0;
+    eos_current = EOS_NULL;
     eos_next = &task_idle;
     
     eos_task_start( &task_idle,
@@ -740,14 +740,32 @@ static void eos_sheduler(void)
             }
         }
     }
-    if (eos_next == &task_idle)
-    {
-        eos_next = eos_next;
-    }
 
     /* Trigger PendSV, if needed */
     if (eos_next != eos_current)
     {
+        if (eos_current != EOS_NULL)
+        {
+            eos_object_t *list = eos.task[eos_current->priority];
+            if (list->ocb.task.next != list)
+            {
+                list = list->ocb.task.next;
+                while (1)
+                {
+                    if (list->ocb.task.tcb->state == EosTaskState_Ready)
+                    {
+                        eos.task[eos_current->priority] = list;
+                        break;
+                    }
+                }
+            }
+
+            if (eos_current->state == EosTaskState_Running)
+            {
+                eos_current->state = EosTaskState_Ready;
+            }
+        }
+
         eos_next->state = EosTaskState_Running;
         eos_next->timeslice_count = 0;
         eos_port_task_switch();
@@ -1026,6 +1044,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
                     if (list->ocb.task.tcb->state == EosTaskState_Ready ||
                         list->ocb.task.tcb->state == EosTaskState_Running)
                     {
+                        eos.task[priority] = list;
                         eos.t_prio_ready |= bit;
                     }
                 }

@@ -25,6 +25,9 @@ typedef struct eos_test
     uint32_t middle_count;
     uint32_t e_one;
     
+    uint32_t send_give1_count;
+    uint32_t send_give2_count;
+    
     uint32_t idle_count;
 } eos_test_t;
 
@@ -39,14 +42,17 @@ typedef struct task_test
 } task_test_info_t;
 
 
-static void task_func_e_give(void *parameter);
+static void task_func_e_give1(void *parameter);
+static void task_func_e_give2(void *parameter);
 static void task_func_e_value(void *parameter);
 static void task_func_high(void *parameter);
 static void task_func_middle(void *parameter);
 
 /* private data ------------------------------------------------------------- */
-static uint64_t stack_e_give[64];
-static eos_task_t task_e_give;
+static uint64_t stack_e_give1[64];
+static eos_task_t task_e_give1;
+static uint64_t stack_e_give2[64];
+static eos_task_t task_e_give2;
 static uint64_t stack_e_value[64];
 static eos_task_t task_e_value;
 static uint64_t stack_high[64];
@@ -59,25 +65,30 @@ eos_test_t eos_test;
 static const task_test_info_t task_test_info[] =
 {
     {
-        &task_e_give, "TaskGive", TaskPrio_Give,
-        stack_e_give, sizeof(stack_e_give),
-        task_func_e_give
+        &task_e_give1, "TaskGive1", TaskPrio_Give1,
+        stack_e_give1, sizeof(stack_e_give1),
+        task_func_e_give1
+    },
+    {
+        &task_e_give2, "TaskGive2", TaskPrio_Give2,
+        stack_e_give2, sizeof(stack_e_give2),
+        task_func_e_give2
     },
     {
         &task_e_value, "TaskValue", TaskPrio_Value,
         stack_e_value, sizeof(stack_e_value),
         task_func_e_value
     },
-    {
-        &task_high, "TaskHigh", TaskPrio_High,
-        stack_high, sizeof(stack_high),
-        task_func_high
-    },
-    {
-        &task_middle, "TaskMiddle", TaskPrio_Middle,
-        stack_middle, sizeof(stack_middle),
-        task_func_middle
-    },
+//    {
+//        &task_high, "TaskHigh", TaskPrio_High,
+//        stack_high, sizeof(stack_high),
+//        task_func_high
+//    },
+//    {
+//        &task_middle, "TaskMiddle", TaskPrio_Middle,
+//        stack_middle, sizeof(stack_middle),
+//        task_func_middle
+//    },
 };
 
 /* public function ---------------------------------------------------------- */
@@ -127,7 +138,7 @@ void timer_isr_1ms(void)
 }
 
 /* public function ---------------------------------------------------------- */
-static void task_func_e_give(void *parameter)
+static void task_func_e_give1(void *parameter)
 {
     (void)parameter;
     
@@ -135,6 +146,22 @@ static void task_func_e_give(void *parameter)
     {
         eos_test.time = eos_time();
         eos_test.send_count ++;
+        eos_test.send_give1_count ++;
+        eos_test.send_speed = eos_test.send_count / eos_test.time;
+        
+        eos_event_send("TaskValue", "Event_One");
+    }
+}
+
+static void task_func_e_give2(void *parameter)
+{
+    (void)parameter;
+    
+    while (1)
+    {
+        eos_test.time = eos_time();
+        eos_test.send_count ++;
+        eos_test.send_give2_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
         
         eos_event_send("TaskValue", "Event_One");
