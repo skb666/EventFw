@@ -1870,7 +1870,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
                               const char *topic)
 {
     EOS_ASSERT((task != EOS_NULL && task_id == EOS_MAX_OBJECTS) ||
-               (task == EOS_NULL && task_id < EOS_MAX_OBJECTS));
+               (task == EOS_NULL && task_id <= EOS_MAX_OBJECTS));
     
     /* TODO 这个功能还是要实现。 */
     /* EOS_ASSERT(eos.running == true); */
