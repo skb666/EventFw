@@ -1903,7 +1903,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     eos_interrupt_enable();
 
     /* If in interrupt service function, disable the interrupt. */
-    if (eos_interrupt_nest > 0)
+    // if (eos_interrupt_nest > 0)
     {
         eos_interrupt_disable();
     }
@@ -1986,6 +1986,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     else if (give_type == EosEventGiveType_Publish)
     {
         memcpy(&g_owner, &eos.object[e_id].ocb.event.e_sub, sizeof(eos_owner_t));
+        
         /* The suspended task does not receive any event. */
         for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
         {
@@ -2131,13 +2132,13 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     eos_interrupt_enable();
 
 __EXIT:
-    /* If in interrupt function. */
-    if (eos_interrupt_nest > 0)
-    {
-        eos_interrupt_enable();
-    }
-    /* If not in interrupt function. */
-    else
+    // /* If in interrupt function. */
+    // if (eos_interrupt_nest > 0)
+    // {
+    //     eos_interrupt_enable();
+    // }
+    // /* If not in interrupt function. */
+    // else
     {
         eos_interrupt_disable();
 
@@ -2180,6 +2181,7 @@ __EXIT:
 
         eos_interrupt_enable();
     }
+    eos_interrupt_enable();
 
     eos_sheduler();
 
