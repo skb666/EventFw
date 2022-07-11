@@ -408,15 +408,12 @@ static inline void eos_task_delay_handle(void)
     bool sheduler = false;
     
     /* check all the tasks are timeout or not */
-    uint32_t bit;
     eos_interrupt_disable();
-    for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 0; i --)
+    for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
     {
         eos_object_t *list = eos.task[i];
-        bit = (1U << i);
-        eos.t_prio_ready &= ~bit;
 
-        while (list != eos.task[i])
+        while (list != EOS_NULL)
         {
             if (list->ocb.task.tcb->state == EosTaskState_Delay ||
                 list->ocb.task.tcb->state == EosTaskState_DelayNoEvent)
@@ -424,17 +421,20 @@ static inline void eos_task_delay_handle(void)
                 if (eos.time >= list->ocb.task.tcb->timeout)
                 {
                     list->ocb.task.tcb->state = EosTaskState_Ready;
+                    if (eos.task[i]->ocb.task.tcb->state != EosTaskState_Ready)
+                    {
+                        eos.task[i] = list;
+                    }
                     sheduler = true;
+                    eos.t_prio_ready |= (1 << i);
                 }
             }
 
-            if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-                list->ocb.task.tcb->state == EosTaskState_Running)
-            {
-                eos.t_prio_ready |= (1 << i);
-            }
-
             list = list->ocb.task.next;
+            if (list == eos.task[i])
+            {
+                break;
+            }
         }
     }
     
@@ -619,25 +619,35 @@ void eos_tick(void)
     time += EOS_TICK_MS;
     eos.time = time;
 
+    bool sheduler = false;
     eos_interrupt_disable();
-    eos_current->timeslice_count ++;
-    if (eos_current->timeslice_count >= EOS_TIMESLICE)
+    if (eos_current != &task_idle)
     {
-        eos_current->timeslice_count = 0;
-        eos_object_t *obj_current = eos.task[eos_current->priority];
-        if (obj_current->ocb.task.next != EOS_NULL)
+        eos_current->timeslice_count ++;
+        if (eos_current->timeslice_count >= EOS_TIMESLICE)
         {
-            // Find out the next ready task in the same priority.
-            eos_object_t *list = obj_current->ocb.task.next;
-            while (list->ocb.task.tcb->state != EosTaskState_Ready &&
-                   list->ocb.task.tcb->state != EosTaskState_Running)
+            eos_current->timeslice_count = 0;
+            eos_object_t *obj_current = eos.task[eos_current->priority];
+            if (obj_current->ocb.task.next != EOS_NULL)
             {
-                list = list->ocb.task.next;
+                // Find out the next ready task in the same priority.
+                eos_object_t *list = obj_current->ocb.task.next;
+                while (list->ocb.task.tcb->state != EosTaskState_Ready &&
+                       list->ocb.task.tcb->state != EosTaskState_Running)
+                {
+                    list = list->ocb.task.next;
+                }
+                eos.task[eos_current->priority] = list;
+                
+                sheduler = true;
             }
-            eos.task[eos_current->priority] = list;
         }
     }
     eos_interrupt_enable();
+    if (sheduler == true)
+    {
+        eos_sheduler();
+    }
     
 #if (EOS_USE_PREEMPTIVE != 0)
     eos_task_delay_handle();
@@ -716,7 +726,7 @@ static void eos_sheduler(void)
     /* eos_next = ... */
     task_idle.state = EosTaskState_Ready;
     eos_next = &task_idle;
-    for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 1; i --)
+    for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
     {
         /* If the task is existent. */
         if ((eos.t_prio_ready & (1 << i)) != 0 && eos.task[i] != EOS_NULL)
@@ -1268,7 +1278,7 @@ void eos_mutex_release(const char *name)
             bool found = false;
 
             // Find the highest-priority task in mutex-block state.
-            for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 0; i --)
+            for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
             {
                 eos_object_t *list = eos.task[i];
                 while (list != EOS_NULL)
@@ -1703,6 +1713,7 @@ static uint16_t eos_task_init(  eos_task_t *const me,
         obj->ocb.task.next = list;
         obj->ocb.task.prev = list->ocb.task.prev;
         list->ocb.task.prev = obj;
+        obj->ocb.task.prev->ocb.task.next = obj;
         eos.task[priority] = obj;
     }
     eos.t_prio_ready |= (1 << priority);
@@ -1957,7 +1968,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     {
         memcpy(&g_owner, &eos.object[e_id].ocb.event.e_sub, sizeof(eos_owner_t));
         /* The suspended task does not receive any event. */
-        for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 0; i --)
+        for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
         {
             eos_object_t *list = eos.task[i];
             while (list != EOS_NULL)
@@ -1986,7 +1997,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     
     /* Check if the related tasks are waiting for the specific event or not. */
     eos_interrupt_disable();
-    for (int8_t i =  (EOS_MAX_PRIORITY - 1); i >= 0; i --)
+    for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
     {
         eos_object_t *list = eos.task[i];
         while (list != EOS_NULL)
@@ -2119,7 +2130,7 @@ __EXIT:
             bool found = false;
 
             // Find the highest-priority task in mutex-block state.
-            for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 0; i --)
+            for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
             {
                 eos_object_t *list = eos.task[i];
                 while (list != EOS_NULL)
@@ -2504,7 +2515,7 @@ static inline void __eos_db_write(uint8_t type,
             bool found = false;
 
             // Find the highest-priority task in mutex-block state.
-            for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 0; i --)
+            for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
             {
                 eos_object_t *list = eos.task[i];
                 while (list != EOS_NULL)
@@ -2637,7 +2648,7 @@ static inline int32_t __eos_db_read(uint8_t type,
             bool found = false;
 
             // Find the highest-priority task in mutex-block state.
-            for (int8_t i = (EOS_MAX_PRIORITY - 1); i >= 0; i --)
+            for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
             {
                 eos_object_t *list = eos.task[i];
                 while (list != EOS_NULL)

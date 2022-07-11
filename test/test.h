@@ -4,7 +4,7 @@
 #include "eventos_config.h"
 
 #define TEST_EN_01_0                    0
-#define TEST_EN_01_1                    1
+#define TEST_EN_01_1                    0
 #define TEST_EN_02_0                    0
 #define TEST_EN_02_1                    0
 #define TEST_EN_02_2                    0
@@ -16,6 +16,7 @@
 #define TEST_EN_07                      0
 #define TEST_EN_08                      0
 #define TEST_EN_09                      0
+#define TEST_EN_11                      1
 
 enum
 {

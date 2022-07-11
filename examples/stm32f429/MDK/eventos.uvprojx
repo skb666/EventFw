@@ -523,6 +523,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\test\test_09.c</FilePath>
             </File>
+            <File>
+              <FileName>test_11.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test_11.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
