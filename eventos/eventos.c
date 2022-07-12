@@ -757,6 +757,11 @@ static void eos_sheduler(void)
                         eos.task[eos_current->priority] = list;
                         break;
                     }
+                    list = list->ocb.task.next;
+                    if (list == eos.task[eos_current->priority])
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -769,8 +774,14 @@ static void eos_sheduler(void)
         eos_next->state = EosTaskState_Running;
         eos_next->timeslice_count = 0;
         eos_port_task_switch();
+        
+        EOS_ASSERT(eos_current->state != EosTaskState_Running);
+        EOS_ASSERT(eos_next->state == EosTaskState_Running);
     }
+    EOS_ASSERT(critical_count == 1);
     eos_interrupt_enable();
+    
+    EOS_ASSERT(eos_current->state == EosTaskState_Running);
 }
 
 void eos_task_start(eos_task_t *const me,
@@ -870,7 +881,10 @@ static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
     /* Never call eos_delay_ms and eos_delay_ticks in the idle task. */
     EOS_ASSERT(eos_current != &task_idle);
     /* The state of current task must be running. */
-    EOS_ASSERT(eos_current->state == EosTaskState_Running);
+    if (eos_current->state != EosTaskState_Running)
+    {
+        EOS_ASSERT(eos_current->state == EosTaskState_Running);
+    }
 
     uint32_t bit;
     eos_interrupt_disable();
@@ -1869,8 +1883,42 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
                               uint8_t give_type,
                               const char *topic)
 {
-    EOS_ASSERT((task != EOS_NULL && task_id == EOS_MAX_OBJECTS) ||
-               (task == EOS_NULL && task_id <= EOS_MAX_OBJECTS));
+    /* Get the task id in the object hash table. */
+    uint16_t t_id;
+    eos_task_t *tcb;
+
+    if (give_type == EosEventGiveType_Send)
+    {
+        EOS_ASSERT((task != EOS_NULL && task_id == EOS_MAX_OBJECTS) ||
+                   (task == EOS_NULL && task_id < EOS_MAX_OBJECTS));
+
+        eos_interrupt_disable();
+        if (task_id == EOS_MAX_OBJECTS)
+        {
+            t_id = eos_hash_get_index(task);
+            EOS_ASSERT_NAME(t_id != EOS_MAX_OBJECTS, topic);
+            EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
+        }
+        else
+        {
+            t_id = task_id;
+        }
+        tcb = eos.object[t_id].ocb.task.tcb;
+        if (tcb->state == EosTaskState_DelayNoEvent)
+        {
+            eos_interrupt_enable();
+            return (int8_t)EosRun_OK;
+        }
+        eos_interrupt_enable();
+    }
+    else if (give_type == EosEventGiveType_Publish)
+    {
+        EOS_ASSERT(task == EOS_NULL && task_id == EOS_MAX_OBJECTS);
+    }
+    else
+    {
+        EOS_ASSERT(0);
+    }
     
     /* TODO 这个功能还是要实现。 */
     /* EOS_ASSERT(eos.running == true); */
@@ -1879,28 +1927,6 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     {
         return 0;
     }
-
-    /* Get the task id in the object hash table. */
-    uint16_t t_id;
-    eos_task_t *tcb;
-    eos_interrupt_disable();
-    if (task_id == EOS_MAX_OBJECTS)
-    {
-        t_id = eos_hash_get_index(task);
-        EOS_ASSERT_NAME(t_id != EOS_MAX_OBJECTS, topic);
-        EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
-    }
-    else
-    {
-        t_id = task_id;
-    }
-    tcb = eos.object[t_id].ocb.task.tcb;
-    if (tcb->state == EosTaskState_DelayNoEvent)
-    {
-        eos_interrupt_enable();
-        return (int8_t)EosRun_OK;
-    }
-    eos_interrupt_enable();
 
     /* If in interrupt service function, disable the interrupt. */
     // if (eos_interrupt_nest > 0)
@@ -2009,12 +2035,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             goto __EXIT;
         }
     }
-    /* No other event-deliver-type. */
-    else
-    { 
-        EOS_ASSERT(0);
-    }
-    
+
     /* Check if the related tasks are waiting for the specific event or not. */
     eos_interrupt_disable();
     for (int8_t i = (EOS_MAX_PRIORITY - 1); i > 0; i --)
@@ -2457,7 +2478,7 @@ static inline void __eos_db_write(uint8_t type,
                                   const void *memory, uint32_t size)
 {
     /* If in interrupt service function, disable the interrupt. */
-    if (eos_interrupt_nest > 0)
+//    if (eos_interrupt_nest > 0)
     {
         eos_interrupt_disable();
     }
@@ -2521,13 +2542,15 @@ static inline void __eos_db_write(uint8_t type,
     }
 
     /* If in interrupt function. */
+    eos_interrupt_enable();
     if (eos_interrupt_nest > 0)
     {
-        eos_interrupt_enable();
+        
     }
     /* If not in interrupt function. */
     else
     {
+        eos_interrupt_disable();
         eos.object[e_id].ocb.event.t_id = EOS_MAX_OBJECTS;
 
         /* The event is accessed by other higher-priority tasks. */
@@ -2569,6 +2592,10 @@ static inline void __eos_db_write(uint8_t type,
 
             /* Excute eos kernel sheduler. */
             eos_sheduler();
+        }
+        else
+        {
+            eos_interrupt_enable();
         }
     }
 

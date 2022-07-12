@@ -4,10 +4,10 @@
 #include "eventos_config.h"
 
 #define TEST_EN_01_0                    0
-#define TEST_EN_01_1                    1
+#define TEST_EN_01_1                    0
 #define TEST_EN_02_0                    0
 #define TEST_EN_02_1                    0
-#define TEST_EN_02_2                    0
+#define TEST_EN_02_2                    1
 #define TEST_EN_03                      0
 #define TEST_EN_04                      0
 #define TEST_EN_05_0                    0
