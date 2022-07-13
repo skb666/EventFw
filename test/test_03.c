@@ -3,6 +3,8 @@
 #include "eventos.h"
 #include "bsp.h"
 
+EOS_TAG("Test03")
+
 #if (TEST_EN_03 != 0)
 
 /* private data structure --------------------------------------------------- */
@@ -31,6 +33,7 @@ typedef struct eos_test
     uint32_t send_give1_count;
     uint32_t send_give2_count;
     
+    uint32_t isr_count;
     uint32_t idle_count;
 } eos_test_t;
 
@@ -64,28 +67,30 @@ static eos_task_t task_middle;
 
 eos_test_t eos_test;
 
+eos_task_t *p_high = EOS_NULL;
+
 static const task_test_info_t task_test_info[] =
 {
-//    {
-//        &task_e_give1, "TaskGive1", TaskPrio_Give1,
-//        stack_e_give1, sizeof(stack_e_give1),
-//        task_func_e_give1
-//    },
-//    {
-//        &task_e_give2, "TaskGive2", TaskPrio_Give2,
-//        stack_e_give2, sizeof(stack_e_give2),
-//        task_func_e_give2
-//    },
+    {
+        &task_e_give1, "TaskGive1", TaskPrio_Give1,
+        stack_e_give1, sizeof(stack_e_give1),
+        task_func_e_give1
+    },
+    {
+        &task_e_give2, "TaskGive2", TaskPrio_Give2,
+        stack_e_give2, sizeof(stack_e_give2),
+        task_func_e_give2
+    },
     {
         &task_e_value, "TaskValue", TaskPrio_Value,
         stack_e_value, sizeof(stack_e_value),
         task_func_e_value
     },
-//    {
-//        &task_high, "TaskHigh", TaskPrio_High,
-//        stack_high, sizeof(stack_high),
-//        task_func_high
-//    },
+    {
+        &task_high, "TaskHigh", TaskPrio_High,
+        stack_high, sizeof(stack_high),
+        task_func_high
+    },
 //    {
 //        &task_middle, "TaskMiddle", TaskPrio_Middle,
 //        stack_middle, sizeof(stack_middle),
@@ -110,6 +115,8 @@ void test_init(void)
                        task_test_info[i].stack_size,
                        EOS_NULL);
     }
+    
+    p_high = &task_high;
 
     timer_init(1);
 }
@@ -124,17 +131,25 @@ void eos_reactor_count(void)
     eos_test.e_reactor ++;
 }
 
+extern eos_task_t *volatile eos_current;
+
 void timer_isr_1ms(void)
 {
     eos_interrupt_enter();
+    bool sent = false;
     
     if (eos_test.isr_func_enable != 0)
     {
+        if (task_high.state == 1)
+        sent = true;
+        eos_test.isr_count ++;
         eos_db_stream_write("Event_One", "1", 1);
         eos_event_send("TaskValue", "Event_One");
     }
     
     eos_interrupt_exit();
+    if (sent)
+    EOS_ASSERT(task_high.state == 1);
 }
 
 void eos_idle_count(void)
@@ -203,17 +218,33 @@ static void task_func_e_value(void *parameter)
     }
 }
 
+
+uint32_t count_enter_isr = 0;
 static void task_func_high(void *parameter)
 {
     (void)parameter;
+    uint32_t isr_count_bkp = 0;
     
     while (1)
     {
+        EOS_ASSERT(eos_current->state == 1);
         eos_test.send_count ++;
         eos_test.high_count ++;
+        isr_count_bkp = eos_test.isr_count;
         eos_db_stream_write("Event_One", "1", 1);
+        if (isr_count_bkp != eos_test.isr_count)
+        {
+            count_enter_isr ++;
+        }
+        if (eos_current->state != 1)
+        {
+            EOS_ASSERT(eos_current->state == 1);
+        }
+        
         eos_event_send("TaskValue", "Event_One");
+        EOS_ASSERT(eos_current->state == 1);
         eos_delay_ms(1);
+        EOS_ASSERT(eos_current->state == 1);
     }
 }
 

@@ -64,8 +64,8 @@ enum
 enum
 {
     EosTaskState_Ready = 0,
-    EosTaskState_Suspend,
     EosTaskState_Running,
+    EosTaskState_Suspend,
     EosTaskState_Delay,
     EosTaskState_DelayNoEvent,
     EosTaskState_WaitEvent,
@@ -403,6 +403,10 @@ EventOS
 static uint8_t stack_idle[1024];
 static eos_task_t task_idle;
 
+extern eos_task_t *p_high;
+uint32_t count_high = 0;
+
+
 static inline void eos_task_delay_handle(void)
 {
     bool sheduler = false;
@@ -421,10 +425,7 @@ static inline void eos_task_delay_handle(void)
                 if (eos.time >= list->ocb.task.tcb->timeout)
                 {
                     list->ocb.task.tcb->state = EosTaskState_Ready;
-                    if (eos.task[i]->ocb.task.tcb->state != EosTaskState_Ready)
-                    {
-                        eos.task[i] = list;
-                    }
+                    eos.t_prio_ready |= (1 << list->ocb.task.tcb->priority);
                     sheduler = true;
                     eos.t_prio_ready |= (1 << i);
                 }
@@ -699,6 +700,7 @@ void eos_set_hash(hash_algorithm_t hash)
 /* -----------------------------------------------------------------------------
 Task
 ----------------------------------------------------------------------------- */
+uint32_t count_idle_ = 0;
 static void eos_sheduler(void)
 {
     EOS_ASSERT(critical_count == 0);
@@ -740,27 +742,35 @@ static void eos_sheduler(void)
             }
         }
     }
+    
+    if (eos_next == &task_idle)
+    {
+        count_idle_ ++;
+    }
 
     /* Trigger PendSV, if needed */
     if (eos_next != eos_current)
     {
         if (eos_current != EOS_NULL)
         {
-            eos_object_t *list = eos.task[eos_current->priority];
-            if (list->ocb.task.next != list)
+            if (eos_current != &task_idle)
             {
-                list = list->ocb.task.next;
-                while (1)
+                eos_object_t *list = eos.task[eos_current->priority];
+                if (list->ocb.task.next != list)
                 {
-                    if (list->ocb.task.tcb->state == EosTaskState_Ready)
-                    {
-                        eos.task[eos_current->priority] = list;
-                        break;
-                    }
                     list = list->ocb.task.next;
-                    if (list == eos.task[eos_current->priority])
+                    while (1)
                     {
-                        break;
+                        if (list->ocb.task.tcb->state == EosTaskState_Ready)
+                        {
+                            eos.task[eos_current->priority] = list;
+                            break;
+                        }
+                        list = list->ocb.task.next;
+                        if (list == eos.task[eos_current->priority])
+                        {
+                            break;
+                        }
                     }
                 }
             }
@@ -773,15 +783,14 @@ static void eos_sheduler(void)
 
         eos_next->state = EosTaskState_Running;
         eos_next->timeslice_count = 0;
+        
         eos_port_task_switch();
         
         EOS_ASSERT(eos_current->state != EosTaskState_Running);
         EOS_ASSERT(eos_next->state == EosTaskState_Running);
     }
-    EOS_ASSERT(critical_count == 1);
-    eos_interrupt_enable();
     
-    EOS_ASSERT(eos_current->state == EosTaskState_Running);
+    eos_interrupt_enable();
 }
 
 void eos_task_start(eos_task_t *const me,
@@ -880,6 +889,7 @@ static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
     EOS_ASSERT(eos_interrupt_nest == 0);
     /* Never call eos_delay_ms and eos_delay_ticks in the idle task. */
     EOS_ASSERT(eos_current != &task_idle);
+    eos_interrupt_disable();
     /* The state of current task must be running. */
     if (eos_current->state != EosTaskState_Running)
     {
@@ -887,7 +897,6 @@ static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
     }
 
     uint32_t bit;
-    eos_interrupt_disable();
     eos_current->timeout = eos.time + time_ms;
     eos_current->state = no_event ?
                          EosTaskState_DelayNoEvent :
@@ -1983,6 +1992,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             }
 
             /* Excute eos kernel sheduler. */
+            EOS_ASSERT(critical_count == 0);
             eos_sheduler();
         }
         /* No task is accessing the event. */
@@ -2180,6 +2190,7 @@ __EXIT:
                                           list->ocb.task.tcb->t_id))
                     {
                         list->ocb.task.tcb->state = EosTaskState_Ready;
+                        eos.t_prio_ready |= (1 << list->ocb.task.tcb->priority);
                         /* Clear the flag in event mutex and gobal mutex. */
                         owner_set_bit(&eos.object[e_id].ocb.event.e_owner,
                                       list->ocb.task.tcb->t_id,
@@ -2204,6 +2215,7 @@ __EXIT:
     }
     eos_interrupt_enable();
 
+    EOS_ASSERT(critical_count == 0);
     eos_sheduler();
 
     return (int8_t)EosRun_OK;
@@ -2505,8 +2517,22 @@ static inline void __eos_db_write(uint8_t type,
                               eos_current->t_id, true);
             eos_current->state = EosTaskState_WaitMutex;
 
+            eos_object_t *list = eos.task[eos_current->priority];
+            eos.t_prio_ready &= ~bits;
+            if (list != EOS_NULL)
+            {
+                if (list->ocb.task.tcb->state == EosTaskState_Ready ||
+                    list->ocb.task.tcb->state == EosTaskState_Running)
+                {
+                    eos.t_prio_ready |= bits;
+                }
+            }
+
             /* Excute eos kernel sheduler. */
+            eos_interrupt_enable();
+            EOS_ASSERT(critical_count == 0);
             eos_sheduler();
+            eos_interrupt_disable();
         }
         /* No task is accessing the event. */
         else
@@ -2552,6 +2578,9 @@ static inline void __eos_db_write(uint8_t type,
     {
         eos_interrupt_disable();
         eos.object[e_id].ocb.event.t_id = EOS_MAX_OBJECTS;
+        
+        owner_set_bit(&eos.object[e_id].ocb.event.e_owner,
+                      eos_current->t_id, false);
 
         /* The event is accessed by other higher-priority tasks. */
         if (owner_not_cleared(&eos.object[e_id].ocb.event.e_owner))
@@ -2568,6 +2597,7 @@ static inline void __eos_db_write(uint8_t type,
                                           list->ocb.task.tcb->t_id))
                     {
                         list->ocb.task.tcb->state = EosTaskState_Ready;
+                        eos.t_prio_ready |= (1 << list->ocb.task.tcb->priority);
                         /* Clear the flag in event mutex and gobal mutex. */
                         owner_set_bit(&eos.object[e_id].ocb.event.e_owner,
                                       list->ocb.task.tcb->t_id,
@@ -2591,6 +2621,7 @@ static inline void __eos_db_write(uint8_t type,
             eos_interrupt_enable();
 
             /* Excute eos kernel sheduler. */
+            EOS_ASSERT(critical_count == 0);
             eos_sheduler();
         }
         else
@@ -2688,7 +2719,6 @@ static inline int32_t __eos_db_read(uint8_t type,
         /* Clear the flag in event mutex and gobal mutex. */
         owner_set_bit(&eos.object[e_id].ocb.event.e_owner,
                           eos_current->t_id, false);
-        eos_current->state = EosTaskState_Ready;
 
         /* The event is accessed by other higher-priority tasks. */
         if (owner_not_cleared(&eos.object[e_id].ocb.event.e_owner))
@@ -2705,6 +2735,7 @@ static inline int32_t __eos_db_read(uint8_t type,
                                           list->ocb.task.tcb->t_id))
                     {
                         list->ocb.task.tcb->state = EosTaskState_Ready;
+                        eos.t_prio_ready |= (1 << list->ocb.task.tcb->priority);
                         found = true;
                         break;
                     }
