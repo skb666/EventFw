@@ -778,6 +778,7 @@ static void eos_sheduler(void)
             if (eos_current->state == EosTaskState_Running)
             {
                 eos_current->state = EosTaskState_Ready;
+                eos.t_prio_ready |= (1 << eos_current->priority);
             }
         }
 
@@ -867,12 +868,19 @@ void eos_task_exit(void)
 
     eos_object_t *list = eos.task[i];
     eos.t_prio_ready &= ~(1 << i);
-    if (list != EOS_NULL)
+    while (list != EOS_NULL)
     {
-        if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-            list->ocb.task.tcb->state == EosTaskState_Running)
+        if (list->ocb.task.tcb->state == EosTaskState_Ready)
         {
+            eos.task[i] = list;
             eos.t_prio_ready |= (1 << i);
+            break;
+        }
+
+        list = list->ocb.task.next;
+        if (list == eos.task[i])
+        {
+            break;
         }
     }
 
@@ -904,12 +912,19 @@ static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
     bit = (1U << (eos_current->priority));
     eos_object_t *list = eos.task[eos_current->priority];
     eos.t_prio_ready &= ~bit;
-    if (list != EOS_NULL)
+    while (list != EOS_NULL)
     {
-        if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-            list->ocb.task.tcb->state == EosTaskState_Running)
+        if (list->ocb.task.tcb->state == EosTaskState_Ready)
         {
-            eos.t_prio_ready |= bit;
+            eos.task[eos_current->priority] = list;
+            eos.t_prio_ready |= (1 << eos_current->priority);
+            break;
+        }
+
+        list = list->ocb.task.next;
+        if (list == eos.task[eos_current->priority])
+        {
+            break;
         }
     }
     eos_interrupt_enable();
@@ -940,15 +955,22 @@ void eos_task_suspend(const char *task)
     obj->ocb.task.tcb->state = EosTaskState_Suspend;
     uint8_t priority = obj->ocb.task.tcb->priority;
 
-    uint32_t bit = (1U << priority);
+    uint32_t bits = (1U << priority);
     eos_object_t *list = eos.task[priority];
-    eos.t_prio_ready &= ~bit;
-    if (list != EOS_NULL)
+    eos.t_prio_ready &= ~bits;
+    while (list != EOS_NULL)
     {
-        if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-            list->ocb.task.tcb->state == EosTaskState_Running)
+        if (list->ocb.task.tcb->state == EosTaskState_Ready)
         {
-            eos.t_prio_ready |= bit;
+            eos.task[priority] = list;
+            eos.t_prio_ready |= bits;
+            break;
+        }
+
+        list = list->ocb.task.next;
+        if (list == eos.task[priority])
+        {
+            break;
         }
     }
     eos_interrupt_enable();
@@ -1046,7 +1068,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
             // Block
             else
             {
-                uint32_t bit;
+                uint32_t bits;
                 if (time_ms == EOS_TIME_FOREVER)
                 {
                     eos_current->timeout = EOS_TIME_FOREVER;
@@ -1058,17 +1080,23 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
                 
                 eos_current->state = EosTaskState_WaitEvent;
                 eos_current->event_wait = EOS_NULL;
-                bit = (1U << priority);
+                bits = (1U << priority);
 
                 eos_object_t *list = eos.task[eos_current->priority];
-                eos.t_prio_ready &= ~bit;
-                if (list != EOS_NULL)
+                eos.t_prio_ready &= ~bits;
+                while (list != EOS_NULL)
                 {
-                    if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-                        list->ocb.task.tcb->state == EosTaskState_Running)
+                    if (list->ocb.task.tcb->state == EosTaskState_Ready)
                     {
                         eos.task[priority] = list;
-                        eos.t_prio_ready |= bit;
+                        eos.t_prio_ready |= bits;
+                        break;
+                    }
+
+                    list = list->ocb.task.next;
+                    if (list == eos.task[priority])
+                    {
+                        break;
                     }
                 }
 
@@ -1123,12 +1151,19 @@ void eos_task_delete(const char *task)
 
     eos_object_t *list = eos.task[i];
     eos.t_prio_ready &= ~(1 << i);
-    if (list != EOS_NULL)
+    while (list != EOS_NULL)
     {
-        if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-            list->ocb.task.tcb->state == EosTaskState_Running)
+        if (list->ocb.task.tcb->state == EosTaskState_Ready)
         {
+            eos.task[i] = list;
             eos.t_prio_ready |= (1 << i);
+            break;
+        }
+
+        list = list->ocb.task.next;
+        if (list == eos.task[i])
+        {
+            break;
         }
     }
 
@@ -1232,16 +1267,23 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
         eos_current->state = EosTaskState_WaitSpecificEvent;
         eos_current->event_wait = topic;
 
-        uint32_t bit = (1U << priority);
+        uint32_t bits = (1U << priority);
 
         eos_object_t *list = eos.task[eos_current->priority];
-        eos.t_prio_ready &= ~bit;
-        if (list != EOS_NULL)
+        eos.t_prio_ready &= ~bits;
+        while (list != EOS_NULL)
         {
-            if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-                list->ocb.task.tcb->state == EosTaskState_Running)
+            if (list->ocb.task.tcb->state == EosTaskState_Ready)
             {
-                eos.t_prio_ready |= bit;
+                eos.task[priority] = list;
+                eos.t_prio_ready |= bits;
+                break;
+            }
+
+            list = list->ocb.task.next;
+            if (list == eos.task[priority])
+            {
+                break;
             }
         }
         
@@ -1982,12 +2024,19 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             
             eos_object_t *list = eos.task[eos_current->priority];
             eos.t_prio_ready &= ~bits;
-            if (list != EOS_NULL)
+            while (list != EOS_NULL)
             {
-                if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-                    list->ocb.task.tcb->state == EosTaskState_Running)
+                if (list->ocb.task.tcb->state == EosTaskState_Ready)
                 {
+                    eos.task[eos_current->priority] = list;
                     eos.t_prio_ready |= bits;
+                    break;
+                }
+
+                list = list->ocb.task.next;
+                if (list == eos.task[eos_current->priority])
+                {
+                    break;
                 }
             }
 
@@ -2519,12 +2568,19 @@ static inline void __eos_db_write(uint8_t type,
 
             eos_object_t *list = eos.task[eos_current->priority];
             eos.t_prio_ready &= ~bits;
-            if (list != EOS_NULL)
+            while (list != EOS_NULL)
             {
-                if (list->ocb.task.tcb->state == EosTaskState_Ready ||
-                    list->ocb.task.tcb->state == EosTaskState_Running)
+                if (list->ocb.task.tcb->state == EosTaskState_Ready)
                 {
+                    eos.task[eos_current->priority] = list;
                     eos.t_prio_ready |= bits;
+                    break;
+                }
+
+                list = list->ocb.task.next;
+                if (list == eos.task[eos_current->priority])
+                {
+                    break;
                 }
             }
 
