@@ -2041,8 +2041,9 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             }
 
             /* Excute eos kernel sheduler. */
-            EOS_ASSERT(critical_count == 0);
+            eos_interrupt_enable();
             eos_sheduler();
+            eos_interrupt_disable();
         }
         /* No task is accessing the event. */
         else
@@ -2545,9 +2546,7 @@ static inline void __eos_db_write(uint8_t type,
     }
 
     /* Get event id according the topic. */
-    eos_interrupt_disable();
     uint16_t e_id = eos_hash_get_index(key);
-    eos_interrupt_enable();
     EOS_ASSERT(e_id != EOS_MAX_OBJECTS);
     EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
     uint8_t attribute = eos.object[e_id].attribute;
@@ -2624,7 +2623,7 @@ static inline void __eos_db_write(uint8_t type,
     }
 
     /* If in interrupt function. */
-    eos_interrupt_enable();
+    
     if (eos_interrupt_nest > 0)
     {
         
@@ -2691,6 +2690,8 @@ static inline void __eos_db_write(uint8_t type,
     {
         eos_event_publish(key);
     }
+
+    eos_interrupt_enable();
 }
 
 static inline int32_t __eos_db_read(uint8_t type,
