@@ -438,12 +438,12 @@ static inline void eos_task_delay_handle(void)
             }
         }
     }
-    
-    eos_interrupt_enable();
+
     if (sheduler == true)
     {
         eos_sheduler();
     }
+    eos_interrupt_enable();
 }
 
 static void task_func_idle(void *parameter)
@@ -631,25 +631,16 @@ void eos_tick(void)
             eos_object_t *obj_current = eos.task[eos_current->priority];
             if (obj_current->ocb.task.next != EOS_NULL)
             {
-                // Find out the next ready task in the same priority.
-                eos_object_t *list = obj_current->ocb.task.next;
-                while (list->ocb.task.tcb->state != EosTaskState_Ready &&
-                       list->ocb.task.tcb->state != EosTaskState_Running)
-                {
-                    list = list->ocb.task.next;
-                }
-                eos.task[eos_current->priority] = list;
-                
                 sheduler = true;
             }
         }
     }
-    eos_interrupt_enable();
     if (sheduler == true)
     {
         eos_sheduler();
     }
-    
+    eos_interrupt_enable();
+
 #if (EOS_USE_PREEMPTIVE != 0)
     eos_task_delay_handle();
 #endif
@@ -703,7 +694,9 @@ Task
 uint32_t count_idle_ = 0;
 static void eos_sheduler(void)
 {
-    EOS_ASSERT(critical_count == 0);
+    // EOS_ASSERT(critical_count != 0);
+
+    uint32_t isr_count = critical_count;
     
 #if (EOS_USE_PREEMPTIVE != 0)
     if (eos.sheduler_lock == 1)
@@ -722,8 +715,6 @@ static void eos_sheduler(void)
         eos.sheduler = 1;
         return;
     }
-    
-    eos_interrupt_disable();
 
     /* eos_next = ... */
     task_idle.state = EosTaskState_Ready;
@@ -785,13 +776,21 @@ static void eos_sheduler(void)
         eos_next->state = EosTaskState_Running;
         eos_next->timeslice_count = 0;
         
+        // if (eos_current != EOS_NULL)
+        // EOS_ASSERT(eos_current->state != EosTaskState_Running);
+        // EOS_ASSERT(eos_next->state == EosTaskState_Running);
+
         eos_port_task_switch();
-        
-        EOS_ASSERT(eos_current->state != EosTaskState_Running);
-        EOS_ASSERT(eos_next->state == EosTaskState_Running);
+
+        for (uint32_t i = 0; i < isr_count; i ++)
+        {
+            eos_interrupt_enable();
+        }
+        for (uint32_t i = 0; i < isr_count; i ++)
+        {
+            eos_interrupt_disable();
+        }
     }
-    
-    eos_interrupt_enable();
 }
 
 void eos_task_start(eos_task_t *const me,
@@ -813,8 +812,8 @@ void eos_task_start(eos_task_t *const me,
                            stack_addr, stack_size, parameter);
     me->state = EosTaskState_Ready;
 
-    eos_interrupt_enable();
     eos_sheduler();
+    eos_interrupt_enable();
 }
 
 static void eos_actor_start(eos_task_t *const me,
@@ -829,13 +828,10 @@ static void eos_actor_start(eos_task_t *const me,
     
     if (eos_current == &task_idle)
     {
-        eos_interrupt_enable();
         eos_sheduler();
     }
-    else
-    {
-        eos_interrupt_enable();
-    }
+
+    eos_interrupt_enable();
 }
 
 void eos_task_exit(void)
@@ -884,9 +880,8 @@ void eos_task_exit(void)
         }
     }
 
-    eos_interrupt_enable();
-    
     eos_sheduler();
+    eos_interrupt_enable();
 }
 
 static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
@@ -927,9 +922,9 @@ static inline void eos_delay_ms_private(uint32_t time_ms, bool no_event)
             break;
         }
     }
-    eos_interrupt_enable();
 
     eos_sheduler();
+    eos_interrupt_enable();
 }
 
 void eos_delay_ms(uint32_t time_ms)
@@ -973,9 +968,9 @@ void eos_task_suspend(const char *task)
             break;
         }
     }
-    eos_interrupt_enable();
 
     eos_sheduler();
+    eos_interrupt_enable();
 }
 
 void eos_task_resume(const char *task)
@@ -1325,11 +1320,10 @@ void eos_mutex_take(const char *name)
             /* Set the flag bit in mutex to suspend the current task. */
             owner_set_bit(&eos.object[m_id].ocb.mutex.e_owner, eos_current->t_id, true);
             eos_current->state = EosTaskState_WaitMutex;
-            
-            eos_interrupt_enable();
 
             /* Excute eos kernel sheduler. */
             eos_sheduler();
+            eos_interrupt_enable();
         }
         /* No task is accessing the mutex. */
         else
@@ -1390,10 +1384,9 @@ void eos_mutex_release(const char *name)
                 }
             }
 
-            eos_interrupt_enable();
-
             /* Excute eos kernel sheduler. */
             eos_sheduler();
+            eos_interrupt_enable();
         }
         else
         {
@@ -2041,9 +2034,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             }
 
             /* Excute eos kernel sheduler. */
-            eos_interrupt_enable();
             eos_sheduler();
-            eos_interrupt_disable();
         }
         /* No task is accessing the event. */
         else
@@ -2263,10 +2254,9 @@ __EXIT:
 
         eos_interrupt_enable();
     }
-    eos_interrupt_enable();
 
-    EOS_ASSERT(critical_count == 0);
     eos_sheduler();
+    eos_interrupt_enable();
 
     return (int8_t)EosRun_OK;
 }
@@ -2584,10 +2574,7 @@ static inline void __eos_db_write(uint8_t type,
             }
 
             /* Excute eos kernel sheduler. */
-            eos_interrupt_enable();
-            EOS_ASSERT(critical_count == 0);
             eos_sheduler();
-            eos_interrupt_disable();
         }
         /* No task is accessing the event. */
         else
@@ -2670,19 +2657,13 @@ static inline void __eos_db_write(uint8_t type,
                 if (found)
                 {
                     break;
-                }
+                } 
             }
 
-            eos_interrupt_enable();
-
-            /* Excute eos kernel sheduler. */
-            EOS_ASSERT(critical_count == 0);
             eos_sheduler();
         }
-        else
-        {
-            eos_interrupt_enable();
-        }
+
+        eos_interrupt_enable();
     }
 
     /* If the key is linked with event, publish it. */

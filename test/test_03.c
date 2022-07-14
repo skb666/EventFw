@@ -136,20 +136,15 @@ extern eos_task_t *volatile eos_current;
 void timer_isr_1ms(void)
 {
     eos_interrupt_enter();
-    bool sent = false;
     
     if (eos_test.isr_func_enable != 0)
     {
-        if (task_high.state == 1)
-        sent = true;
         eos_test.isr_count ++;
         eos_db_stream_write("Event_One", "1", 1);
         eos_event_send("TaskValue", "Event_One");
     }
     
     eos_interrupt_exit();
-    if (sent)
-    EOS_ASSERT(task_high.state == 1);
 }
 
 void eos_idle_count(void)
@@ -218,8 +213,6 @@ static void task_func_e_value(void *parameter)
     }
 }
 
-
-uint32_t count_enter_isr = 0;
 static void task_func_high(void *parameter)
 {
     (void)parameter;
@@ -230,14 +223,13 @@ static void task_func_high(void *parameter)
         EOS_ASSERT(eos_current->state == 1);
         eos_test.send_count ++;
         eos_test.high_count ++;
+        
         isr_count_bkp = eos_test.isr_count;
         eos_db_stream_write("Event_One", "1", 1);
-        if (isr_count_bkp != eos_test.isr_count)
-        {
-            count_enter_isr ++;
-        }
+
         if (eos_current->state != 1)
         {
+            EOS_ASSERT(isr_count_bkp == eos_test.isr_count);
             EOS_ASSERT(eos_current->state == 1);
         }
         
@@ -251,14 +243,28 @@ static void task_func_high(void *parameter)
 static void task_func_middle(void *parameter)
 {
     (void)parameter;
+    uint32_t isr_count_bkp = 0;
     
     while (1)
     {
+        EOS_ASSERT(eos_current->state == 1);
         eos_test.send_count ++;
         eos_test.middle_count += 2;
+
+        isr_count_bkp = eos_test.isr_count;
         eos_db_stream_write("Event_One", "1", 1);
+
+        if (eos_current->state != 1)
+        {
+            EOS_ASSERT(isr_count_bkp == eos_test.isr_count);
+            EOS_ASSERT(eos_current->state == 1);
+        }
+
         eos_event_send("TaskValue", "Event_One");
+
+        EOS_ASSERT(eos_current->state == 1);
         eos_delay_ms(2);
+        EOS_ASSERT(eos_current->state == 1);
     }
 }
 
