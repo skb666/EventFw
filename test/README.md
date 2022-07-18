@@ -20,7 +20,3 @@
 
 以上的任务优先级：High > Reactor > Sm > Value > Middle > Give = GiveSame
 High任务发送的周期为1ms，Middle发送周期为2ms。
-
-### TODO
-
-12 测试310个任务的运行。

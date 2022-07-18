@@ -155,13 +155,14 @@ static void task_func_e_give1(void *parameter)
         eos_test.send_give1_count ++;
         
         eos_event_send("TaskValue", "Event_One");
+        eos_event_publish("Event_Two");
     }
 }
 
 static void task_func_e_give2(void *parameter)
 {
     (void)parameter;
-    
+
     while (1)
     {
         eos_test.time = eos_time();
@@ -170,12 +171,15 @@ static void task_func_e_give2(void *parameter)
         eos_test.send_give2_count ++;
 
         eos_event_send("TaskValue", "Event_One");
+        eos_event_publish("Event_Two");
     }
 }
 
 static void task_func_e_value(void *parameter)
 {
     (void)parameter;
+
+    eos_event_sub("Event_Two");
     
     while (1)
     {

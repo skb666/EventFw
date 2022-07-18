@@ -2067,7 +2067,8 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             eos_object_t *list = eos.task[i];
             while (list != EOS_NULL)
             {
-                if (list->ocb.task.tcb->state == EosTaskState_Suspend)
+                if (list->ocb.task.tcb->state == EosTaskState_DelayNoEvent ||
+                    list->ocb.task.tcb->state == EosTaskState_Suspend)
                 {
                     owner_set_bit(&g_owner, list->ocb.task.tcb->t_id, false);
                 }
