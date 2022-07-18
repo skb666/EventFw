@@ -91,11 +91,11 @@ static const task_test_info_t task_test_info[] =
         stack_high, sizeof(stack_high),
         task_func_high
     },
-    {
-        &task_middle, "TaskMiddle", TaskPrio_Middle,
-        stack_middle, sizeof(stack_middle),
-        task_func_middle
-    },
+    // {
+    //     &task_middle, "TaskMiddle", TaskPrio_Middle,
+    //     stack_middle, sizeof(stack_middle),
+    //     task_func_middle
+    // },
 };
 
 /* public function ---------------------------------------------------------- */
@@ -164,8 +164,10 @@ static void task_func_e_give1(void *parameter)
         eos_test.send_give1_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
         
+        eos_interrupt_disable();
         eos_db_stream_write("Event_One", "1", 1);
         eos_event_send("TaskValue", "Event_One");
+        eos_interrupt_enable();
     }
 }
 
@@ -180,8 +182,10 @@ static void task_func_e_give2(void *parameter)
         eos_test.send_give2_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
         
+        eos_interrupt_disable();
         eos_db_stream_write("Event_One", "1", 1);
         eos_event_send("TaskValue", "Event_One");
+        eos_interrupt_enable();
     }
 }
 
@@ -224,6 +228,7 @@ static void task_func_high(void *parameter)
         eos_test.send_count ++;
         eos_test.high_count ++;
         
+        eos_interrupt_disable();
         isr_count_bkp = eos_test.isr_count;
         eos_db_stream_write("Event_One", "1", 1);
 
@@ -234,6 +239,8 @@ static void task_func_high(void *parameter)
         }
         
         eos_event_send("TaskValue", "Event_One");
+        eos_interrupt_enable();
+
         EOS_ASSERT(eos_current->state == 1);
         eos_delay_ms(1);
         EOS_ASSERT(eos_current->state == 1);
@@ -251,6 +258,7 @@ static void task_func_middle(void *parameter)
         eos_test.send_count ++;
         eos_test.middle_count += 2;
 
+        eos_interrupt_disable();
         isr_count_bkp = eos_test.isr_count;
         eos_db_stream_write("Event_One", "1", 1);
 
@@ -261,6 +269,7 @@ static void task_func_middle(void *parameter)
         }
 
         eos_event_send("TaskValue", "Event_One");
+        eos_interrupt_enable();
 
         EOS_ASSERT(eos_current->state == 1);
         eos_delay_ms(2);
