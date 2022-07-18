@@ -116,7 +116,7 @@ extern volatile int32_t critical_count;
 void eos_init(void);
 // Run EventOS.
 void eos_run(void);
-uint64_t eos_time(void);
+uint32_t eos_time(void);
 // System tick function.
 void eos_tick(void);
 // 进入中断

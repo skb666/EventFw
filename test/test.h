@@ -8,7 +8,7 @@
 
 #if (TEST_MODE == 0)
 
-#define TEST_EN_01_0                    0
+#define TEST_EN_01_0                    1
 #define TEST_EN_01_1                    0
 #define TEST_EN_02_0                    0
 #define TEST_EN_02_1                    0
@@ -20,7 +20,7 @@
 #define TEST_EN_06                      0
 #define TEST_EN_07                      0
 #define TEST_EN_08                      0
-#define TEST_EN_09                      1
+#define TEST_EN_09                      0
 #define TEST_EN_10                      0
 #define TEST_EN_11                      0
 
