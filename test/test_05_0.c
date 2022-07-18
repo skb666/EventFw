@@ -27,6 +27,12 @@ typedef struct eos_test
     uint32_t e_two;
     uint32_t e_sm;
     uint32_t e_reactor;
+
+    uint32_t send_give1_count;
+    uint32_t send_give2_count;
+    
+    uint32_t isr_count;
+    uint32_t idle_count;
 } eos_test_t;
 
 typedef struct task_test
@@ -117,25 +123,26 @@ void eos_reactor_count(void)
     eos_test.e_reactor ++;
 }
 
-uint32_t test_count = 0;
 void timer_isr_1ms(void)
 {
     eos_interrupt_enter();
     
     if (eos_test.isr_func_enable != 0)
     {
-        test_count ++;
         eos_event_send("TaskValue", "Event_One");
-        test_count ++;
         eos_event_send("TaskValue", "Event_Two");
-        test_count ++;
     }
     
     eos_interrupt_exit();
 }
 
+void eos_idle_count(void)
+{
+    eos_test.idle_count ++;
+}
+
 /* public function ---------------------------------------------------------- */
-static void task_func_e_give(void *parameter)
+static void task_func_e_give1(void *parameter)
 {
     (void)parameter;
     
@@ -144,6 +151,23 @@ static void task_func_e_give(void *parameter)
         eos_test.time = eos_time();
         eos_test.send_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
+        eos_test.send_give1_count ++;
+        
+        eos_event_send("TaskValue", "Event_One");
+        eos_event_send("TaskValue", "Event_Two");
+    }
+}
+
+static void task_func_e_give2(void *parameter)
+{
+    (void)parameter;
+    
+    while (1)
+    {
+        eos_test.time = eos_time();
+        eos_test.send_count ++;
+        eos_test.send_speed = eos_test.send_count / eos_test.time;
+        eos_test.send_give2_count ++;
         
         eos_event_send("TaskValue", "Event_One");
         eos_event_send("TaskValue", "Event_Two");

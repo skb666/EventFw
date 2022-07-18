@@ -13,7 +13,7 @@
 #define TEST_EN_02_0                    0
 #define TEST_EN_02_1                    0
 #define TEST_EN_02_2                    0
-#define TEST_EN_03                      1
+#define TEST_EN_03                      0
 #define TEST_EN_04                      0
 #define TEST_EN_05_0                    0
 #define TEST_EN_05_1                    0
@@ -21,7 +21,7 @@
 #define TEST_EN_07                      0
 #define TEST_EN_08                      0
 #define TEST_EN_09                      0
-#define TEST_EN_11                      0
+#define TEST_EN_11                      1
 
 #else
 
@@ -56,6 +56,8 @@ enum
 };
 
 void test_init(void);
+void test_general(void);
+
 void eos_reactor_led_init(void);
 void eos_sm_led_init(void);
 

@@ -67,9 +67,9 @@ void test_init(void)
                    task_func_high, 3, stack_high, sizeof(stack_high),
                    EOS_NULL);
     
-    // eos_task_start(&task_low, "TaskLow",
-    //                task_func_low, 1, stack_low, sizeof(stack_low),
-    //                EOS_NULL);
+    eos_task_start(&task_low, "TaskLow",
+                   task_func_low, 1, stack_low, sizeof(stack_low),
+                   EOS_NULL);
     
     for (uint32_t i = 0; i < EOS_MAX_TASK_TEST; i ++)
     {

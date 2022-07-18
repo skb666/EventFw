@@ -3,9 +3,9 @@
 #include "eventos.h"
 #include "bsp.h"
 
-EOS_TAG("Test03")
-
 #if (TEST_EN_03 != 0)
+
+EOS_TAG("Test03")
 
 /* private data structure --------------------------------------------------- */
 typedef struct e_value
@@ -91,11 +91,11 @@ static const task_test_info_t task_test_info[] =
         stack_high, sizeof(stack_high),
         task_func_high
     },
-    // {
-    //     &task_middle, "TaskMiddle", TaskPrio_Middle,
-    //     stack_middle, sizeof(stack_middle),
-    //     task_func_middle
-    // },
+    {
+        &task_middle, "TaskMiddle", TaskPrio_Middle,
+        stack_middle, sizeof(stack_middle),
+        task_func_middle
+    },
 };
 
 /* public function ---------------------------------------------------------- */

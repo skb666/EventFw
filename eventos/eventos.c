@@ -752,7 +752,7 @@ static void eos_sheduler(void)
                     list = list->ocb.task.next;
                     while (1)
                     {
-//                        EOS_ASSERT(list->ocb.task.tcb->state != EosTaskState_Running);
+                        EOS_ASSERT(list->ocb.task.tcb->state != EosTaskState_Running);
                         if (list->ocb.task.tcb->state == EosTaskState_Ready)
                         {
                             eos.task[eos_current->priority] = list;
@@ -768,23 +768,12 @@ static void eos_sheduler(void)
             }
             
             
-            if (eos_current->priority == 3)
+            if (eos_current->state == EosTaskState_Running)
             {
-                if (eos_current->state == EosTaskState_Running)
-                {
-                    eos_current->state = EosTaskState_Ready;
-                    eos.t_prio_ready |= (1 << eos_current->priority);
-                }
-                EOS_ASSERT(eos_current->state != EosTaskState_Running);
+                eos_current->state = EosTaskState_Ready;
+                eos.t_prio_ready |= (1 << eos_current->priority);
             }
-            else {
-                if (eos_current->state == EosTaskState_Running)
-                {
-                    eos_current->state = EosTaskState_Ready;
-                    eos.t_prio_ready |= (1 << eos_current->priority);
-                }
-                EOS_ASSERT(eos_current->state != EosTaskState_Running);
-            }
+            EOS_ASSERT(eos_current->state != EosTaskState_Running);
         }
 
         eos_next->state = EosTaskState_Running;
@@ -792,15 +781,6 @@ static void eos_sheduler(void)
         EOS_ASSERT(eos_next->state == EosTaskState_Running);
 
         eos_port_task_switch();
-
-        // for (uint32_t i = 0; i < isr_count; i ++)
-        // {
-        //     eos_interrupt_enable();
-        // }
-        // for (uint32_t i = 0; i < isr_count; i ++)
-        // {
-        //     eos_interrupt_disable();
-        // }
     }
 }
 
@@ -1185,11 +1165,11 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
 {
     EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
 
+    eos_interrupt_disable();
     uint8_t priority = eos_current->priority;
     
     do
     {
-        eos_interrupt_disable();
         uint16_t e_id = eos_hash_get_index(topic);
         /* If the topic is not existed in hash table. */
         if (e_id == EOS_MAX_OBJECTS)

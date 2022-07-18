@@ -21,6 +21,8 @@ typedef struct eos_test
     uint32_t e_one;
     uint32_t e_sm;
     uint32_t e_reactor;
+    
+    uint32_t idle_count;
 } eos_test_t;
 
 typedef struct task_test
@@ -51,7 +53,7 @@ eos_test_t eos_test;
 static const task_test_info_t task_test_info[] =
 {
     {
-        &task_e_give, "TaskGive", TaskPrio_Give,
+        &task_e_give, "TaskGive", TaskPrio_Give1,
         stack_e_give, sizeof(stack_e_give),
         task_func
     },
@@ -101,6 +103,11 @@ void eos_reactor_count(void)
 
 void timer_isr_1ms(void)
 {
+}
+
+void eos_idle_count(void)
+{
+    eos_test.idle_count ++;
 }
 
 /* public function ---------------------------------------------------------- */
