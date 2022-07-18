@@ -15,11 +15,12 @@
 7 从一个任务Give，满负荷向另一个任务Value，同时从0.8ms中断中，和高优先级任务High与Middle中，发送值事件，同时Value订阅1ms周期事件。
 8 启动四个任务，测试任务参数。
 9 测试task_delay_no_event。
+10 测试任务的挂起和恢复。
 11 测试同优先级轮转。
 
 以上的任务优先级：High > Reactor > Sm > Value > Middle > Give = GiveSame
 High任务发送的周期为1ms，Middle发送周期为2ms。
 
 ### TODO
-10 测试任务的挂起和恢复。
+
 12 测试310个任务的运行。

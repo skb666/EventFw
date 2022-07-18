@@ -119,10 +119,6 @@ void eos_run(void);
 uint64_t eos_time(void);
 // System tick function.
 void eos_tick(void);
-// // Disable the global interrupt.
-// void eos_interrupt_disable(void);
-// // 开中断
-// void eos_interrupt_enable(void);
 // 进入中断
 void eos_interrupt_enter(void);
 // 退出中断

@@ -3,15 +3,9 @@
 #include "eventos.h"
 #include "bsp.h"
 
-#if (TEST_EN_01_0 != 0)
+#if (TEST_EN_10 != 0)
 
 /* private data structure --------------------------------------------------- */
-typedef struct e_value
-{
-    uint32_t count;
-    uint32_t value;
-} e_value_t;
-
 typedef struct eos_test
 {
     uint32_t error;
@@ -195,8 +189,11 @@ static void task_func_high(void *parameter)
     {
         eos_test.send_count ++;
         eos_test.high_count ++;
-        eos_event_send("TaskValue", "Event_One");
-        eos_delay_ms(1);
+
+        eos_task_suspend("TaskValue");
+        eos_delay_ms(10);
+        eos_event_send("TaskMiddle", "Event_One");
+        eos_delay_ms(10);
     }
 }
 
@@ -206,10 +203,16 @@ static void task_func_middle(void *parameter)
     
     while (1)
     {
-        eos_test.send_count ++;
-        eos_test.middle_count += 2;
-        eos_event_send("TaskValue", "Event_One");
-        eos_delay_ms(2);
+        eos_event_t e;
+        if (eos_task_wait_event(&e, EOS_TIME_FOREVER) == false)
+        {
+            continue;
+        }
+
+        if (eos_event_topic(&e, "Event_One"))
+        {
+            eos_task_resume("TaskValue");
+        }
     }
 }
 

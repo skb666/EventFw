@@ -1942,7 +1942,8 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             t_id = task_id;
         }
         tcb = eos.object[t_id].ocb.task.tcb;
-        if (tcb->state == EosTaskState_DelayNoEvent)
+        if (tcb->state == EosTaskState_DelayNoEvent ||
+            tcb->state == EosTaskState_Suspend)
         {
             eos_interrupt_enable();
             return (int8_t)EosRun_OK;
