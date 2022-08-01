@@ -37,6 +37,8 @@
 #include "eventos_config.h"
 
 /* basic data type ---------------------------------------------------------- */
+typedef unsigned long long              eos_u64_t;
+typedef signed long long                eos_s64_t;
 typedef unsigned int                    eos_u32_t;
 typedef signed int                      eos_s32_t;
 typedef unsigned short                  eos_u16_t;
@@ -44,7 +46,13 @@ typedef signed short                    eos_s16_t;
 typedef unsigned char                   eos_u8_t;
 typedef signed char                     eos_s8_t;
 
-typedef enum eos_bool {
+typedef unsigned int                    eos_size_t;      /**< Type for size number */
+typedef long                            eos_base_t;      /**< Nbit CPU related date type */
+typedef unsigned long                   eos_ubase_t;     /**< Nbit unsigned CPU related data type */
+typedef eos_base_t                      eos_err_t;       /**< Type for error number */
+
+typedef enum eos_bool
+{
     EOS_False = 0,
     EOS_True = 1,
 } eos_bool_t;
@@ -60,5 +68,75 @@ typedef enum eos_bool {
 #define EOS_HEAP_MAX                    (0x7fffU)
 
 #define EOS_TIME_FOREVER                EOS_U32_MAX
+
+#define EOS_U8_MAX                      (0xffU)
+#define EOS_U8_MIN                      (0U)
+
+#define EOS_TICK_MAX                    EOS_U32_MAX     /**< Maximum number of tick */
+
+#define EOS_HEAP_MAX                    (0x7fffU)
+
+#define EOS_TIME_FOREVER                EOS_U32_MAX
+
+#define EOS_UNUSED(x)                   ((void)x)
+
+/* Compiler Related Definitions */
+#if defined(__ARMCC_VERSION)           /* ARM Compiler */
+    #include <stdarg.h>
+    #define EOS_SECTION(x)               __attribute__((section(x)))
+    #define EOS_USED                    __attribute__((used))
+    #define ALIGN(n)                    __attribute__((aligned(n)))
+    #define EOS_WEAK                     __attribute__((weak))
+    #define eos_inline                   static __inline
+    /* module compiling */
+        #define RTT_API                 __declspec(dllexport)
+#elif defined (__IAR_SYSTEMS_ICC__)     /* for IAR Compiler */
+    #include <stdarg.h>
+    #define EOS_SECTION(x)               @ x
+    #define EOS_USED                     __root
+    #define PRAGMA(x)                   _Pragma(#x)
+    #define ALIGN(n)                    PRAGMA(data_alignment=n)
+    #define EOS_WEAK                     __weak
+    #define eos_inline                   static inline
+    #define RTT_API
+#elif defined (__GNUC__)                /* GNU GCC Compiler */
+    /* the version of GNU GCC must be greater than 4.x */
+    typedef __builtin_va_list       __gnuc_va_list;
+    typedef __gnuc_va_list          va_list;
+    #define va_start(v,l)           __builtin_va_start(v,l)
+    #define va_end(v)               __builtin_va_end(v)
+    #define va_arg(v,l)             __builtin_va_arg(v,l)
+    #define EOS_SECTION(x)               __attribute__((section(x)))
+    #define EOS_USED                     __attribute__((used))
+    #define ALIGN(n)                    __attribute__((aligned(n)))
+    #define EOS_WEAK                     __attribute__((weak))
+    #define eos_inline                   static __inline
+    #define RTT_API
+#else
+    #error not supported tool chain
+#endif
+
+
+/* EventOS error code definitions */
+#define EOS_EOK                         0               /**< There is no error */
+#define EOS_ERROR                       -1              /**< A generic error happens */
+#define EOS_ETIMEOUT                    -2              /**< Timed out */
+#define EOS_EFULL                       -3              /**< The resource is full */
+#define EOS_EEMPTY                      -4              /**< The resource is empty */
+#define EOS_ENOMEM                      -5              /**< No memory */
+#define EOS_ENOSYS                      -6              /**< No system */
+#define EOS_EBUSY                       -7              /**< Busy */
+#define EOS_EIO                         -8              /**< IO error */
+#define EOS_EINTR                       -9              /**< Interrupted system call */
+#define EOS_EINVAL                      -10             /**< Invalid argument */
+
+
+/* maximum value of ipc type */
+#define EOS_SEM_VALUE_MAX               EOS_U16_MAX     /**< Maximum number of semaphore .value */
+#define EOS_MUTEX_VALUE_MAX             EOS_U16_MAX     /**< Maximum number of mutex .value */
+#define EOS_MUTEX_HOLD_MAX              EOS_U8_MAX      /**< Maximum number of mutex .hold */
+#define EOS_MB_ENTRY_MAX                EOS_U16_MAX     /**< Maximum number of mailbox .entry */
+#define EOS_MQ_ENTRY_MAX                EOS_U16_MAX     /**< Maximum number of message queue .entry */
+
 
 #endif

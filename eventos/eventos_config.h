@@ -63,12 +63,25 @@
 //    <o>  use cpu usage function (0 or 1) <0-1>
 #define EOS_USE_PREEMPTIVE                      1
 
+#define EOS_ALIGN_SIZE                          4
+#define EOS_TASK_PRIORITY_MAX                   EOS_MAX_PRIORITY
+#define EOS_TICK_PER_SECOND                     1000
+#define EOS_IDLE_HOOK_LIST_SIZE                 4
+#define IDLE_THREAD_STACK_SIZE                  256
+
 /* Assert Configuration ----------------------------------------------------- */
 //   <o>  use ASSERT or not (0 or 1) <0-1>
 #define EOS_USE_ASSERT                          1
 
 //   <o>  use LOG or not (0 or 1) <0-1>
 #define EOS_USE_LOG                             0
+
+
+#define EOS_USING_SEMAPHORE
+#define EOS_USING_MUTEX
+#define EOS_USING_TIMER_SOFT
+#define EOS_USING_CPU_USAGE
+#define EOS_USING_OVERFLOW_CHECK
 
 // </h>
 
