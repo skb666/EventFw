@@ -109,6 +109,7 @@
 /* Time Event Configuration ------------------------------------------------- */
 //   <o>  use time event (0 or 1) <0-1>
 #define EOS_USE_TIME_EVENT                      1
+
 #if (EOS_USE_TIME_EVENT != 0)
     //   <o>  The maximum number of event timers (1 - 256)
     #define EOS_MAX_TIME_EVENT                  4           // 时间事件的数量
