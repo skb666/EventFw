@@ -85,13 +85,13 @@ typedef enum eos_bool
 /* Compiler Related Definitions */
 #if defined(__ARMCC_VERSION)           /* ARM Compiler */
     #include <stdarg.h>
-    #define EOS_SECTION(x)               __attribute__((section(x)))
+    #define EOS_SECTION(x)              __attribute__((section(x)))
     #define EOS_USED                    __attribute__((used))
     #define ALIGN(n)                    __attribute__((aligned(n)))
-    #define EOS_WEAK                     __attribute__((weak))
-    #define eos_inline                   static __inline
+    #define EOS_WEAK                    __attribute__((weak))
+    #define eos_inline                  static __inline
     /* module compiling */
-        #define RTT_API                 __declspec(dllexport)
+    #define RTT_API                     __declspec(dllexport)
 #elif defined (__IAR_SYSTEMS_ICC__)     /* for IAR Compiler */
     #include <stdarg.h>
     #define EOS_SECTION(x)               @ x
@@ -103,16 +103,16 @@ typedef enum eos_bool
     #define RTT_API
 #elif defined (__GNUC__)                /* GNU GCC Compiler */
     /* the version of GNU GCC must be greater than 4.x */
-    typedef __builtin_va_list       __gnuc_va_list;
-    typedef __gnuc_va_list          va_list;
-    #define va_start(v,l)           __builtin_va_start(v,l)
-    #define va_end(v)               __builtin_va_end(v)
-    #define va_arg(v,l)             __builtin_va_arg(v,l)
-    #define EOS_SECTION(x)               __attribute__((section(x)))
-    #define EOS_USED                     __attribute__((used))
+    typedef __builtin_va_list           __gnuc_va_list;
+    typedef __gnuc_va_list              va_list;
+    #define va_start(v,l)               __builtin_va_start(v,l)
+    #define va_end(v)                   __builtin_va_end(v)
+    #define va_arg(v,l)                 __builtin_va_arg(v,l)
+    #define EOS_SECTION(x)              __attribute__((section(x)))
+    #define EOS_USED                    __attribute__((used))
     #define ALIGN(n)                    __attribute__((aligned(n)))
-    #define EOS_WEAK                     __attribute__((weak))
-    #define eos_inline                   static __inline
+    #define EOS_WEAK                    __attribute__((weak))
+    #define eos_inline                  static __inline
     #define RTT_API
 #else
     #error not supported tool chain
