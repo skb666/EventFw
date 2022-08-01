@@ -12,9 +12,11 @@ All copyrights in ek.c and ek.h belongs to RT-Thread Development Team. Sincere
 thanks to the RT-Thread Team.
 */
 
-#include "eos_kernel.h"
+#include "eventos.h"
 #include <string.h>
 #include <stdio.h>
+
+EOS_TAG("EosKernel")
 
 /*
  * task state definitions
@@ -33,10 +35,10 @@ void eos_schedule(void);
 void eos_schedule_inseeos_task(struct eos_task *task);
 void eos_schedule_remove_task(struct eos_task *task);
 
-uint8_t *eos_hw_stack_init(void       *entry,
-                             void       *parameter,
-                             uint8_t *stack_addr,
-                             void       *exit);
+uint8_t *eos_hw_stack_init(void *entry,
+                            void *parameter,
+                            uint8_t *stack_addr,
+                            void *exit);
 /*
  * Context interfaces
  */
@@ -283,6 +285,21 @@ eos_bool_t eos_object_is_systemobject(eos_object_t object)
     }
 
     return ret;
+}
+
+/**
+ * @brief This function will return the type of object without EOS_Object_Static flag.
+ *
+ * @param object is the specified object to be get type.
+ *
+ * @return the type of object.
+ */
+eos_u8_t eos_object_get_type(eos_object_t object)
+{
+    /* object check */
+    EOS_ASSERT(object != EOS_NULL);
+
+    return object->type & ~EOS_Object_Static;
 }
 
 volatile uint8_t eos_interrupt_nest = 0;
@@ -3125,7 +3142,7 @@ void eos_system_timer_task_init(void)
 #endif /* EOS_USING_TIMER_SOFT */
 }
 
-static volatile eos_u32_t eos_tick = 0;
+static volatile eos_u32_t eos_tick_ = 0;
 
 #ifndef __on_eos_tick_hook
     #define __on_eos_tick_hook()          __ON_HOOK_ARGS(eos_tick_hook, ())
@@ -3139,7 +3156,7 @@ static volatile eos_u32_t eos_tick = 0;
 eos_u32_t eos_tick_get(void)
 {
     /* return the global tick */
-    return eos_tick;
+    return eos_tick_;
 }
 
 /**
@@ -3152,7 +3169,7 @@ void eos_tick_set(eos_u32_t tick)
     eos_base_t level;
 
     level = eos_hw_interrupt_disable();
-    eos_tick = tick;
+    eos_tick_ = tick;
     eos_hw_interrupt_enable(level);
 }
 
@@ -3169,7 +3186,7 @@ void eos_tick_increase(void)
     level = eos_hw_interrupt_disable();
 
     /* increase the global tick */
-    ++ eos_tick;
+    ++ eos_tick_;
 
     /* check time slice */
     task = eos_task_self();

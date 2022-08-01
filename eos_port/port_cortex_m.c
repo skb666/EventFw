@@ -199,12 +199,4 @@ void eos_port_task_switch(void)
     *(uint32_t volatile *)0xE000ED04 = (1U << 28);
 }
 
-uint32_t assert_id = 0;
-void eos_port_assert(const char *tag, const char *name, uint32_t id)
-{
-    eos_interrupt_disable();
-    
-    assert_id = id;
-    
-    while (1);
-}
+

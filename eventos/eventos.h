@@ -79,16 +79,6 @@ EventOS Default Configuration
 /* -----------------------------------------------------------------------------
 Basic type
 ----------------------------------------------------------------------------- */
-typedef enum eos_bool
-{
-    EOS_False = 0,
-    EOS_True = !EOS_False,
-} eos_bool_t;
-
-#define EOS_NULL                        ((void *)0)
-
-#define EOS_TIME_FOREVER                UINT32_MAX
-
 #if (EOS_TEST_PLATFORM == 32)
 typedef uint32_t                        eos_pointer_t;
 #else
@@ -152,9 +142,7 @@ void eos_tick_increase(void);
 eos_u32_t eos_tick_from_millisecond(eos_s32_t ms);
 eos_u32_t eos_tick_get_millisecond(void);
 
-/* defunct */
-void eos_task_defunct_enqueue(eos_task_handle_t task);
-eos_task_handle_t eos_task_defunct_dequeue(void);
+
 
 /*
  * interrupt service
@@ -178,6 +166,33 @@ int *_eos_errno(void);
 /* -----------------------------------------------------------------------------
 Task
 ----------------------------------------------------------------------------- */
+/**
+ * clock & timer macros
+ */
+#define EOS_TIMER_FLAG_DEACTIVATED       0x0             /**< timer is deactive */
+#define EOS_TIMER_FLAG_ACTIVATED         0x1             /**< timer is active */
+#define EOS_TIMER_FLAG_ONE_SHOT          0x0             /**< one shot timer */
+#define EOS_TIMER_FLAG_PERIODIC          0x2             /**< periodic timer */
+
+#define EOS_TIMER_FLAG_HARD_TIMER        0x0             /**< hard timer,the timer's callback function will be called in tick isr. */
+#define EOS_TIMER_FLAG_SOFT_TIMER        0x4             /**< soft timer,the timer's callback function will be called in timer task. */
+
+#define EOS_TIMER_CTRL_SET_TIME          0x0             /**< set timer control command */
+#define EOS_TIMER_CTRL_GET_TIME          0x1             /**< get timer control command */
+#define EOS_TIMER_CTRL_SET_ONESHOT       0x2             /**< change timer to one shot */
+#define EOS_TIMER_CTRL_SET_PERIODIC      0x3             /**< change timer to periodic */
+#define EOS_TIMER_CTRL_GET_STATE         0x4             /**< get timer run state active or deactive*/
+#define EOS_TIMER_CTRL_GET_REMAIN_TIME   0x5             /**< get the remaining hang time */
+
+#ifndef EOS_TIMER_SKIP_LIST_LEVEL
+#define EOS_TIMER_SKIP_LIST_LEVEL        1
+#endif
+
+/* 1 or 3 */
+#ifndef EOS_TIMER_SKIP_LIST_MASK
+#define EOS_TIMER_SKIP_LIST_MASK         0x3
+#endif
+
 /**
  * Double List structure
  */
@@ -246,6 +261,23 @@ typedef struct eos_event
     uint32_t eid                    : 16;   // The event ID.
     uint32_t size                   : 16;   // The event content's size.
 } eos_event_t;
+
+/**
+ * timer structure
+ */
+typedef struct eos_timer
+{
+    eos_obj_t super;
+
+    eos_list_t row[EOS_TIMER_SKIP_LIST_LEVEL];
+
+    void (*timeout_func)(void *parameter);
+    void *parameter;
+
+    eos_u32_t init_tick;
+    eos_u32_t timeout_tick;
+} eos_timer_t;
+typedef struct eos_timer *eos_timer_handle_t;
 
 /**
  * Thread structure
@@ -341,81 +373,46 @@ bool eos_task_wait_specific_event(  eos_event_t * const e_out,
 // 任务阻塞式等待事件
 bool eos_task_wait_event(eos_event_t * const e_out, uint32_t time_ms);
 
+
+/* defunct */
+void eos_task_defunct_enqueue(eos_task_handle_t task);
+eos_task_handle_t eos_task_defunct_dequeue(void);
+
 /* -----------------------------------------------------------------------------
 Timer
 ----------------------------------------------------------------------------- */
 
-/**
- * clock & timer macros
- */
-#define EOS_TIMER_FLAG_DEACTIVATED       0x0             /**< timer is deactive */
-#define EOS_TIMER_FLAG_ACTIVATED         0x1             /**< timer is active */
-#define EOS_TIMER_FLAG_ONE_SHOT          0x0             /**< one shot timer */
-#define EOS_TIMER_FLAG_PERIODIC          0x2             /**< periodic timer */
 
-#define EOS_TIMER_FLAG_HARD_TIMER        0x0             /**< hard timer,the timer's callback function will be called in tick isr. */
-#define EOS_TIMER_FLAG_SOFT_TIMER        0x4             /**< soft timer,the timer's callback function will be called in timer task. */
-
-#define EOS_TIMER_CTRL_SET_TIME          0x0             /**< set timer control command */
-#define EOS_TIMER_CTRL_GET_TIME          0x1             /**< get timer control command */
-#define EOS_TIMER_CTRL_SET_ONESHOT       0x2             /**< change timer to one shot */
-#define EOS_TIMER_CTRL_SET_PERIODIC      0x3             /**< change timer to periodic */
-#define EOS_TIMER_CTRL_GET_STATE         0x4             /**< get timer run state active or deactive*/
-#define EOS_TIMER_CTRL_GET_REMAIN_TIME   0x5             /**< get the remaining hang time */
-
-#ifndef EOS_TIMER_SKIP_LIST_LEVEL
-#define EOS_TIMER_SKIP_LIST_LEVEL        1
-#endif
-
-/* 1 or 3 */
-#ifndef EOS_TIMER_SKIP_LIST_MASK
-#define EOS_TIMER_SKIP_LIST_MASK         0x3
-#endif
 
 /*
  * Definition of the timer class.
  */
-typedef struct eos_timer
-{
-    struct eos_timer *next;
-    uint32_t time;
-    uint32_t time_out;
-    eos_func_t callback;
-    uint32_t oneshoot               : 1;
-    uint32_t running                : 1;
-} eos_timer_t;
+//typedef struct eos_timer
+//{
+//    struct eos_timer *next;
+//    uint32_t time;
+//    uint32_t time_out;
+//    eos_func_t callback;
+//    uint32_t oneshoot               : 1;
+//    uint32_t running                : 1;
+//} eos_timer_t;
 
-/**
- * timer structure
- */
-typedef struct eos_timer
-{
-    eos_obj_t super;
 
-    eos_list_t row[EOS_TIMER_SKIP_LIST_LEVEL];
 
-    void (*timeout_func)(void *parameter);
-    void *parameter;
-
-    eos_u32_t init_tick;
-    eos_u32_t timeout_tick;
-} eos_timer_t;
-typedef struct eos_timer *eos_timer_handle_t;
-
-// 启动软定时器，允许在中断中调用。
-void eos_timer_start(eos_timer_t * const me,
-                     const char *name,
-                     uint32_t time_ms,
-                     bool oneshoot,
-                     eos_func_t callback);
-// 删除软定时器，允许在中断中调用。
-void eos_timer_delete(const char *name);
-// 暂停软定时器，允许在中断中调用。
-void eos_timer_pause(const char *name);
-// 继续软定时器，允许在中断中调用。
-void eos_timer_continue(const char *name);
-// 重启软定时器的定时，允许在中断中调用。
-void eos_timer_reset(const char *name);
+//// 启动软定时器，允许在中断中调用。
+//void eos_timer_start(eos_timer_t * const me,
+//                     const char *name,
+//                     uint32_t time_ms,
+//                     bool oneshoot,
+//                     eos_func_t callback);
+//// 删除软定时器，允许在中断中调用。
+//void eos_timer_delete(const char *name);
+//// 暂停软定时器，允许在中断中调用。
+//void eos_timer_pause(const char *name);
+//// 继续软定时器，允许在中断中调用。
+//void eos_timer_continue(const char *name);
+//// 重启软定时器的定时，允许在中断中调用。
+//void eos_timer_reset(const char *name);
 
 void eos_timer_init(eos_timer_handle_t  timer,
                    const char *name,

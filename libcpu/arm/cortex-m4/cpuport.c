@@ -1,5 +1,7 @@
 
-#include <eos_kernel.h>
+#include <eventos.h>
+
+EOS_TAG("CpuPort")
 
 #if               /* ARMCC */ (  (defined ( __CC_ARM ) && defined ( __TARGET_FPU_VFP ))    \
                   /* Clang */ || (defined ( __clang__ ) && defined ( __VFP_FP__ ) && !defined(__SOFTFP__)) \

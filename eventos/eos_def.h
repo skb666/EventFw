@@ -149,6 +149,4 @@ typedef enum eos_bool
  */
 #define EOS_ALIGN_DOWN(size, align)     ((size) & ~((align) - 1))
 
-#define EOS_ASSERT(EX)
-
 #endif
