@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2006-2021, RT-Thread Development Team
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -50,7 +49,6 @@ void eos_hw_context_switch_interrupt(eos_ubase_t from, eos_ubase_t to);
 
 /**
  * @brief initialize a list
- *
  * @param l list to be initialized
  */
 eos_inline void eos_list_init(eos_list_t *l)
@@ -60,7 +58,6 @@ eos_inline void eos_list_init(eos_list_t *l)
 
 /**
  * @brief insert a node after a list
- *
  * @param l list to insert it
  * @param n new node to be inserted
  */
@@ -75,7 +72,6 @@ eos_inline void eos_list_inseeos_after(eos_list_t *l, eos_list_t *n)
 
 /**
  * @brief insert a node before a list
- *
  * @param n new node to be inserted
  * @param l list to insert it
  */
@@ -155,10 +151,8 @@ static struct eos_obj_info _object_container[EosObjInfo_Max] =
 
 /**
  * @brief This function will return the specified type of object information.
- *
  * @param type is the type of object, which can be
  *             EOS_Object_Thread/Semaphore/Mutex... etc
- *
  * @return the object type information or EOS_NULL
  */
 struct eos_obj_info *eos_object_get_info(enum eos_obj_type type)
@@ -177,7 +171,6 @@ struct eos_obj_info *eos_object_get_info(enum eos_obj_type type)
 /**
  * @brief This function will initialize an object and add it to object system
  *        management.
- *
  * @param object is the specified object to be initialized.
  * @param type is the object type.
  * @param name is the object name. In system, the object's name must be unique.
@@ -229,7 +222,6 @@ void eos_object_init(eos_obj_t *object,
 /**
  * @brief This function will detach a static object from object system,
  *        and the memory of static object is not freed.
- *
  * @param object the specified object to be detached.
  */
 void eos_object_detach(eos_object_t object)
@@ -254,12 +246,9 @@ void eos_object_detach(eos_object_t object)
 
 /**
  * @brief This function will judge the object is system object or not.
- *
  * @note  Normally, the system object is a static object and the type
  *        of object set to EOS_Object_Static.
- *
  * @param object is the specified object to be judged.
- *
  * @return EOS_True if a system object, EOS_False for others.
  */
 eos_bool_t eos_object_is_systemobject(eos_object_t object)
@@ -279,9 +268,7 @@ eos_bool_t eos_object_is_systemobject(eos_object_t object)
 
 /**
  * @brief This function will return the type of object without EOS_Object_Static flag.
- *
  * @param object is the specified object to be get type.
- *
  * @return the type of object.
  */
 eos_u8_t eos_object_get_type(eos_object_t object)
@@ -296,9 +283,7 @@ volatile uint8_t eos_interrupt_nest = 0;
 
 /**
  * @brief This function will be invoked by BSP, when enter interrupt service routine
- *
  * @note Please don't invoke this routine in application
- *
  * @see eos_interrupt_leave
  */
 void eos_interrupt_enter(void)
@@ -312,9 +297,7 @@ void eos_interrupt_enter(void)
 
 /**
  * @brief This function will be invoked by BSP, when leave interrupt service routine
- *
  * @note Please don't invoke this routine in application
- *
  * @see eos_interrupt_enter
  */
 void eos_interrupt_leave(void)
@@ -328,10 +311,8 @@ void eos_interrupt_leave(void)
 
 /**
  * @brief This function will return the nest of interrupt.
- *
  * User application can invoke this function to get whether current
  * context is interrupt context.
- *
  * @return the number of nested interrupts.
  */
 EOS_WEAK uint8_t eos_interrupt_get_nest(void)
@@ -350,7 +331,6 @@ static volatile int __eos_errno;
 
 /**
  * This function gets the global errno for the current task.
- *
  * @return errno
  */
 eos_err_t eos_get_errno(void)
@@ -379,7 +359,6 @@ exit:
 
 /**
  * This function sets the global errno for the current task.
- *
  * @param error is the errno shall be set.
  */
 void eos_set_errno(eos_err_t error)
@@ -407,7 +386,6 @@ void eos_set_errno(eos_err_t error)
 
 /**
  * This function returns the address of the current task errno.
- *
  * @return The errno address.
  */
 int *_eos_errno(void)
@@ -438,10 +416,8 @@ const uint8_t __lowest_bit_bitmap[] =
 /**
  * This function finds the first bit set (beginning with the least significant bit)
  * in value and return the index of that bit.
- *
  * Bits are numbered starting at 1 (the least significant bit).  A return value of
  * zero from any of these functions means that the argument was zero.
- *
  * @return return the index of the first bit set. If value is 0, then this function
  * shall return 0.
  */
@@ -473,10 +449,8 @@ const uint8_t __lowest_bit_bitmap[] =
 /**
  * This function finds the first bit set (beginning with the least significant bit)
  * in value and return the index of that bit.
- *
  * Bits are numbered starting at 1 (the least significant bit).  A return value of
  * zero from any of these functions means that the argument was zero.
- *
  * @return Return the index of the first bit set. If value is 0, then this function
  *         shall return 0.
  */
@@ -706,9 +680,7 @@ __exit:
 /**
  * @brief This function will insert a task to the system ready queue. The state of
  *        task will be set as READY and the task will be removed from suspend queue.
- *
  * @param task is the task to be inserted.
- *
  * @note  Please do not invoke this function in user application.
  */
 void eos_schedule_inseeos_task(eos_task_handle_t task)
@@ -743,9 +715,7 @@ __exit:
 
 /**
  * @brief This function will remove a task from system ready queue.
- *
  * @param task is the task to be removed.
- *
  * @note  Please do not invoke this function in user application.
  */
 void eos_schedule_remove_task(eos_task_handle_t task)
@@ -820,7 +790,6 @@ void eos_exit_critical(void)
 
 /**
  * @brief Get the scheduler lock level.
- *
  * @return the level of the scheduler lock. 0 means unlocked.
  */
 eos_u16_t eos_critical_level(void)
@@ -863,7 +832,6 @@ static void _task_exit(void)
 /**
  * @brief   This function is the timeout function for task, normally which is invoked
  *          when task is timeout to wait some resource.
- *
  * @param   parameter is the parameter of task timeout function
  */
 static void _task_timeout(void *parameter)
@@ -964,23 +932,14 @@ static eos_err_t _task_init(eos_task_handle_t task,
 /**
  * @brief   This function will initialize a task. It's used to initialize a
  *          static task object.
- *
  * @param   task is the static task object.
- *
  * @param   name is the name of task, which shall be unique.
- *
  * @param   entry is the entry function of task.
- *
  * @param   parameter is the parameter of task enter function.
- *
  * @param   stack_start is the start address of task stack.
- *
  * @param   stack_size is the size of task stack.
- *
  * @param   priority is the priority of task.
- *
  * @param   tick is the time slice if there are same priority task.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1000,28 +959,13 @@ eos_err_t eos_task_init(eos_task_handle_t task,
     /* initialize task object */
     eos_object_init((eos_object_t)task, EOS_Object_Thread, name);
 
-    /* initialize event semaphore */
-    eos_err_t err_sem = eos_sem_init(&(task->event_sem),
-                                        name,
-                                        0,
-                                        EOS_IPC_FLAG_PRIO);
-    EOS_ASSERT(err_sem == EOS_EOK);
-
-    task->event_recv_disable = false;
-
-    return _task_init(task,
-                        name,
-                        entry,
-                        parameter,
-                        stack_start,
-                        stack_size,
+    return _task_init(task, name, entry, parameter, stack_start, stack_size,
                         priority,
                         tick);
 }
 
 /**
  * @brief   This function will return self task object.
- *
  * @return  The self task object.
  */
 eos_task_handle_t eos_task_self(void)
@@ -1033,9 +977,7 @@ eos_task_handle_t eos_task_self(void)
 
 /**
  * @brief   This function will start a task and put it to system ready queue.
- *
  * @param   task is the task to be started.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1065,9 +1007,7 @@ eos_err_t eos_task_startup(eos_task_handle_t task)
 /**
  * @brief   This function will detach a task. The task object will be removed from
  *          task queue and detached/deleted from the system object management.
- *
  * @param   task is the task to be deleted.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1111,7 +1051,6 @@ eos_err_t eos_task_detach(eos_task_handle_t task)
  * @brief   This function will let current task yield processor, and scheduler will
  *          choose the highest task to run. After yield processor, the current task
  *          is still in READY state.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1133,9 +1072,7 @@ eos_err_t eos_task_yield(void)
 /**
  * @brief   This function will let current task sleep for some ticks. Change current task state to suspend,
  *          when the task timer reaches the tick value, scheduler will awaken this task.
- *
  * @param   tick is the sleep ticks.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1176,9 +1113,7 @@ eos_err_t eos_task_sleep(eos_u32_t tick)
 
 /**
  * @brief   This function will let current task delay for some ticks.
- *
  * @param   tick is the delay ticks.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1189,11 +1124,8 @@ eos_err_t eos_task_delay(eos_u32_t tick)
 
 /**
  * @brief   This function will let current task delay until (*tick + inc_tick).
- *
  * @param   tick is the tick of last wakeup.
- *
  * @param   inc_tick is the increment tick.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1253,9 +1185,7 @@ eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick)
 
 /**
  * @brief   This function will let current task delay for some milliseconds.
- *
  * @param   ms is the delay ms time.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1270,21 +1200,13 @@ eos_err_t eos_task_mdelay(eos_s32_t ms)
 
 /**
  * @brief   This function will control task behaviors according to control command.
- *
  * @param   task is the specified task to be controlled.
- *
  * @param   cmd is the control command, which includes.
- *
  *              EOS_TASK_CTRL_CHANGE_PRIORITY for changing priority level of task.
- *
  *              EOS_TASK_CTRL_STARTUP for starting a task.
- *
  *              EOS_TASK_CTRL_CLOSE for delete a task.
- *
  *              EOS_TASK_CTRL_BIND_CPU for bind the task to a CPU.
- *
  * @param   arg is the argument of control command.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1357,15 +1279,12 @@ eos_err_t eos_task_control(eos_task_handle_t task, int cmd, void *arg)
 
 /**
  * @brief   This function will suspend the specified task and change it to suspend state.
- *
  * @note    This function ONLY can suspend current task itself.
  *          Do not use the eos_task_suspend and eos_task_resume functions to synchronize the activities of tasks.
  *          You have no way of knowing what code a task is executing when you suspend it.
  *          If you suspend a task while it is executing a critical area which is protected by a mutex,
  *          other tasks attempt to use that mutex and have to wait. Deadlocks can occur very easily.
- *
  * @param   task is the task to be suspended.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1403,11 +1322,8 @@ eos_err_t eos_task_suspend(eos_task_handle_t task)
 
 /**
  * @brief   This function will resume a task and put it to system ready queue.
- *
  * @note    Do not use the eos_task_suspend and eos_task_resume functions to synchronize the activities of tasks.
- *
  * @param   task is the task to be resumed.
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -1449,14 +1365,10 @@ eos_task_state_t eos_task_get_state(eos_task_handle_t task)
 
 /**
  * @brief    This function will initialize an IPC object, such as semaphore, mutex, messagequeue and mailbox.
- *
  * @note     Executing this function will complete an initialization of the suspend task list of the ipc object.
- *
  * @param    ipc is a pointer to the IPC object.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the initialization is successful.
  *           When the return value is any other values, it means the initialization failed.
- *
  * @warning  This function can be called from all IPC initialization and creation.
  */
 eos_inline eos_err_t _ipc_object_init(struct eos_ipc_object *ipc)
@@ -1469,27 +1381,19 @@ eos_inline eos_err_t _ipc_object_init(struct eos_ipc_object *ipc)
 
 /**
  * @brief    This function will suspend a task to a IPC object list.
- *
  * @param    list is a pointer to a suspended task list of the IPC object.
- *
  * @param    task is a pointer to the task object to be suspended.
- *
  * @param    flag is a flag for the task object to be suspended. It determines how the task is suspended.
  *           The flag can be ONE of the following values:
- *
  *               EOS_IPC_FLAG_PRIO          The pending tasks will queue in order of priority.
- *
  *               EOS_IPC_FLAG_FIFO          The pending tasks will queue in the first-in-first-out method
  *                                         (also known as first-come-first-served (FCFS) scheduling strategy).
- *
  *               NOTE: EOS_IPC_FLAG_FIFO is a non-real-time scheduling mode. It is strongly recommended to use
  *               EOS_IPC_FLAG_PRIO to ensure the task is real-time UNLESS your applications concern about
  *               the first-in-first-out principle, and you clearly understand that all tasks involved in
  *               this semaphore will become non-real-time tasks.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the function is successfully executed.
  *           When the return value is any other values, it means the initialization failed.
- *
  * @warning  This function can ONLY be called in the task context, you can use EOS_DEBUG_IN_THREAD_CONTEXT to
  *           check the context.
  *           In addition, this function is generally called by the following functions:
@@ -1547,19 +1451,14 @@ eos_inline eos_err_t _ipc_list_suspend(eos_list_t *list,
 
 /**
  * @brief    This function will resume a task.
- *
  * @note     This function will resume the first task in the list of a IPC object.
  *           1. remove the task from suspend queue of a IPC object.
  *           2. put the task into system ready queue.
- *
  *           By contrast, the eos_ipc_list_resume_all() function will resume all suspended tasks
  *           in the list of a IPC object.
- *
  * @param    list is a pointer to a suspended task list of the IPC object.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the function is successfully executed.
  *           When the return value is any other values, it means this operation failed.
- *
  * @warning  This function is generally called by the following functions:
  *           eos_sem_release(),    eos_mutex_release(),    eos_mb_send_wait(),    eos_mq_send_wait(),
  *           eos_mb_urgent(),      eos_mb_recv(),          eos_mq_urgent(),       eos_mq_recv(),
@@ -1581,15 +1480,11 @@ eos_inline eos_err_t _ipc_list_resume(eos_list_t *list)
 /**
  * @brief   This function will resume all suspended tasks in the IPC object list,
  *          including the suspended list of IPC object, and private list of mailbox etc.
- *
  * @note    This function will resume all tasks in the IPC object list.
  *          By contrast, the eos_ipc_list_resume() function will resume a suspended task in the list of a IPC object.
- *
  * @param   list is a pointer to a suspended task list of the IPC object.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the function is successfully executed.
  *           When the return value is any other values, it means this operation failed.
- *
  */
 eos_inline eos_err_t _ipc_list_resume_all(eos_list_t *list)
 {
@@ -1624,40 +1519,29 @@ eos_inline eos_err_t _ipc_list_resume_all(eos_list_t *list)
 #ifdef EOS_USING_SEMAPHORE
 /**
  * @brief    This function will initialize a static semaphore object.
- *
  * @note     For the static semaphore object, its memory space is allocated by the compiler during compiling,
  *           and shall placed on the read-write data segment or on the uninitialized data segment.
  *           By contrast, the eos_sem_create() function will allocate memory space automatically and initialize
  *           the semaphore.
- *
  * @see      eos_sem_create()
- *
  * @param    sem is a pointer to the semaphore to initialize. It is assumed that storage for the semaphore will be
  *           allocated in your application.
- *
  * @param    name is a pointer to the name you would like to give the semaphore.
- *
  * @param    value is the initial value for the semaphore.
  *           If used to share resources, you should initialize the value as the number of available resources.
  *           If used to signal the occurrence of an event, you should initialize the value as 0.
- *
  * @param    flag is the semaphore flag, which determines the queuing way of how multiple tasks wait
  *           when the semaphore is not available.
  *           The semaphore flag can be ONE of the following values:
- *
  *               EOS_IPC_FLAG_PRIO          The pending tasks will queue in order of priority.
- *
  *               EOS_IPC_FLAG_FIFO          The pending tasks will queue in the first-in-first-out method
  *                                         (also known as first-come-first-served (FCFS) scheduling strategy).
- *
  *               NOTE: EOS_IPC_FLAG_FIFO is a non-real-time scheduling mode. It is strongly recommended to
  *               use EOS_IPC_FLAG_PRIO to ensure the task is real-time UNLESS your applications concern about
  *               the first-in-first-out principle, and you clearly understand that all tasks involved in
  *               this semaphore will become non-real-time tasks.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the initialization is successful.
  *           If the return value is any other values, it represents the initialization failed.
- *
  * @warning  This function can ONLY be called from tasks.
  */
 eos_err_t eos_sem_init(eos_sem_handle_t sem,
@@ -1686,18 +1570,13 @@ eos_err_t eos_sem_init(eos_sem_handle_t sem,
 
 /**
  * @brief    This function will detach a static semaphore object.
- *
  * @note     This function is used to detach a static semaphore object which is initialized by eos_sem_init() function.
  *           By contrast, the eos_sem_delete() function will delete a semaphore object.
  *           When the semaphore is successfully detached, it will resume all suspended tasks in the semaphore list.
- *
  * @see      eos_sem_delete()
- *
  * @param    sem is a pointer to a semaphore object to be detached.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the initialization is successful.
  *           If the return value is any other values, it means that the semaphore detach failed.
- *
  * @warning  This function can ONLY detach a static semaphore initialized by the eos_sem_init() function.
  *           If the semaphore is created by the eos_sem_create() function, you MUST NOT USE this function to detach it,
  *           ONLY USE the eos_sem_delete() function to complete the deletion.
@@ -1721,28 +1600,21 @@ eos_err_t eos_sem_detach(eos_sem_handle_t sem)
 /**
  * @brief    This function will take a semaphore, if the semaphore is unavailable, the task shall wait for
  *           the semaphore up to a specified time.
- *
  * @note     When this function is called, the count value of the sem->value will decrease 1 until it is equal to 0.
  *           When the sem->value is 0, it means that the semaphore is unavailable. At this time, it will suspend the
  *           task preparing to take the semaphore.
  *           On the contrary, the eos_sem_release() function will increase the count value of sem->value by 1 each time.
- *
  * @see      eos_sem_trytake()
- *
  * @param    sem is a pointer to a semaphore object.
- *
  * @param    time is a timeout period (unit: an OS tick). If the semaphore is unavailable, the task will wait for
  *           the semaphore up to the amount of time specified by this parameter.
- *
  *           NOTE:
  *           If use Macro EOS_WAITING_FOREVER to set this parameter, which means that when the
  *           message is unavailable in the queue, the task will be waiting forever.
  *           If use macro EOS_WAITING_NO to set this parameter, which means that this
  *           function is non-blocking and will return immediately.
- *
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the semaphore take failed.
- *
  * @warning  This function can ONLY be called in the task context. It MUST NOT BE called in interrupt context.
  */
 eos_err_t eos_sem_take(eos_sem_handle_t sem, eos_s32_t time)
@@ -1820,15 +1692,11 @@ eos_err_t eos_sem_take(eos_sem_handle_t sem, eos_s32_t time)
 
 /**
  * @brief    This function will try to take a semaphore, if the semaphore is unavailable, the task returns immediately.
- *
  * @note     This function is very similar to the eos_sem_take() function, when the semaphore is not available,
  *           the eos_sem_trytake() function will return immediately without waiting for a timeout.
  *           In other words, eos_sem_trytake(sem) has the same effect as eos_sem_take(sem, 0).
- *
  * @see      eos_sem_take()
- *
  * @param    sem is a pointer to a semaphore object.
- *
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the semaphore take failed.
  */
@@ -1839,13 +1707,10 @@ eos_err_t eos_sem_trytake(eos_sem_handle_t sem)
 
 /**
  * @brief    This function will release a semaphore. If there is task suspended on the semaphore, it will get resumed.
- *
  * @note     If there are tasks suspended on this semaphore, the first task in the list of this semaphore object
  *           will be resumed, and a task scheduling (eos_schedule) will be executed.
  *           If no tasks are suspended on this semaphore, the count value sem->value of this semaphore will increase by 1.
- *
  * @param    sem is a pointer to a semaphore object.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the semaphore release failed.
  */
@@ -1924,26 +1789,19 @@ eos_err_t eos_sem_reset(eos_sem_handle_t sem, eos_ubase_t value)
 
 /**
  * @brief    Initialize a static mutex object.
- *
  * @note     For the static mutex object, its memory space is allocated by the compiler during compiling,
  *           and shall placed on the read-write data segment or on the uninitialized data segment.
  *           By contrast, the eos_mutex_create() function will automatically allocate memory space
  *           and initialize the mutex.
- *
  * @see      eos_mutex_create()
- *
  * @param    mutex is a pointer to the mutex to initialize. It is assumed that storage for the mutex will be
  *           allocated in your application.
- *
  * @param    name is a pointer to the name that given to the mutex.
- *
  * @param    flag is the mutex flag, which determines the queuing way of how multiple tasks wait
  *           when the mutex is not available.
  *           NOTE: This parameter has been obsoleted. It can be EOS_IPC_FLAG_PRIO, EOS_IPC_FLAG_FIFO or EOS_NULL.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the initialization is successful.
  *           If the return value is any other values, it represents the initialization failed.
- *
  * @warning  This function can ONLY be called from tasks.
  */
 eos_err_t eos_mutex_init(eos_mutex_handle_t mutex, const char *name, uint8_t flag)
@@ -1973,18 +1831,13 @@ eos_err_t eos_mutex_init(eos_mutex_handle_t mutex, const char *name, uint8_t fla
 
 /**
  * @brief    This function will detach a static mutex object.
- *
  * @note     This function is used to detach a static mutex object which is initialized by eos_mutex_init() function.
  *           By contrast, the eos_mutex_delete() function will delete a mutex object.
  *           When the mutex is successfully detached, it will resume all suspended tasks in the mutex list.
- *
  * @see      eos_mutex_delete()
- *
  * @param    mutex is a pointer to a mutex object to be detached.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the initialization is successful.
  *           If the return value is any other values, it means that the mutex detach failed.
- *
  * @warning  This function can ONLY detach a static mutex initialized by the eos_mutex_init() function.
  *           If the mutex is created by the eos_mutex_create() function, you MUST NOT USE this function to detach it,
  *           ONLY USE the eos_mutex_delete() function to complete the deletion.
@@ -2008,24 +1861,18 @@ eos_err_t eos_mutex_detach(eos_mutex_handle_t mutex)
 /**
  * @brief    This function will take a mutex, if the mutex is unavailable, the task shall wait for
  *           the mutex up to a specified time.
- *
  * @note     When this function is called, the count value of the mutex->value will decrease 1 until it is equal to 0.
  *           When the mutex->value is 0, it means that the mutex is unavailable. At this time, it will suspend the
  *           task preparing to take the mutex.
  *           On the contrary, the eos_mutex_release() function will increase the count value of mutex->value by 1 each time.
- *
  * @see      eos_mutex_trytake()
- *
  * @param    mutex is a pointer to a mutex object.
- *
  * @param    time is a timeout period (unit: an OS tick). If the mutex is unavailable, the task will wait for
  *           the mutex up to the amount of time specified by the argument.
  *           NOTE: Generally, we set this parameter to EOS_WAITING_FOREVER, which means that when the mutex is unavailable,
  *           the task will be waitting forever.
- *
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the mutex take failed.
- *
  * @warning  This function can ONLY be called in the task context. It MUST NOT BE called in interrupt context.
  */
 eos_err_t eos_mutex_take(eos_mutex_handle_t mutex, eos_s32_t time)
@@ -2157,16 +2004,12 @@ eos_err_t eos_mutex_take(eos_mutex_handle_t mutex, eos_s32_t time)
 
 /**
  * @brief    This function will try to take a mutex, if the mutex is unavailable, the task returns immediately.
- *
  * @note     This function is very similar to the eos_mutex_take() function, when the mutex is not available,
  *           except that eos_mutex_trytake() will return immediately without waiting for a timeout
  *           when the mutex is not available.
  *           In other words, eos_mutex_trytake(mutex) has the same effect as eos_mutex_take(mutex, 0).
- *
  * @see      eos_mutex_take()
- *
  * @param    mutex is a pointer to a mutex object.
- *
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the mutex take failed.
  */
@@ -2177,13 +2020,10 @@ eos_err_t eos_mutex_trytake(eos_mutex_handle_t mutex)
 
 /**
  * @brief    This function will release a mutex. If there is task suspended on the mutex, the task will be resumed.
- *
  * @note     If there are tasks suspended on this mutex, the first task in the list of this mutex object
  *           will be resumed, and a task scheduling (eos_schedule) will be executed.
  *           If no tasks are suspended on this mutex, the count value mutex->value of this mutex will increase by 1.
- *
  * @param    mutex is a pointer to a mutex object.
- *
  * @return   Return the operation status. When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the mutex release failed.
  */
@@ -2318,12 +2158,9 @@ static void (*idle_hook_list[EOS_IDLE_HOOK_LIST_SIZE])(void);
 /**
  * @brief This function sets a hook function to idle task loop. When the system performs
  *        idle loop, this hook function should be invoked.
- *
  * @param hook the specified hook function.
- *
  * @return EOS_EOK: set OK.
  *         EOS_EFULL: hook list is full.
- *
  * @note the hook function must be simple and never be blocked or suspend.
  */
 eos_err_t eos_task_idle_sethook(void (*hook)(void))
@@ -2353,7 +2190,6 @@ eos_err_t eos_task_idle_sethook(void (*hook)(void))
 
 /**
  * @brief Enqueue a task to defunct queue.
- *
  * @note It must be called between eos_hw_interrupt_disable and eos_hw_interrupt_enable
  */
 void eos_task_defunct_enqueue(eos_task_handle_t task)
@@ -2445,7 +2281,6 @@ static void eos_task_idle_entry(void *parameter)
 
 /**
  * @brief This function will initialize idle task, then start it.
- *
  * @note this function must be invoked when system init.
  */
 void eos_task_idle_init(void)
@@ -2493,19 +2328,12 @@ static uint8_t _timer_task_stack[EOS_TIMER_THREAD_STACK_SIZE];
 
 /**
  * @brief [internal] The init funtion of timer
- *
  *        The internal called function of eos_timer_init
- *
  * @see eos_timer_init
- *
  * @param timer is timer object
- *
  * @param timeout is the timeout function
- *
  * @param parameter is the parameter of timeout function
- *
  * @param time is the tick of timer
- *
  * @param flag the flag of timer
  */
 static void _timer_init(eos_timer_handle_t timer,
@@ -2536,11 +2364,8 @@ static void _timer_init(eos_timer_handle_t timer,
 
 /**
  * @brief  Find the next emtpy timer ticks
- *
  * @param timer_list is the array of time list
- *
  * @param timeout_tick is the next timer's ticks
- *
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
@@ -2573,7 +2398,6 @@ static eos_err_t _timer_list_next_timeout(eos_list_t timer_list[], eos_u32_t *ti
 
 /**
  * @brief Remove the timer
- *
  * @param timer the point of the timer
  */
 eos_inline void _timer_remove(eos_timer_handle_t timer)
@@ -2587,9 +2411,7 @@ eos_inline void _timer_remove(eos_timer_handle_t timer)
 #if EOS_DEBUG_TIMER
 /**
  * @brief The number of timer
- *
  * @param timer the head of timer
- *
  * @return count of timer
  */
 static int _timer_count_height(eos_timer_handle_t timer)
@@ -2607,7 +2429,6 @@ static int _timer_count_height(eos_timer_handle_t timer)
 }
 /**
  * @brief dump the all timer information
- *
  * @param timer_heads the head of timer
  */
 void eos_timer_dump(eos_list_t timer_heads[])
@@ -2630,21 +2451,13 @@ void eos_timer_dump(eos_list_t timer_heads[])
 /**
  * @brief This function will initialize a timer
  *        normally this function is used to initialize a static timer object.
- *
  * @param timer is the point of timer
- *
  * @param name is a pointer to the name of the timer
- *
  * @param timeout is the callback of timer
- *
  * @param parameter is the param of the callback
- *
  * @param time is timeout ticks of timer
- *
  *             NOTE: The max timeout tick should be no more than (EOS_TICK_MAX/2 - 1).
- *
  * @param flag is the flag of timer
- *
  */
 void eos_timer_init(eos_timer_handle_t  timer,
                    const char *name,
@@ -2666,9 +2479,7 @@ void eos_timer_init(eos_timer_handle_t  timer,
 
 /**
  * @brief This function will detach a timer from timer management.
- *
  * @param timer is the timer to be detached
- *
  * @return the status of detach
  */
 eos_err_t eos_timer_detach(eos_timer_handle_t timer)
@@ -2697,9 +2508,7 @@ eos_err_t eos_timer_detach(eos_timer_handle_t timer)
 
 /**
  * @brief This function will start the timer
- *
  * @param timer the timer to be started
- *
  * @return the operation status, EOS_EOK on OK, EOS_ERROR on error
  */
 eos_err_t eos_timer_start(eos_timer_handle_t timer)
@@ -2822,9 +2631,7 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer)
 
 /**
  * @brief This function will stop the timer
- *
  * @param timer the timer to be stopped
- *
  * @return the operation status, EOS_EOK on OK, EOS_ERROR on error
  */
 eos_err_t eos_timer_stop(eos_timer_handle_t timer)
@@ -2853,11 +2660,9 @@ eos_err_t eos_timer_stop(eos_timer_handle_t timer)
 
 /**
  * @brief This function will get or set some options of the timer
- *
  * @param timer the timer to be get or set
  * @param cmd the control command
  * @param arg the argument
- *
  * @return the statu of control
  */
 eos_err_t eos_timer_control(eos_timer_handle_t timer, int cmd, void *arg)
@@ -2914,7 +2719,6 @@ eos_err_t eos_timer_control(eos_timer_handle_t timer, int cmd, void *arg)
 /**
  * @brief This function will check timer list, if a timeout event happens,
  *        the corresponding timeout function will be invoked.
- *
  * @note This function shall be invoked in operating system timer interrupt.
  */
 void eos_timer_check(void)
@@ -2982,7 +2786,6 @@ void eos_timer_check(void)
 
 /**
  * @brief This function will return the next timeout tick in the system.
- *
  * @return the next timeout tick in the system
  */
 eos_u32_t eos_timer_next_timeout_tick(void)
@@ -3067,7 +2870,6 @@ void eos_soft_timer_check(void)
 
 /**
  * @brief System timer task entry
- *
  * @param parameter is the arg of the task
  */
 static void _timer_task_entry(void *parameter)
@@ -3106,7 +2908,6 @@ static void _timer_task_entry(void *parameter)
 
 /**
  * @ingroup SystemInit
- *
  * @brief This function will initialize system timer
  */
 void eos_system_timer_init(void)
@@ -3119,7 +2920,6 @@ void eos_system_timer_init(void)
 
 /**
  * @ingroup SystemInit
- *
  * @brief This function will initialize system timer task
  */
 void eos_system_timer_task_init(void)
@@ -3155,7 +2955,6 @@ static volatile eos_u32_t eos_tick_ = 0;
 
 /**
  * @brief    This function will return current tick from operating system startup.
- *
  * @return   Return current tick.
  */
 eos_u32_t eos_tick_get(void)
@@ -3166,7 +2965,6 @@ eos_u32_t eos_tick_get(void)
 
 /**
  * @brief    This function will set current tick.
- *
  * @param    tick is the value that you will set.
  */
 void eos_tick_set(eos_u32_t tick)
@@ -3217,12 +3015,10 @@ void eos_tick_increase(void)
 
 /**
  * @brief    This function will calculate the tick from millisecond.
- *
  * @param    ms is the specified millisecond.
  *              - Negative Number wait forever
  *              - Zero not wait
  *              - Max 0x7fffffff
- *
  * @return   Return the calculated tick.
  */
 eos_u32_t eos_tick_from_millisecond(eos_s32_t ms)
@@ -3245,11 +3041,9 @@ eos_u32_t eos_tick_from_millisecond(eos_s32_t ms)
 
 /**
  * @brief    This function will return the passed millisecond from boot.
- *
  * @note     if the value of EOS_TICK_PER_SECOND is lower than 1000 or
  *           is not an integral multiple of 1000, this function will not
  *           provide the correct 1ms-based tick.
- *
  * @return   Return passed millisecond from boot.
  */
 EOS_WEAK eos_u32_t eos_tick_get_millisecond(void)
