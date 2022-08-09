@@ -119,6 +119,19 @@ typedef enum eos_bool
 #endif
 
 
+/*
+ * task state definitions
+ */
+typedef enum eos_task_state
+{
+    EOS_TASK_INIT                = 0x00,                /**< Initialized status */
+    EOS_TASK_READY               = 0x01,                /**< Ready status */
+    EOS_TASK_SUSPEND             = 0x02,                /**< Suspend status */
+    EOS_TASK_RUNNING             = 0x03,                /**< Running status */
+    EOS_TASK_CLOSE               = 0x04,                /**< Closed status */
+    EOS_TASK_STAT_MASK           = 0x07,
+} eos_task_state_t;
+
 /* EventOS error code definitions */
 #define EOS_EOK                         0               /**< There is no error */
 #define EOS_ERROR                       -1              /**< A generic error happens */

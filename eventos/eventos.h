@@ -98,9 +98,8 @@ extern volatile int32_t critical_count;
 #define eos_interrupt_enable() do {                                            \
     critical_count --;                                                         \
     EOS_ASSERT(critical_count >= 0);                                           \
-    if (critical_count == 0) {                                                 \
+    if (critical_count == 0)                                                   \
         __enable_irq();                                                        \
-    }                                                                          \
 } while (0)
 
 // EventOS initialization.
@@ -121,7 +120,6 @@ void eos_sheduler_lock(void);
 void eos_sheduler_unlock(void);
 #endif
 
-void eos_kernel_init(void);
 void eos_kernel_start(void);
 
 void eos_task_idle_init(void);
@@ -142,8 +140,6 @@ void eos_tick_increase(void);
 eos_u32_t eos_tick_from_millisecond(eos_s32_t ms);
 eos_u32_t eos_tick_get_millisecond(void);
 
-
-
 /*
  * interrupt service
  */
@@ -163,9 +159,6 @@ eos_err_t eos_get_errno(void);
 void eos_set_errno(eos_err_t no);
 int *_eos_errno(void);
 
-/* -----------------------------------------------------------------------------
-Task
------------------------------------------------------------------------------ */
 /**
  * clock & timer macros
  */
@@ -279,47 +272,110 @@ typedef struct eos_timer
 } eos_timer_t;
 typedef struct eos_timer *eos_timer_handle_t;
 
+/* -----------------------------------------------------------------------------
+Semaphore
+----------------------------------------------------------------------------- */
+/**
+ * IPC flags and control command definitions
+ */
+#define EOS_IPC_FLAG_FIFO                0x00            /**< FIFOed IPC. @ref IPC. */
+#define EOS_IPC_FLAG_PRIO                0x01            /**< PRIOed IPC. @ref IPC. */
+
+#define EOS_WAITING_FOREVER              -1              /**< Block forever until get resource. */
+#define EOS_WAITING_NO                   0               /**< Non-block. */
+
+/**
+ * Base structure of IPC object
+ */
+struct eos_ipc_object
+{
+    eos_obj_t super;                            /**< inherit from eos_object */
+
+    eos_list_t suspend_task;                    /**< tasks pended on this resource */
+};
+
+#ifdef EOS_USING_SEMAPHORE
+/**
+ * Semaphore structure
+ */
+typedef struct eos_semaphore
+{
+    struct eos_ipc_object super;                /**< inherit from ipc_object */
+
+    eos_u16_t value;                            /**< value of semaphore. */
+} eos_sem_t;
+typedef struct eos_semaphore *eos_sem_handle_t;
+#endif
+
+#ifdef EOS_USING_SEMAPHORE
+/*
+ * semaphore interface
+ */
+eos_err_t eos_sem_init(eos_sem_handle_t sem,
+                       const char *name,
+                       eos_u32_t value,
+                       eos_u8_t flag);
+eos_err_t eos_sem_detach(eos_sem_handle_t sem);
+
+eos_err_t eos_sem_take(eos_sem_handle_t sem, eos_s32_t time);
+eos_err_t eos_sem_trytake(eos_sem_handle_t sem);
+eos_err_t eos_sem_release(eos_sem_handle_t sem);
+eos_err_t eos_sem_reset(eos_sem_handle_t sem, eos_ubase_t value);
+#endif
+
+/* -----------------------------------------------------------------------------
+Task
+----------------------------------------------------------------------------- */
+
 /**
  * Thread structure
  */
 typedef struct eos_task
 {
+#if (EOS_USE_3RD_KERNEL == 0)
     /* eos object */
-    eos_u8_t type;                                   /**< type of object */
-    eos_u8_t flags;                                  /**< task's flags */
+    eos_u8_t type;                              /**< type of object */
+    eos_u8_t flags;                             /**< task's flags */
 
-    eos_list_t list;                                   /**< the object list */
-    eos_list_t tlist;                                  /**< the task list */
+    eos_list_t list;                            /**< the object list */
+    eos_list_t tlist;                           /**< the task list */
 
     /* stack point and entry */
-    void *sp;                                     /**< stack point */
-    void *entry;                                  /**< entry */
-    void *parameter;                              /**< parameter */
-    void *stack_addr;                             /**< stack address */
-    eos_u32_t stack_size;                             /**< stack size */
+    void *sp;                                   /**< stack point */
+    void *entry;                                /**< entry */
+    void *parameter;                            /**< parameter */
+    void *stack_addr;                           /**< stack address */
+    eos_u32_t stack_size;                       /**< stack size */
 
     /* error code */
-    eos_err_t error;                                  /**< error code */
+    eos_err_t error;                            /**< error code */
 
-    eos_u8_t status;                                   /**< task status */
+    eos_u8_t status;                            /**< task status */
 
     /* priority */
-    eos_u8_t  current_priority;                       /**< current priority */
+    eos_u8_t  current_priority;                 /**< current priority */
     eos_u32_t number_mask;
 
-    eos_ubase_t init_tick;                              /**< task's initialized tick */
-    eos_ubase_t remaining_tick;                         /**< remaining tick */
+    eos_ubase_t init_tick;                      /**< task's initialized tick */
+    eos_ubase_t remaining_tick;                 /**< remaining tick */
 
 #ifdef EOS_USING_CPU_USAGE
-    eos_u64_t  duration_tick;                          /**< cpu usage tick */
+    eos_u64_t duration_tick;                    /**< cpu usage tick */
 #endif
 
-    struct eos_timer task_timer;                       /**< built-in task timer */
+    eos_timer_t task_timer;                     /**< built-in task timer */
+    
 
-    void (*cleanup)(struct eos_task *tid);             /**< cleanup function when task exit */
+    void (*cleanup)(struct eos_task *tid);      /**< cleanup function when task exit */
 
     /* light weight process if present */
-    eos_ubase_t user_data;                             /**< private user data beyond this task */
+    void *user_data;                            /**< private user data beyond this task */
+#else
+    uint32_t task;
+    uint32_t sem;
+#endif
+
+    uint16_t t_id;
 } eos_task_t;
 
 typedef struct eos_task *eos_task_handle_t;
@@ -354,6 +410,7 @@ eos_err_t eos_task_mdelay(eos_s32_t ms);
 eos_err_t eos_task_control(eos_task_handle_t task, int cmd, void *arg);
 eos_err_t eos_task_suspend(eos_task_handle_t task);
 eos_err_t eos_task_resume(eos_task_handle_t task);
+eos_task_state_t eos_task_get_state(eos_task_handle_t task);
 
 // 启动任务，main函数或者任务函数中调用。
 void eos_task_start(eos_task_t * const me,
@@ -372,7 +429,6 @@ bool eos_task_wait_specific_event(  eos_event_t * const e_out,
                                     const char *topic, uint32_t time_ms);
 // 任务阻塞式等待事件
 bool eos_task_wait_event(eos_event_t * const e_out, uint32_t time_ms);
-
 
 /* defunct */
 void eos_task_defunct_enqueue(eos_task_handle_t task);
@@ -425,58 +481,6 @@ eos_err_t eos_timer_control(eos_timer_handle_t timer, int cmd, void *arg);
 eos_u32_t eos_timer_next_timeout_tick(void);
 void eos_timer_check(void);
 
-
-/* -----------------------------------------------------------------------------
-Semaphore
------------------------------------------------------------------------------ */
-/**
- * IPC flags and control command definitions
- */
-#define EOS_IPC_FLAG_FIFO                0x00            /**< FIFOed IPC. @ref IPC. */
-#define EOS_IPC_FLAG_PRIO                0x01            /**< PRIOed IPC. @ref IPC. */
-
-#define EOS_WAITING_FOREVER              -1              /**< Block forever until get resource. */
-#define EOS_WAITING_NO                   0               /**< Non-block. */
-
-/**
- * Base structure of IPC object
- */
-struct eos_ipc_object
-{
-    eos_obj_t super;                            /**< inherit from eos_object */
-
-    eos_list_t suspend_task;                    /**< tasks pended on this resource */
-};
-
-#ifdef EOS_USING_SEMAPHORE
-/**
- * Semaphore structure
- */
-struct eos_semaphore
-{
-    struct eos_ipc_object super;                        /**< inherit from ipc_object */
-
-    eos_u16_t value;                         /**< value of semaphore. */
-};
-typedef struct eos_semaphore *eos_sem_t;
-#endif
-
-#ifdef EOS_USING_SEMAPHORE
-/*
- * semaphore interface
- */
-eos_err_t eos_sem_init(eos_sem_t sem,
-                       const char *name,
-                       eos_u32_t value,
-                       eos_u8_t flag);
-eos_err_t eos_sem_detach(eos_sem_t sem);
-
-eos_err_t eos_sem_take(eos_sem_t sem, eos_s32_t time);
-eos_err_t eos_sem_trytake(eos_sem_t sem);
-eos_err_t eos_sem_release(eos_sem_t sem);
-eos_err_t eos_sem_reset(eos_sem_t sem, eos_ubase_t value);
-#endif
-
 /* -----------------------------------------------------------------------------
 Mutex
 ----------------------------------------------------------------------------- */
@@ -485,7 +489,7 @@ Mutex
 /**
  * Mutual exclusion (mutex) structure
  */
-struct eos_mutex
+typedef struct eos_mutex
 {
     struct eos_ipc_object super;                        /**< inherit from ipc_object */
 
@@ -495,21 +499,20 @@ struct eos_mutex
     eos_u8_t hold;                          /**< numbers of task hold the mutex */
 
     struct eos_task *owner;                         /**< current owner of mutex */
-};
-typedef struct eos_mutex *eos_mutex_t;
+} eos_mutex_t;
+typedef struct eos_mutex *eos_mutex_handle_t;
 #endif
-
 
 #ifdef EOS_USING_MUTEX
 /*
  * mutex interface
  */
-eos_err_t eos_mutex_init(eos_mutex_t mutex, const char *name, eos_u8_t flag);
-eos_err_t eos_mutex_detach(eos_mutex_t mutex);
+eos_err_t eos_mutex_init(eos_mutex_handle_t mutex, const char *name, eos_u8_t flag);
+eos_err_t eos_mutex_detach(eos_mutex_handle_t mutex);
 
-eos_err_t eos_mutex_take(eos_mutex_t mutex, eos_s32_t time);
-eos_err_t eos_mutex_trytake(eos_mutex_t mutex);
-eos_err_t eos_mutex_release(eos_mutex_t mutex);
+eos_err_t eos_mutex_take(eos_mutex_handle_t mutex, eos_s32_t time);
+eos_err_t eos_mutex_trytake(eos_mutex_handle_t mutex);
+eos_err_t eos_mutex_release(eos_mutex_handle_t mutex);
 #endif
 
 /* -----------------------------------------------------------------------------

@@ -18,22 +18,12 @@ thanks to the RT-Thread Team.
 
 EOS_TAG("EosKernel")
 
-/*
- * task state definitions
- */
-#define EOS_TASK_INIT                  0x00                /**< Initialized status */
-#define EOS_TASK_READY                 0x01                /**< Ready status */
-#define EOS_TASK_SUSPEND               0x02                /**< Suspend status */
-#define EOS_TASK_RUNNING               0x03                /**< Running status */
-#define EOS_TASK_CLOSE                 0x04                /**< Closed status */
-#define EOS_TASK_STAT_MASK             0x07
-
 #define EOS_TASK_STAT_YIELD            0x08                /**< indicate whether remaining_tick has been reloaded since last schedule */
 #define EOS_TASK_STAT_YIELD_MASK       EOS_TASK_STAT_YIELD
 
 void eos_schedule(void);
-void eos_schedule_inseeos_task(struct eos_task *task);
-void eos_schedule_remove_task(struct eos_task *task);
+void eos_schedule_inseeos_task(eos_task_t *task);
+void eos_schedule_remove_task(eos_task_t *task);
 
 uint8_t *eos_hw_stack_init(void *entry,
                             void *parameter,
@@ -153,14 +143,14 @@ static struct eos_obj_info _object_container[EosObjInfo_Max] =
     {EOS_Object_Thread, _OBJ_CONTAINER_LIST_INIT(EosObjInfo_Thread), sizeof(eos_task_t)},
 #ifdef EOS_USING_SEMAPHORE
     /* initialize object container - semaphore */
-    {EOS_Object_Semaphore, _OBJ_CONTAINER_LIST_INIT(EosObjInfo_Semaphore), sizeof(struct eos_semaphore)},
+    {EOS_Object_Semaphore, _OBJ_CONTAINER_LIST_INIT(EosObjInfo_Semaphore), sizeof(eos_sem_t)},
 #endif
 #ifdef EOS_USING_MUTEX
     /* initialize object container - mutex */
-    {EOS_Object_Mutex, _OBJ_CONTAINER_LIST_INIT(EosObjInfo_Mutex), sizeof(struct eos_mutex)},
+    {EOS_Object_Mutex, _OBJ_CONTAINER_LIST_INIT(EosObjInfo_Mutex), sizeof(eos_mutex_t)},
 #endif
     /* initialize object container - timer */
-    {EOS_Object_Timer, _OBJ_CONTAINER_LIST_INIT(EosObjInfo_Timer), sizeof(struct eos_timer)},
+    {EOS_Object_Timer, _OBJ_CONTAINER_LIST_INIT(EosObjInfo_Timer), sizeof(eos_timer_t)},
 };
 
 /**
@@ -699,7 +689,9 @@ void eos_schedule(void)
             else
             {
                 eos_schedule_remove_task(eos_current_task);
-                eos_current_task->status = EOS_TASK_RUNNING | (eos_current_task->status & ~EOS_TASK_STAT_MASK);
+                eos_current_task->status =
+                    EOS_TASK_RUNNING |
+                    (eos_current_task->status & ~EOS_TASK_STAT_MASK);
             }
         }
     }
@@ -952,7 +944,7 @@ static eos_err_t _task_init(eos_task_handle_t task,
 
     /* initialize cleanup function and user data */
     task->cleanup   = 0;
-    task->user_data = 0;
+    task->user_data = EOS_NULL;
 
     /* initialize task timer */
     eos_timer_init(&(task->task_timer),
@@ -965,7 +957,6 @@ static eos_err_t _task_init(eos_task_handle_t task,
 #ifdef EOS_USING_CPU_USAGE
     task->duration_tick = 0;
 #endif
-
 
     return EOS_EOK;
 }
@@ -1008,6 +999,15 @@ eos_err_t eos_task_init(eos_task_handle_t task,
 
     /* initialize task object */
     eos_object_init((eos_object_t)task, EOS_Object_Thread, name);
+
+    /* initialize event semaphore */
+    eos_err_t err_sem = eos_sem_init(&(task->event_sem),
+                                        name,
+                                        0,
+                                        EOS_IPC_FLAG_PRIO);
+    EOS_ASSERT(err_sem == EOS_EOK);
+
+    task->event_recv_disable = false;
 
     return _task_init(task,
                         name,
@@ -1442,6 +1442,11 @@ eos_err_t eos_task_resume(eos_task_handle_t task)
     return EOS_EOK;
 }
 
+eos_task_state_t eos_task_get_state(eos_task_handle_t task)
+{
+    return (task->status & EOS_TASK_STAT_MASK);
+}
+
 /**
  * @brief    This function will initialize an IPC object, such as semaphore, mutex, messagequeue and mailbox.
  *
@@ -1491,9 +1496,9 @@ eos_inline eos_err_t _ipc_object_init(struct eos_ipc_object *ipc)
  *           eos_sem_take(),  eos_mutex_take(),  eos_event_recv(),   eos_mb_send_wait(),
  *           eos_mb_recv(),   eos_mq_recv(),     eos_mq_send_wait()
  */
-eos_inline eos_err_t _ipc_list_suspend(eos_list_t        *list,
-                                     eos_task_handle_t task,
-                                     uint8_t        flag)
+eos_inline eos_err_t _ipc_list_suspend(eos_list_t *list,
+                                        eos_task_handle_t task,
+                                        uint8_t flag)
 {
     /* suspend task */
     eos_task_suspend(task);
@@ -1655,10 +1660,10 @@ eos_inline eos_err_t _ipc_list_resume_all(eos_list_t *list)
  *
  * @warning  This function can ONLY be called from tasks.
  */
-eos_err_t eos_sem_init(eos_sem_t    sem,
-                     const char *name,
-                     eos_u32_t value,
-                     uint8_t  flag)
+eos_err_t eos_sem_init(eos_sem_handle_t sem,
+                        const char *name,
+                        eos_u32_t value,
+                        uint8_t flag)
 {
     EOS_ASSERT(sem != EOS_NULL);
     EOS_ASSERT(value < 0x10000U);
@@ -1697,7 +1702,7 @@ eos_err_t eos_sem_init(eos_sem_t    sem,
  *           If the semaphore is created by the eos_sem_create() function, you MUST NOT USE this function to detach it,
  *           ONLY USE the eos_sem_delete() function to complete the deletion.
  */
-eos_err_t eos_sem_detach(eos_sem_t sem)
+eos_err_t eos_sem_detach(eos_sem_handle_t sem)
 {
     /* parameter check */
     EOS_ASSERT(sem != EOS_NULL);
@@ -1740,7 +1745,7 @@ eos_err_t eos_sem_detach(eos_sem_t sem)
  *
  * @warning  This function can ONLY be called in the task context. It MUST NOT BE called in interrupt context.
  */
-eos_err_t eos_sem_take(eos_sem_t sem, eos_s32_t time)
+eos_err_t eos_sem_take(eos_sem_handle_t sem, eos_s32_t time)
 {
     register eos_base_t temp;
     eos_task_handle_t task;
@@ -1827,7 +1832,7 @@ eos_err_t eos_sem_take(eos_sem_t sem, eos_s32_t time)
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the semaphore take failed.
  */
-eos_err_t eos_sem_trytake(eos_sem_t sem)
+eos_err_t eos_sem_trytake(eos_sem_handle_t sem)
 {
     return eos_sem_take(sem, EOS_WAITING_NO);
 }
@@ -1844,7 +1849,7 @@ eos_err_t eos_sem_trytake(eos_sem_t sem)
  * @return   Return the operation status. When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the semaphore release failed.
  */
-eos_err_t eos_sem_release(eos_sem_t sem)
+eos_err_t eos_sem_release(eos_sem_handle_t sem)
 {
     register eos_base_t temp;
     register eos_bool_t need_schedule;
@@ -1890,7 +1895,7 @@ eos_err_t eos_sem_release(eos_sem_t sem)
     return EOS_EOK;
 }
 
-eos_err_t eos_sem_reset(eos_sem_t sem, eos_ubase_t value)
+eos_err_t eos_sem_reset(eos_sem_handle_t sem, eos_ubase_t value)
 {
     EOS_ASSERT(sem != EOS_NULL);
     EOS_ASSERT(eos_object_get_type(&sem->super.super) == EOS_Object_Semaphore);
@@ -1941,7 +1946,7 @@ eos_err_t eos_sem_reset(eos_sem_t sem, eos_ubase_t value)
  *
  * @warning  This function can ONLY be called from tasks.
  */
-eos_err_t eos_mutex_init(eos_mutex_t mutex, const char *name, uint8_t flag)
+eos_err_t eos_mutex_init(eos_mutex_handle_t mutex, const char *name, uint8_t flag)
 {
     /* flag parameter has been obsoleted */
     EOS_UNUSED(flag);
@@ -1984,7 +1989,7 @@ eos_err_t eos_mutex_init(eos_mutex_t mutex, const char *name, uint8_t flag)
  *           If the mutex is created by the eos_mutex_create() function, you MUST NOT USE this function to detach it,
  *           ONLY USE the eos_mutex_delete() function to complete the deletion.
  */
-eos_err_t eos_mutex_detach(eos_mutex_t mutex)
+eos_err_t eos_mutex_detach(eos_mutex_handle_t mutex)
 {
     /* parameter check */
     EOS_ASSERT(mutex != EOS_NULL);
@@ -2023,7 +2028,7 @@ eos_err_t eos_mutex_detach(eos_mutex_t mutex)
  *
  * @warning  This function can ONLY be called in the task context. It MUST NOT BE called in interrupt context.
  */
-eos_err_t eos_mutex_take(eos_mutex_t mutex, eos_s32_t time)
+eos_err_t eos_mutex_take(eos_mutex_handle_t mutex, eos_s32_t time)
 {
     register eos_base_t temp;
     eos_task_handle_t task;
@@ -2165,7 +2170,7 @@ eos_err_t eos_mutex_take(eos_mutex_t mutex, eos_s32_t time)
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the mutex take failed.
  */
-eos_err_t eos_mutex_trytake(eos_mutex_t mutex)
+eos_err_t eos_mutex_trytake(eos_mutex_handle_t mutex)
 {
     return eos_mutex_take(mutex, EOS_WAITING_NO);
 }
@@ -2182,7 +2187,7 @@ eos_err_t eos_mutex_trytake(eos_mutex_t mutex)
  * @return   Return the operation status. When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the mutex release failed.
  */
-eos_err_t eos_mutex_release(eos_mutex_t mutex)
+eos_err_t eos_mutex_release(eos_mutex_handle_t mutex)
 {
     register eos_base_t temp;
     eos_task_handle_t task;

@@ -1,15 +1,7 @@
-/*
- * Copyright (c) 2006-2021, RT-Thread Development Team
- *
- * SPDX-License-Identifier: Apache-2.0
- *
- * Change Logs:
- * Date           Author       Notes
- * 2018-12-18     zylx         first version
- */
 
 #include <eventos.h>
 #include <stdint.h>
+#include <stdio.h>
 
 EOS_TAG("Main")
 
@@ -21,6 +13,8 @@ struct eos_task main_task;
 
 static void eos_application_init(void);
 static void main_thread_entry(void *parameter);
+
+extern void eos_kernel_init(void);
 
 int main(void)
 {
@@ -47,7 +41,8 @@ void eos_application_init(void)
 
     tid = &main_task;
     result = eos_task_init(tid, "main", main_thread_entry, EOS_NULL,
-                            main_stack, sizeof(main_stack), RT_MAIN_THREAD_PRIORITY, 20);
+                            main_stack, sizeof(main_stack),
+                            RT_MAIN_THREAD_PRIORITY, 20);
     EOS_ASSERT(result == EOS_EOK);
 
     /* if not define RT_USING_HEAP, using to eliminate the warning */
@@ -64,8 +59,8 @@ uint32_t count_cpu = 0;
  *         entry main().
  */
 
-struct eos_mutex mutex;
-eos_mutex_t p_mutex = &mutex;
+eos_mutex_t mutex;
+eos_mutex_handle_t p_mutex = &mutex;
 static void main_thread_entry(void *parameter)
 {
     eos_mutex_init(p_mutex, "mutex", 0);
@@ -77,8 +72,10 @@ static void main_thread_entry(void *parameter)
     while (1)
     {
         count_cpu ++;
-        if (count_cpu % 100 == 0) 
-        printf("count_cpu: %d.\n", count_cpu);
+        if (count_cpu % 100 == 0)
+        {
+            printf("count_cpu: %d.\n", count_cpu);
+        }
         eos_task_mdelay(10);
     }
 }

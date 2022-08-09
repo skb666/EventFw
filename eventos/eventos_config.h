@@ -57,6 +57,9 @@
 //    <o>  use stack usage function (0 or 1) <0-1>
 #define EOS_USE_STACK_USAGE                     1
 
+//    <o>  use third-party RTOS kernel (0 or 1) <0-1>
+#define EOS_USE_3RD_KERNEL                      0
+
 //    <o>  use cpu usage function (0 or 1) <0-1>
 #define EOS_USE_CPU_USAGE                       0
 
