@@ -317,10 +317,6 @@ static int8_t eos_event_give_(const char *task,
                                const char *topic);
 static void eos_e_queue_delete_(eos_event_data_t const *item);
 static void eos_owner_global_(void);
-static uint16_t eos_task_init(eos_task_handle_t const me,
-                              const char *name,
-                              uint8_t priority,
-                              void *stack, uint32_t size);
 static void eos_reactor_enter(eos_reactor_t *const me);
 static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic);
 static void eos_sm_enter(eos_sm_t *const me);
@@ -425,7 +421,6 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
     uint16_t t_id = eos_task_current_tid();
 
     // uint8_t priority = eos_current->priority;
-    
     do
     {
         // If the current task has events to receive.
@@ -814,61 +809,7 @@ static void eos_owner_global_(void)
     }
 }
 
-/* 关于Reactor ----------------------------------------------------------------- */
-static uint16_t eos_task_init(  eos_task_handle_t const me,
-                                const char *name,
-                                uint8_t priority,
-                                void *stack, uint32_t size)
-{
-    /* Check EventOS is running or not. */
-    EOS_ASSERT(eos.enabled != EOS_False);
-    EOS_ASSERT(eos.running == EOS_False);
-
-    /* Check all arguments are valid. */
-    EOS_ASSERT_NAME(me != (eos_task_handle_t )0, name);
-    EOS_ASSERT_NAME(priority < EOS_MAX_PRIORITY, name);
-
-    /* Prevent the task starts for the second time. */
-    EOS_ASSERT_NAME(me->enabled == EOS_False, name);
-
-    /* Prevent duplication of name. */
-    EOS_ASSERT_NAME(eos_hash_get_index(name) == EOS_MAX_OBJECTS, name);
-
-    /* Get the position of the hash table. */
-    uint16_t index = eos_hash_insert(name);
-    eos.object[index].ocb.task.tcb = me;
-    eos_object_t *obj = &eos.object[index];
-
-    /* Write the task into the EventOS block. */
-    if (ek.task[priority] == EOS_NULL)
-    {
-        ek.task[priority] = obj;
-        obj->ocb.task.next = obj;
-        obj->ocb.task.prev = obj;
-    }
-    else
-    {
-        eos_object_t *list = ek.task[priority];
-        obj->ocb.task.next = list;
-        obj->ocb.task.prev = list->ocb.task.prev;
-        list->ocb.task.prev = obj;
-        obj->ocb.task.prev->ocb.task.next = obj;
-        ek.task[priority] = obj;
-    }
-    ek.t_prio_ready |= (1 << priority);
-
-    /* The task information. */
-    me->priority = priority;
-    me->stack = stack;
-    me->size = size;
-    me->id = index;
-    me->t_id = ek.task_id_count ++;
-    
-    EOS_ASSERT(ek.task_id_count <= EOS_MAX_TASKS);
-
-    return index;
-}
-
+/* 关于Reactor -------------------------------------------------------------- */
 void eos_reactor_init(  eos_reactor_t *const me,
                         const char *name,
                         uint8_t priority,

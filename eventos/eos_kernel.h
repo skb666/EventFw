@@ -3,6 +3,7 @@
 
 /* include ------------------------------------------------------------------ */
 #include "eventos_config.h"
+#include "eos_def.h"
 
 /* Basic data structure ----------------------------------------------------- */
 /**
@@ -124,9 +125,8 @@ typedef struct eos_timer *eos_timer_handle_t;
 /**
  * Thread structure
  */
-typedef struct eos_task
+typedef struct ek_task
 {
-#if (EOS_USE_3RD_KERNEL == 0)
     /* eos object */
     eos_u8_t type;                              /**< type of object */
     eos_u8_t flags;                             /**< task's flags */
@@ -159,21 +159,75 @@ typedef struct eos_task
 
     eos_timer_t task_timer;                     /**< built-in task timer */
     
-
-    void (*cleanup)(struct eos_task *tid);      /**< cleanup function when task exit */
+    void (*cleanup)(struct ek_task *tid);      /**< cleanup function when task exit */
 
     /* light weight process if present */
     void *user_data;                            /**< private user data beyond this task */
-#else
-    uint32_t task;
-    uint32_t sem;
+} ek_task_t;
+
+typedef struct ek_task *ek_task_handle_t;
+
+eos_err_t ek_task_init(ek_task_handle_t task,
+                        const char *name,
+                        void (*entry)(void *parameter),
+                        void *parameter,
+                        void *stack_start,
+                        eos_u32_t stack_size,
+                        uint8_t priority,
+                        eos_u32_t tick);
+
+/* mutex -------------------------------------------------------------------- */
+/**
+ * IPC flags and control command definitions
+ */
+#define EOS_IPC_FLAG_FIFO                0x00            /**< FIFOed IPC. @ref IPC. */
+#define EOS_IPC_FLAG_PRIO                0x01            /**< PRIOed IPC. @ref IPC. */
+
+#define EOS_WAITING_FOREVER              -1              /**< Block forever until get resource. */
+#define EOS_WAITING_NO                   0               /**< Non-block. */
+
+/**
+ * Base structure of IPC object
+ */
+struct ek_ipc_object
+{
+    eos_obj_t super;                            /**< inherit from eos_object */
+
+    eos_list_t suspend_task;                    /**< tasks pended on this resource */
+};
+
+#ifdef EOS_USING_MUTEX
+/**
+ * Mutual exclusion (mutex) structure
+ */
+typedef struct ek_mutex
+{
+    struct ek_ipc_object super;                        /**< inherit from ipc_object */
+
+    eos_u16_t value;                         /**< value of mutex */
+
+    eos_u8_t prio_bkp;             /**< priority of last task hold the mutex */
+    eos_u8_t hold;                          /**< numbers of task hold the mutex */
+
+    struct ek_task *owner;                         /**< current owner of mutex */
+} ek_mutex_t;
+
+typedef struct ek_mutex *ek_mutex_handle_t;
 #endif
 
-    uint16_t t_id;
-} eos_task_t;
-
-typedef struct eos_task *eos_task_handle_t;
-
 /* Semaphore ---------------------------------------------------------------- */
+#ifdef EOS_USING_SEMAPHORE
+/**
+ * Semaphore structure
+ */
+typedef struct ek_semaphore
+{
+    struct ek_ipc_object super;                /**< inherit from ipc_object */
+
+    eos_u16_t value;                            /**< value of semaphore. */
+} ek_sem_t;
+
+typedef struct ek_semaphore *ek_sem_handle_t;
+#endif
 
 #endif

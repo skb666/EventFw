@@ -164,37 +164,16 @@ int *_eos_errno(void);
 /* -----------------------------------------------------------------------------
 Semaphore
 ----------------------------------------------------------------------------- */
-/**
- * IPC flags and control command definitions
- */
-#define EOS_IPC_FLAG_FIFO                0x00            /**< FIFOed IPC. @ref IPC. */
-#define EOS_IPC_FLAG_PRIO                0x01            /**< PRIOed IPC. @ref IPC. */
-
-#define EOS_WAITING_FOREVER              -1              /**< Block forever until get resource. */
-#define EOS_WAITING_NO                   0               /**< Non-block. */
-
-/**
- * Base structure of IPC object
- */
-struct eos_ipc_object
-{
-    eos_obj_t super;                            /**< inherit from eos_object */
-
-    eos_list_t suspend_task;                    /**< tasks pended on this resource */
-};
-
-#ifdef EOS_USING_SEMAPHORE
-/**
- * Semaphore structure
- */
 typedef struct eos_semaphore
 {
-    struct eos_ipc_object super;                /**< inherit from ipc_object */
-
-    eos_u16_t value;                            /**< value of semaphore. */
-} eos_sem_t;
-typedef struct eos_semaphore *eos_sem_handle_t;
+#if (EOS_USE_3RD_KERNEL == 0)
+    ek_sem_t sem;
+#else
+    uint32_t sem;
 #endif
+} eos_sem_t;
+
+typedef struct eos_semaphore *eos_sem_handle_t;
 
 #ifdef EOS_USING_SEMAPHORE
 /*
@@ -224,10 +203,26 @@ Task
 #define EOS_TASK_CTRL_INFO             0x03                /**< Get task information. */
 #define EOS_TASK_CTRL_BIND_CPU         0x04                /**< Set task bind cpu. */
 
+
+typedef struct eos_task
+{
+#if (EOS_USE_3RD_KERNEL == 0)
+    ek_task_t task_;
+    eos_sem_t sem_;
+#endif
+
+    uint32_t task;
+    uint32_t sem;
+
+    uint16_t t_id;
+} eos_task_t;
+
+typedef eos_task_t *eos_task_handle_t;
+
 /*
  * task interface
  */
-eos_err_t eos_task_init(struct eos_task *task,
+eos_err_t eos_task_init(eos_task_t *task,
                         const char *name,
                         void (*entry)(void *parameter),
                         void *parameter,
@@ -237,7 +232,6 @@ eos_err_t eos_task_init(struct eos_task *task,
                         eos_u32_t tick);
 eos_err_t eos_task_detach(eos_task_handle_t task);
 eos_task_handle_t eos_task_self(void);
-eos_task_handle_t eos_task_find(char *name);
 eos_err_t eos_task_startup(eos_task_handle_t task);
 eos_err_t eos_task_yield(void);
 eos_err_t eos_task_delay(eos_u32_t tick);
@@ -273,36 +267,6 @@ eos_task_handle_t eos_task_defunct_dequeue(void);
 /* -----------------------------------------------------------------------------
 Timer
 ----------------------------------------------------------------------------- */
-/*
- * Definition of the timer class.
- */
-//typedef struct eos_timer
-//{
-//    struct eos_timer *next;
-//    uint32_t time;
-//    uint32_t time_out;
-//    eos_func_t callback;
-//    uint32_t oneshoot               : 1;
-//    uint32_t running                : 1;
-//} eos_timer_t;
-
-
-
-//// 启动软定时器，允许在中断中调用。
-//void eos_timer_start(eos_timer_t * const me,
-//                     const char *name,
-//                     uint32_t time_ms,
-//                     bool oneshoot,
-//                     eos_func_t callback);
-//// 删除软定时器，允许在中断中调用。
-//void eos_timer_delete(const char *name);
-//// 暂停软定时器，允许在中断中调用。
-//void eos_timer_pause(const char *name);
-//// 继续软定时器，允许在中断中调用。
-//void eos_timer_continue(const char *name);
-//// 重启软定时器的定时，允许在中断中调用。
-//void eos_timer_reset(const char *name);
-
 void eos_timer_init(eos_timer_handle_t  timer,
                    const char *name,
                    void (*timeout)(void *parameter),
@@ -320,24 +284,16 @@ void eos_timer_check(void);
 /* -----------------------------------------------------------------------------
 Mutex
 ----------------------------------------------------------------------------- */
-
-#ifdef EOS_USING_MUTEX
-/**
- * Mutual exclusion (mutex) structure
- */
 typedef struct eos_mutex
 {
-    struct eos_ipc_object super;                        /**< inherit from ipc_object */
-
-    eos_u16_t value;                         /**< value of mutex */
-
-    eos_u8_t prio_bkp;             /**< priority of last task hold the mutex */
-    eos_u8_t hold;                          /**< numbers of task hold the mutex */
-
-    struct eos_task *owner;                         /**< current owner of mutex */
-} eos_mutex_t;
-typedef struct eos_mutex *eos_mutex_handle_t;
+#if (EOS_USE_3RD_KERNEL == 0)
+    ek_mutex_t mutex;
+#else
+    uint32_t mutex;
 #endif
+} eos_mutex_t;
+
+typedef struct eos_mutex *eos_mutex_handle_t;
 
 #ifdef EOS_USING_MUTEX
 /*
