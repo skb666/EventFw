@@ -89,24 +89,10 @@ typedef uint64_t                        eos_pointer_t;
 /* -----------------------------------------------------------------------------
 EventOS
 ----------------------------------------------------------------------------- */
-// extern volatile eos_s32_t critical_count;
-// #define eos_interrupt_disable() do {                                           \
-//     __disable_irq();                                                           \
-//     critical_count ++;                                                         \
-// } while (0)
-
-// #define eos_interrupt_enable() do {                                            \
-//     critical_count --;                                                         \
-//     EOS_ASSERT(critical_count >= 0);                                           \
-//     if (critical_count == 0)                                                   \
-//         __enable_irq();                                                        \
-// } while (0)
-
 // EventOS initialization.
 void eos_init(void);
 // Run EventOS.
 void eos_run(void);
-eos_u32_t eos_time(void);
 // System tick function.
 void eos_tick(void);
 // 进入中断
@@ -254,8 +240,6 @@ void eos_task_start(eos_task_t * const me,
                     void *parameter);
 // 退出当前任务，任务函数中调用。
 void eos_task_exit(void);
-// 任务内延时，任务函数中调用，不允许在定时器的回调函数调用，不允许在空闲回调函数中调用。
-void eos_delay_ms(eos_u32_t time_ms);
 // 任务等待某特定事件，其他事件均忽略。
 bool eos_task_wait_specific_event(  eos_event_t * const e_out,
                                     const char *topic, eos_u32_t time_ms);

@@ -259,10 +259,6 @@ typedef struct eos_tag
     eos_event_data_t *e_queue;
 
     eos_owner_t g_owner;
-
-    /* flag */
-    eos_u8_t enabled                         : 1;
-    eos_u8_t running                         : 1;
 } eos_t;
 
 /* **eos end** ----------------------------------------------------------------- */
@@ -361,8 +357,6 @@ void eos_init(void)
     eos.timer_count = 0;
 #endif
 
-    eos.enabled = true;
-    eos.running = EOS_False;
     eos.hash_func = eos_hash_time33;
     eos.e_queue = EOS_NULL;
 
@@ -400,6 +394,9 @@ void eos_init(void)
     }
 
     eos_kernel_init();
+    eos_system_timer_init();
+    eos_system_timer_task_init();
+    eos_task_idle_init();
 }
 
 /* -----------------------------------------------------------------------------
@@ -422,6 +419,7 @@ eos_err_t eos_task_init(eos_task_t *task,
     /* Newly create one task in the hash table. */
     t_id = eos_hash_insert(name);
     eos.object[t_id].type = EOS_TASK_ATTRIBUTE_TASK;
+    eos.object[t_id].ocb.task.tcb = task;
     task->t_id = t_id;
 
     eos.obj_task_occupy[t_id / 8] |= (1 << (t_id % 8));
@@ -429,6 +427,8 @@ eos_err_t eos_task_init(eos_task_t *task,
 #if (EOS_USE_3RD_KERNEL == 0)
     task->task_handle = (eos_u32_t)(&task->task_);
 #endif
+
+    eos_sem_init(&task->sem, name, 0, EOS_IPC_FLAG_PRIO);
 
     eos_hw_interrupt_enable(level);
 
@@ -442,11 +442,14 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_u32_t time_ms)
 {
     EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
 
-    eos_base_t level = eos_hw_interrupt_disable();
+    eos_base_t level;
+    level = eos_hw_interrupt_disable();
     eos_u16_t t_id = eos_task_self()->t_id;
     eos_task_handle_t task = eos_task_self();
 
+    eos_hw_interrupt_enable(level);
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
+    level = eos_hw_interrupt_disable();
     if (ret == EOS_EOK)
     {
         EOS_ASSERT(eos.e_queue != EOS_NULL);
@@ -850,16 +853,14 @@ static void eos_sm_enter(eos_sm_t *const me)
 /* -----------------------------------------------------------------------------
 Event
 ----------------------------------------------------------------------------- */
-eos_u32_t count_test = 0;
 static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
-                              eos_u8_t give_type,
-                              const char *topic)
+                                eos_u8_t give_type,
+                                const char *topic)
 {
     /* Get the task id in the object hash table. */
     eos_u16_t t_id;
     eos_task_handle_t tcb;
     eos_base_t level;
-
     if (give_type == EosEventGiveType_Send)
     {
         EOS_ASSERT((task != EOS_NULL && task_id == EOS_MAX_OBJECTS) ||
@@ -892,11 +893,6 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
     else
     {
         EOS_ASSERT(0);
-    }
-
-    if (eos.running == false)
-    {
-        return 0;
     }
 
     /* If in interrupt service function, disable the interrupt. */
@@ -974,7 +970,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
         {
             for (eos_u8_t j = 0; j < 8; j ++)
             {
-                if ((eos.obj_task_occupy[i] & (1 << j)) == 0)
+                if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
                 {
                     eos_u16_t _t_id = i * 8 + j;
                     eos_object_t *obj = &eos.object[_t_id];

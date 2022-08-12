@@ -1,5 +1,6 @@
 #include "test.h"
 #include <stdint.h>
+#include <stdio.h>
 #include "eventos.h"
 #include "bsp.h"
 
@@ -97,13 +98,15 @@ void test_init(void)
          i < (sizeof(task_test_info) / sizeof(task_test_info_t));
          i ++)
     {
-        eos_task_start(task_test_info[i].task,
+        eos_task_init(task_test_info[i].task,
                        task_test_info[i].name,
                        task_test_info[i].func,
-                       task_test_info[i].prio,
+                       EOS_NULL,
                        task_test_info[i].stack,
                        task_test_info[i].stack_size,
-                       EOS_NULL);
+                       task_test_info[i].prio,
+                       10);
+        eos_task_startup(task_test_info[i].task);
     }
 
     timer_init(1);
@@ -126,14 +129,14 @@ void eos_idle_count(void)
 
 void timer_isr_1ms(void)
 {
-    eos_interrupt_enter();
+    eos_base_t level = eos_hw_interrupt_disable();
     
     if (eos_test.isr_func_enable != 0)
     {
         eos_event_send("TaskValue", "Event_One");
     }
     
-    eos_interrupt_exit();
+    eos_hw_interrupt_enable(level);
 }
 
 /* public function ---------------------------------------------------------- */
@@ -143,12 +146,15 @@ static void task_func_e_give1(void *parameter)
     
     while (1)
     {
-        eos_test.time = eos_time();
+        eos_test.time = eos_tick_get_millisecond();
         eos_test.send_count ++;
         eos_test.send_give1_count ++;
-        eos_test.send_speed = eos_test.send_count / eos_test.time;
-        
+        if (eos_test.time != 0)
+        {
+            eos_test.send_speed = eos_test.send_count / eos_test.time;
+        }
         eos_event_send("TaskValue", "Event_One");
+        eos_task_mdelay(1000);
     }
 }
 
@@ -158,12 +164,17 @@ static void task_func_e_give2(void *parameter)
     
     while (1)
     {
-        eos_test.time = eos_time();
+        eos_test.time = eos_tick_get_millisecond();
         eos_test.send_count ++;
         eos_test.send_give2_count ++;
-        eos_test.send_speed = eos_test.send_count / eos_test.time;
+        if (eos_test.time != 0)
+        {
+            eos_test.send_speed = eos_test.send_count / eos_test.time;
+        }
         
         eos_event_send("TaskValue", "Event_One");
+
+        eos_task_mdelay(1000);
     }
 }
 
@@ -183,6 +194,7 @@ static void task_func_e_value(void *parameter)
         if (eos_event_topic(&e, "Event_One"))
         {
             eos_test.e_one ++;
+            printf("task e value. eos_test.e_one: %u.\n", eos_test.e_one);
         }
     }
 }
@@ -196,7 +208,7 @@ static void task_func_high(void *parameter)
         eos_test.send_count ++;
         eos_test.high_count ++;
         eos_event_send("TaskValue", "Event_One");
-        eos_delay_ms(1);
+        eos_task_mdelay(1);
     }
 }
 
@@ -209,7 +221,7 @@ static void task_func_middle(void *parameter)
         eos_test.send_count ++;
         eos_test.middle_count += 2;
         eos_event_send("TaskValue", "Event_One");
-        eos_delay_ms(2);
+        eos_task_mdelay(2);
     }
 }
 
