@@ -386,11 +386,7 @@ void eos_init(void)
                 break;
             }
         }
-        if (is_prime == false)
-        {
-            continue;
-        }
-        else
+        if (is_prime)
         {
             eos.prime_max = i;
             break;
@@ -572,61 +568,70 @@ void eos_event_attribute_unblocked(const char *topic)
 #if (EOS_USE_TIME_EVENT != 0)
 int32_t eos_evttimer(void)
 {
+    int32_t ret = EosRun_OK;
+
     /* 获取当前时间，检查延时事件队列 */
     uint32_t system_time = eos_tick_get_millisecond();
     
     if (eos.etimer[0].topic == Event_Null)
     {
-        return EosTimer_Empty;
+        ret = EosTimer_Empty;
+        goto exit;
     }
 
     /* 时间未到达 */
     if (system_time < eos.timeout_min)
     {
-        return EosTimer_NotTimeout;
+        ret = EosTimer_NotTimeout;
+        goto exit;
     }
 
     /* 若时间到达，将此事件推入事件队列，同时在etimer里删除。 */
     for (uint32_t i = 0; i < eos.timer_count; i ++)
     {
-        if (eos.etimer[i].timeout > system_time)
-            continue;
-        eos_event_publish(eos.etimer[i].topic);
-        /* 清零标志位 */
-        if (eos.etimer[i].oneshoot != EOS_False)
+        if (eos.etimer[i].timeout <= system_time)
         {
-            if (i == (eos.timer_count - 1))
+            eos_event_publish(eos.etimer[i].topic);
+            /* 清零标志位 */
+            if (eos.etimer[i].oneshoot != EOS_False)
             {
+                if (i == (eos.timer_count - 1))
+                {
+                    eos.timer_count -= 1;
+                    break;
+                }
+                eos.etimer[i] = eos.etimer[eos.timer_count - 1];
                 eos.timer_count -= 1;
-                break;
+                i --;
             }
-            eos.etimer[i] = eos.etimer[eos.timer_count - 1];
-            eos.timer_count -= 1;
-            i --;
-        }
-        else
-        {
-            uint32_t period = eos.etimer[i].period * timer_unit[eos.etimer[i].unit];
-            eos.etimer[i].timeout += period;
+            else
+            {
+                uint32_t period = eos.etimer[i].period *
+                                        timer_unit[eos.etimer[i].unit];
+                eos.etimer[i].timeout += period;
+            }
         }
     }
     if (eos.timer_count == 0)
     {
         eos.timeout_min = UINT32_MAX;
-        return EosTimer_ChangeToEmpty;
+        ret = EosTimer_ChangeToEmpty;
+        goto exit;
     }
 
     /* 寻找到最小的时间定时器 */
     uint32_t min_time_out_ms = UINT32_MAX;
     for (uint32_t i = 0; i < eos.timer_count; i ++)
     {
-        if (min_time_out_ms <= eos.etimer[i].timeout)
-            continue;
-        min_time_out_ms = eos.etimer[i].timeout;
+        if (min_time_out_ms > eos.etimer[i].timeout)
+        {
+            min_time_out_ms = eos.etimer[i].timeout;
+        }
     }
     eos.timeout_min = min_time_out_ms;
 
-    return EosRun_OK;
+exit:
+    return ret;
 }
 #endif
 
@@ -938,25 +943,21 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
         /* The suspended task does not receive any event. */
         for (uint32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
         {
-            if (eos.obj_task_occupy[i] == 0)
+            if (eos.obj_task_occupy[i] != 0)
             {
-                continue;
-            }
-
-            for (uint8_t j = 0; j < 8; j ++)
-            {
-                if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
+                for (uint8_t j = 0; j < 8; j ++)
                 {
-                    continue;
-                }
+                    if ((eos.obj_task_occupy[i] & (1 << j)) == 0)
+                    {
+                        uint16_t _t_id = i * 8 + j;
+                        eos_object_t *obj = &eos.object[_t_id];
 
-                uint16_t _t_id = i * 8 + j;
-                eos_object_t *obj = &eos.object[_t_id];
-
-                if (obj->ocb.task.tcb->event_recv_disable == true ||
-                    eos_task_get_state(obj->ocb.task.tcb) == EOS_TASK_SUSPEND)
-                {
-                    owner_set_bit(&g_owner, _t_id, false);
+                        if (obj->ocb.task.tcb->event_recv_disable == true ||
+                            eos_task_get_state(obj->ocb.task.tcb) == EOS_TASK_SUSPEND)
+                        {
+                            owner_set_bit(&g_owner, _t_id, false);
+                        }
+                    }
                 }
             }
         }
@@ -969,33 +970,29 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     /* Check if the related tasks are waiting for the specific event or not. */
     for (uint32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
     {
-        if (eos.obj_task_occupy[i] == 0)
+        if (eos.obj_task_occupy[i] != 0)
         {
-            continue;
-        }
-
-        for (uint8_t j = 0; j < 8; j ++)
-        {
-            if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
+            for (uint8_t j = 0; j < 8; j ++)
             {
-                continue;
-            }
-
-            uint16_t _t_id = i * 8 + j;
-            eos_object_t *obj = &eos.object[_t_id];
-
-            if (owner_is_occupied(&g_owner, _t_id) &&
-                obj->ocb.task.tcb != eos_task_self())
-            {
-                if (!obj->ocb.task.tcb->wait_specific_event)
+                if ((eos.obj_task_occupy[i] & (1 << j)) == 0)
                 {
-                    eos_sem_release(&obj->ocb.task.tcb->sem);
-                }
-                else
-                {
-                    if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
+                    uint16_t _t_id = i * 8 + j;
+                    eos_object_t *obj = &eos.object[_t_id];
+
+                    if (owner_is_occupied(&g_owner, _t_id) &&
+                        obj->ocb.task.tcb != eos_task_self())
                     {
-                        eos_sem_release(&obj->ocb.task.tcb->sem);
+                        if (!obj->ocb.task.tcb->wait_specific_event)
+                        {
+                            eos_sem_release(&obj->ocb.task.tcb->sem);
+                        }
+                        else
+                        {
+                            if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
+                            {
+                                eos_sem_release(&obj->ocb.task.tcb->sem);
+                            }
+                        }
                     }
                 }
             }
@@ -1191,17 +1188,18 @@ static void eos_event_pub_time(const char *topic,
     uint16_t period;
     for (uint8_t i = 0; i < EosTimerUnit_Max; i ++)
     {
-        if (time_ms > timer_threshold[i])
-            continue;
-        unit = i;
-        
-        if (i == EosTimerUnit_Ms)
+        if (time_ms <= timer_threshold[i])
         {
-            period = time_ms;
+            unit = i;
+            
+            if (i == EosTimerUnit_Ms)
+            {
+                period = time_ms;
+                break;
+            }
+            period = (time_ms + (timer_unit[i] >> 1)) / timer_unit[i];
             break;
         }
-        period = (time_ms + (timer_unit[i] >> 1)) / timer_unit[i];
-        break;
     }
     uint32_t timeout = (system_ms + time_ms);
     eos.etimer[eos.timer_count ++] = (eos_event_timer_t)
@@ -1965,27 +1963,24 @@ static uint16_t eos_hash_insert(const char *string)
             if (eos.object[index].key == (const char *)0)
             {
                 eos.object[index].key = string;
-                return index;
+                goto exit;
             }
-            if (strcmp(eos.object[index].key, string) != 0)
+            if (strcmp(eos.object[index].key, string) == 0)
             {
-                continue;
+                goto exit;
             }
-            
-            return index;
         }
 
         /* Ensure the finding speed is not slow. */
         if (i >= EOS_MAX_HASH_SEEK_TIMES)
         {
-            break;
+            /* If this assert is trigged, you need to enlarge the hash table size. */
+            EOS_ASSERT(0);
         }
     }
 
-    /* If this assert is trigged, you need to enlarge the hash table size. */
-    EOS_ASSERT(0);
-    
-    return 0;
+exit:
+    return index;
 }
 
 static uint16_t eos_hash_get_index(const char *string)
@@ -2003,31 +1998,28 @@ static uint16_t eos_hash_get_index(const char *string)
             index = index_init + i * j + 2 * (int16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;
 
-            if (eos.object[index].key == (const char *)0)
+            if (eos.object[index].key != (const char *)0 &&
+                strcmp(eos.object[index].key, string) == 0)
             {
-                continue;
+                goto exit;
             }
-            if (strcmp(eos.object[index].key, string) != 0)
-            {
-                continue;
-            }
-            
-            return index;
         }
 
         /* Ensure the finding speed is not slow. */
         if (i >= EOS_MAX_HASH_SEEK_TIMES)
         {
-            return EOS_MAX_OBJECTS;
+            index = EOS_MAX_OBJECTS;
+            goto exit;
         }
     }
-    
-    return EOS_MAX_OBJECTS;
+
+exit:
+    return index;
 }
 
 static bool eos_hash_existed(const char *string)
 {
-    uint16_t index = 0;
+    bool ret = false;
 
     /* Calculate the hash value of the string. */
     uint32_t hash = eos.hash_func(string);
@@ -2037,29 +2029,26 @@ static bool eos_hash_existed(const char *string)
     {
         for (int8_t j = -1; j <= 1; j += 2)
         {
-            index = index_init + i * j + 2 * (int16_t)EOS_MAX_OBJECTS;
+            uint16_t index = index_init + i * j + 2 * (int16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;
 
-            if (eos.object[index].key == (const char *)0)
+            if (eos.object[index].key != (const char *)0 &&
+                strcmp(eos.object[index].key, string) == 0)
             {
-                continue;
+                ret = true;
+                goto exit;
             }
-            if (strcmp(eos.object[index].key, string) != 0)
-            {
-                continue;
-            }
-            
-            return true;
         }
 
         /* Ensure the finding speed is not slow. */
         if (i >= EOS_MAX_HASH_SEEK_TIMES)
         {
-            return false;
+            goto exit;
         }
     }
-    
-    return false;
+
+exit:
+    return ret;
 }
 
 /* -----------------------------------------------------------------------------

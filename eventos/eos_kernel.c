@@ -24,9 +24,9 @@ void eos_schedule(void);
 void eos_schedule_inseeos_task(ek_task_t *task);
 void eos_schedule_remove_task(ek_task_t *task);
 
-uint8_t *eos_hw_stack_init(void *entry,
+eos_u8_t *eos_hw_stack_init(void *entry,
                             void *parameter,
-                            uint8_t *stack_addr,
+                            eos_u8_t *stack_addr,
                             void *exit);
 /*
  * Context interfaces
@@ -295,7 +295,7 @@ eos_u8_t eos_object_get_type(eos_obj_handle_t object)
     return object->type & ~EOS_Object_Static;
 }
 
-volatile uint8_t eos_interrupt_nest = 0;
+volatile eos_u8_t eos_interrupt_nest = 0;
 
 /**
  * @brief This function will be invoked by BSP, when enter interrupt service routine
@@ -331,9 +331,9 @@ void eos_interrupt_leave(void)
  * context is interrupt context.
  * @return the number of nested interrupts.
  */
-EOS_WEAK uint8_t eos_interrupt_get_nest(void)
+EOS_WEAK eos_u8_t eos_interrupt_get_nest(void)
 {
-    uint8_t ret;
+    eos_u8_t ret;
     eos_base_t level;
 
     level = eos_hw_interrupt_disable();
@@ -420,7 +420,7 @@ int *_eos_errno(void)
 
 #ifndef EOS_USING_CPU_FFS
 #ifdef EOS_USING_TINY_FFS
-const uint8_t __lowest_bit_bitmap[] =
+const eos_u8_t __lowest_bit_bitmap[] =
 {
     /*  0 - 7  */  0,  1,  2, 27,  3, 24, 28, 32,
     /*  8 - 15 */  4, 17, 25, 31, 29, 12, 32, 14,
@@ -442,7 +442,7 @@ int __eos_ffs(int value)
     return __lowest_bit_bitmap[(eos_u32_t)(value & (value - 1) ^ value) % 37];
 }
 #else
-const uint8_t __lowest_bit_bitmap[] =
+const eos_u8_t __lowest_bit_bitmap[] =
 {
     /* 00 */ 0, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
     /* 10 */ 4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
@@ -492,10 +492,10 @@ int __eos_ffs(int value)
 eos_list_t eos_task_priority_table[EOS_TASK_PRIORITY_MAX];
 eos_u32_t eos_task_ready_priority_group;
 
-extern volatile uint8_t eos_interrupt_nest;
+extern volatile eos_u8_t eos_interrupt_nest;
 static eos_s16_t eos_scheduler_lock_nest;
 ek_task_handle_t eos_current_task = EOS_NULL;
-uint8_t eos_current_priority;
+eos_u8_t eos_current_priority;
 
 #ifdef EOS_USING_OVERFLOW_CHECK
 static void _eos_scheduler_stack_check(ek_task_handle_t task)
@@ -503,9 +503,9 @@ static void _eos_scheduler_stack_check(ek_task_handle_t task)
     EOS_ASSERT(task != EOS_NULL);
 
 #ifdef ARCH_CPU_STACK_GROWS_UPWARD
-    if (*((uint8_t *)((eos_ubase_t)task->stack_addr + task->stack_size - 1)) != '#' ||
+    if (*((eos_u8_t *)((eos_ubase_t)task->stack_addr + task->stack_size - 1)) != '#' ||
 #else
-    if (*((uint8_t *)task->stack_addr) != '#' ||
+    if (*((eos_u8_t *)task->stack_addr) != '#' ||
 #endif /* ARCH_CPU_STACK_GROWS_UPWARD */
         (eos_ubase_t)task->sp <= (eos_ubase_t)task->stack_addr ||
         (eos_ubase_t)task->sp >
@@ -637,7 +637,7 @@ void eos_schedule(void)
             if (to_task != eos_current_task)
             {
                 /* if the destination task is not the same as current task */
-                eos_current_priority = (uint8_t)highest_ready_priority;
+                eos_current_priority = (eos_u8_t)highest_ready_priority;
                 from_task         = eos_current_task;
                 eos_current_task   = to_task;
 
@@ -887,7 +887,7 @@ static eos_err_t _task_init(ek_task_handle_t task,
                              void *parameter,
                              void *stack_start,
                              eos_u32_t stack_size,
-                             uint8_t priority,
+                             eos_u8_t priority,
                              eos_u32_t tick)
 {
     /* init task list */
@@ -908,7 +908,7 @@ static eos_err_t _task_init(ek_task_handle_t task,
                                           (void *)_task_exit);
 #else
     task->sp = (void *)eos_hw_stack_init(task->entry, task->parameter,
-                                          (uint8_t *)((char *)task->stack_addr + task->stack_size - sizeof(eos_ubase_t)),
+                                          (eos_u8_t *)((char *)task->stack_addr + task->stack_size - sizeof(eos_ubase_t)),
                                           (void *)_task_exit);
 #endif /* ARCH_CPU_STACK_GROWS_UPWARD */
 
@@ -965,7 +965,7 @@ eos_err_t ek_task_init(ek_task_handle_t task,
                         void *parameter,
                         void *stack_start,
                         eos_u32_t stack_size,
-                        uint8_t priority,
+                        eos_u8_t priority,
                         eos_u32_t tick)
 {
     /* parameter check */
@@ -1253,7 +1253,7 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
                 eos_schedule_remove_task(task);
 
                 /* change task priority */
-                task->current_priority = *(uint8_t *)arg;
+                task->current_priority = *(eos_u8_t *)arg;
 
                 /* recalculate priority attribute */
                 task->number_mask = 1 << task->current_priority;
@@ -1263,7 +1263,7 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
             }
             else
             {
-                task->current_priority = *(uint8_t *)arg;
+                task->current_priority = *(eos_u8_t *)arg;
 
                 /* recalculate priority attribute */
                 task->number_mask = 1 << task->current_priority;
@@ -1424,7 +1424,7 @@ eos_inline eos_err_t _ipc_object_init(struct ek_ipc_object *ipc)
  */
 eos_inline eos_err_t _ipc_list_suspend(eos_list_t *list,
                                         ek_task_handle_t task,
-                                        uint8_t flag)
+                                        eos_u8_t flag)
 {
     /* suspend task */
     eos_task_suspend((eos_task_handle_t)task);
@@ -1569,7 +1569,7 @@ eos_inline eos_err_t _ipc_list_resume_all(eos_list_t *list)
 eos_err_t eos_sem_init(eos_sem_handle_t sem_,
                         const char *name,
                         eos_u32_t value,
-                        uint8_t flag)
+                        eos_u8_t flag)
 {
     ek_sem_handle_t sem = (ek_sem_handle_t)sem_;
 
@@ -1834,7 +1834,7 @@ eos_err_t eos_sem_reset(eos_sem_handle_t sem_, eos_ubase_t value)
  *           If the return value is any other values, it represents the initialization failed.
  * @warning  This function can ONLY be called from tasks.
  */
-eos_err_t eos_mutex_init(eos_mutex_handle_t mutex_, const char *name, uint8_t flag)
+eos_err_t eos_mutex_init(eos_mutex_handle_t mutex_, const char *name, eos_u8_t flag)
 {
     ek_mutex_handle_t mutex = (ek_mutex_handle_t)mutex_;
 
@@ -2179,7 +2179,7 @@ static eos_list_t _eos_task_defunct = EOS_LIST_OBJECT_INIT(_eos_task_defunct);
 
 static ek_task_t idle[_CPUS_NR];
 ALIGN(EOS_ALIGN_SIZE)
-static uint8_t eos_task_stack[_CPUS_NR][IDLE_THREAD_STACK_SIZE];
+static eos_u8_t eos_task_stack[_CPUS_NR][IDLE_THREAD_STACK_SIZE];
 
 #ifndef SYSTEM_THREAD_STACK_SIZE
 #endif
@@ -2356,12 +2356,12 @@ static eos_list_t _timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
 #endif /* EOS_TIMER_THREAD_PRIO */
 
 /* soft timer status */
-static uint8_t _soft_timer_status = EOS_SOFT_TIMER_IDLE;
+static eos_u8_t _soft_timer_status = EOS_SOFT_TIMER_IDLE;
 /* soft timer list */
 static eos_list_t _soft_timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
 static ek_task_t _timer_task;
 ALIGN(EOS_ALIGN_SIZE)
-static uint8_t _timer_task_stack[EOS_TIMER_THREAD_STACK_SIZE];
+static eos_u8_t _timer_task_stack[EOS_TIMER_THREAD_STACK_SIZE];
 #endif /* EOS_USING_TIMER_SOFT */
 
 /**
@@ -2378,7 +2378,7 @@ static void _timer_init(eos_timer_handle_t timer,
                            void (*timeout)(void *parameter),
                            void      *parameter,
                            eos_u32_t  time,
-                           uint8_t flag)
+                           eos_u8_t flag)
 {
     /* set flag */
     timer->super.flag  = flag;
@@ -2502,7 +2502,7 @@ void eos_timer_init(eos_timer_handle_t  timer,
                    void (*timeout)(void *parameter),
                    void       *parameter,
                    eos_u32_t time,
-                   uint8_t flag)
+                   eos_u8_t flag)
 {
     /* parameter check */
     EOS_ASSERT(timer != EOS_NULL);

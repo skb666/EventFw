@@ -18,6 +18,8 @@ extern void eos_kernel_init(void);
 
 int main(void)
 {
+    eos_init();
+    
     eos_hw_interrupt_disable();
     eos_system_timer_init();
     eos_kernel_init();
