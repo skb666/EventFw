@@ -34,10 +34,7 @@
 #ifndef EVENTOS_DEF_H__
 #define EVENTOS_DEF_H__
 
-#include <stdint.h>
-
 /* basic data type ---------------------------------------------------------- */
-
 typedef unsigned int                    eos_u32_t;
 typedef int                             eos_s32_t;
 typedef unsigned short                  eos_u16_t;

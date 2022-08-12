@@ -74,14 +74,13 @@ EventOS Default Configuration
 #define EOS_USE_EVENT_BRIDGE                    0       // 默认关闭事件桥
 #endif
 
-#include <stdint.h>
 #include <stdbool.h>
 
 /* -----------------------------------------------------------------------------
 Basic type
 ----------------------------------------------------------------------------- */
 #if (EOS_TEST_PLATFORM == 32)
-typedef uint32_t                        eos_pointer_t;
+typedef eos_u32_t                        eos_pointer_t;
 #else
 #include <stdint.h>
 typedef uint64_t                        eos_pointer_t;
@@ -90,7 +89,7 @@ typedef uint64_t                        eos_pointer_t;
 /* -----------------------------------------------------------------------------
 EventOS
 ----------------------------------------------------------------------------- */
-// extern volatile int32_t critical_count;
+// extern volatile eos_s32_t critical_count;
 // #define eos_interrupt_disable() do {                                           \
 //     __disable_irq();                                                           \
 //     critical_count ++;                                                         \
@@ -107,7 +106,7 @@ EventOS
 void eos_init(void);
 // Run EventOS.
 void eos_run(void);
-uint32_t eos_time(void);
+eos_u32_t eos_time(void);
 // System tick function.
 void eos_tick(void);
 // 进入中断
@@ -169,7 +168,7 @@ typedef struct eos_semaphore
 #if (EOS_USE_3RD_KERNEL == 0)
     ek_sem_t sem;
 #else
-    uint32_t sem;
+    eos_u32_t sem;
 #endif
 } eos_sem_t;
 
@@ -210,10 +209,10 @@ typedef struct eos_task
     ek_task_t task_;
 #endif
 
-    uint32_t task_handle;
+    eos_u32_t task_handle;
     eos_sem_t sem;
 
-    uint16_t t_id;                          // task ID
+    eos_u16_t t_id;                          // task ID
     bool event_recv_disable;
     bool wait_specific_event;
     const char *event_wait;
@@ -249,19 +248,19 @@ eos_u8_t eos_task_get_priority(eos_task_handle_t task);
 void eos_task_start(eos_task_t * const me,
                     const char *name,
                     eos_func_t func,
-                    uint8_t priority,
+                    eos_u8_t priority,
                     void *stack_addr,
-                    uint32_t stack_size,
+                    eos_u32_t stack_size,
                     void *parameter);
 // 退出当前任务，任务函数中调用。
 void eos_task_exit(void);
 // 任务内延时，任务函数中调用，不允许在定时器的回调函数调用，不允许在空闲回调函数中调用。
-void eos_delay_ms(uint32_t time_ms);
+void eos_delay_ms(eos_u32_t time_ms);
 // 任务等待某特定事件，其他事件均忽略。
 bool eos_task_wait_specific_event(  eos_event_t * const e_out,
-                                    const char *topic, uint32_t time_ms);
+                                    const char *topic, eos_u32_t time_ms);
 // 任务阻塞式等待事件
-bool eos_task_wait_event(eos_event_t * const e_out, uint32_t time_ms);
+bool eos_task_wait_event(eos_event_t * const e_out, eos_u32_t time_ms);
 
 /* defunct */
 void eos_task_defunct_enqueue(eos_task_handle_t task);
@@ -292,7 +291,7 @@ typedef struct eos_mutex
 #if (EOS_USE_3RD_KERNEL == 0)
     ek_mutex_t mutex;
 #else
-    uint32_t mutex;
+    eos_u32_t mutex;
 #endif
 } eos_mutex_t;
 
@@ -317,17 +316,17 @@ Event
 // 直接发送事件。允许在中断中调用。
 void eos_event_send(const char *task, const char *topic);
 // 延迟发送事件。
-void eos_event_send_delay(const char *task, const char *topic, uint32_t time_delay_ms);
+void eos_event_send_delay(const char *task, const char *topic, eos_u32_t time_delay_ms);
 // 周期发送事件。
-void eos_event_send_period(const char *task, const char *topic, uint32_t time_period_ms);
+void eos_event_send_period(const char *task, const char *topic, eos_u32_t time_period_ms);
 
 // 事件的发布 --------------------------------------------
 // 发布主题事件。允许在中断中调用。
 void eos_event_publish(const char *topic);
 // 延时发布某事件。允许在中断中调用。
-void eos_event_publish_delay(const char *topic, uint32_t time_delay_ms);
+void eos_event_publish_delay(const char *topic, eos_u32_t time_delay_ms);
 // 周期发布某事件。允许在中断中调用。
-void eos_event_publish_period(const char *topic, uint32_t time_period_ms);
+void eos_event_publish_period(const char *topic, eos_u32_t time_period_ms);
 // 取消某延时或者周期事件的发布。允许在中断中调用。
 void eos_event_time_cancel(const char *topic);
 
@@ -344,23 +343,23 @@ bool eos_event_topic(eos_event_t const * const e, const char *topic);
 /* -----------------------------------------------------------------------------
 Database
 ----------------------------------------------------------------------------- */
-#define EOS_DB_ATTRIBUTE_LINK_EVENT      ((uint8_t)0x40U)
-#define EOS_DB_ATTRIBUTE_PERSISTENT      ((uint8_t)0x20U)
-#define EOS_DB_ATTRIBUTE_VALUE           ((uint8_t)0x01U)
-#define EOS_DB_ATTRIBUTE_STREAM          ((uint8_t)0x02U)
+#define EOS_DB_ATTRIBUTE_LINK_EVENT      ((eos_u8_t)0x40U)
+#define EOS_DB_ATTRIBUTE_PERSISTENT      ((eos_u8_t)0x20U)
+#define EOS_DB_ATTRIBUTE_VALUE           ((eos_u8_t)0x01U)
+#define EOS_DB_ATTRIBUTE_STREAM          ((eos_u8_t)0x02U)
 
 // 事件数据库的初始化
-void eos_db_init(void *const memory, uint32_t size);
+void eos_db_init(void *const memory, eos_u32_t size);
 // 事件数据库的注册。
-void eos_db_register(const char *topic, uint32_t size, uint8_t attribute);
+void eos_db_register(const char *topic, eos_u32_t size, eos_u8_t attribute);
 // 块数据的读取。
 void eos_db_block_read(const char *topic, void * const data);
 // 块数据的写入。允许在中断中调用。
 void eos_db_block_write(const char *topic, void * const data);
 // 流数据的读取。
-int32_t eos_db_stream_read(const char *topic, void *const buffer, uint32_t size);
+eos_s32_t eos_db_stream_read(const char *topic, void *const buffer, eos_u32_t size);
 // 流数据的写入。允许在中断中调用。
-void eos_db_stream_write(const char *topic, void *const buffer, uint32_t size);
+void eos_db_stream_write(const char *topic, void *const buffer, eos_u32_t size);
 
 /* -----------------------------------------------------------------------------
 Reactor
@@ -381,8 +380,8 @@ typedef struct eos_reactor
 
 void eos_reactor_init(  eos_reactor_t * const me,
                         const char *name,
-                        uint8_t priority,
-                        void *stack, uint32_t size);
+                        eos_u8_t priority,
+                        void *stack, eos_u32_t size);
 void eos_reactor_start(eos_reactor_t * const me, eos_event_handler event_handler);
 
 #define EOS_HANDLER_CAST(handler)       ((eos_event_handler)(handler))
@@ -421,8 +420,8 @@ typedef struct eos_sm
 // 状态机初始化函数
 void eos_sm_init(   eos_sm_t * const me,
                     const char *name,
-                    uint8_t priority,
-                    void *stack, uint32_t size);
+                    eos_u8_t priority,
+                    void *stack, eos_u32_t size);
 void eos_sm_start(eos_sm_t * const me, eos_state_handler state_init);
 
 eos_ret_t eos_tran(eos_sm_t * const me, eos_state_handler state);
@@ -453,15 +452,15 @@ Assert
 
 /* General assert */
 #define EOS_ASSERT(test_) ((test_)                                             \
-    ? (void)0 : eos_port_assert(___tag_name, EOS_NULL, (uint32_t)__LINE__))
+    ? (void)0 : eos_port_assert(___tag_name, EOS_NULL, (eos_u32_t)__LINE__))
 
 /* General assert with ID */
 #define EOS_ASSERT_ID(id_, test_) ((test_)                                     \
-    ? (void)0 : eos_port_assert(___tag_name, EOS_NULL, (uint32_t)(id_)))
+    ? (void)0 : eos_port_assert(___tag_name, EOS_NULL, (eos_u32_t)(id_)))
 
 /* General assert with name string or event topic. */
 #define EOS_ASSERT_NAME(test_, name_) ((test_)                                 \
-    ? (void)0 : eos_port_assert(___tag_name, name_, (uint32_t)(__LINE__)))
+    ? (void)0 : eos_port_assert(___tag_name, name_, (eos_u32_t)(__LINE__)))
         
 /* Assert with printed information. */
 #define EOS_ASSERT_INFO(test_, ...) ((test_)                                   \
@@ -487,12 +486,12 @@ Trace
 ----------------------------------------------------------------------------- */
 #if (EOS_USE_STACK_USAGE != 0)
 // 任务的堆栈使用率
-uint8_t eos_task_stack_usage(uint8_t priority);
+eos_u8_t eos_task_stack_usage(eos_u8_t priority);
 #endif
 
 #if (EOS_USE_CPU_USAGE != 0)
 // 任务的CPU使用率
-uint8_t eos_task_cpu_usage(uint8_t priority);
+eos_u8_t eos_task_cpu_usage(eos_u8_t priority);
 // 监控函数，放进一个单独的定时器中断函数，中断频率为SysTick的10-20倍。
 void eos_cpu_usage_monitor(void);
 #endif
@@ -501,7 +500,7 @@ void eos_cpu_usage_monitor(void);
 Port
 ----------------------------------------------------------------------------- */
 void eos_port_task_switch(void);
-void eos_port_assert(const char *tag, const char *name, uint32_t id);
+void eos_port_assert(const char *tag, const char *name, eos_u32_t id);
 
 /* -----------------------------------------------------------------------------
 Hook

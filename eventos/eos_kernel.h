@@ -71,8 +71,8 @@ typedef void (* eos_func_t)(void *parameter);
 typedef struct eos_event
 {
     const char *topic;                      // The event topic.
-    uint32_t eid                    : 16;   // The event ID.
-    uint32_t size                   : 16;   // The event content's size.
+    eos_u32_t eid                    : 16;   // The event ID.
+    eos_u32_t size                   : 16;   // The event content's size.
 } eos_event_t;
 
 /* Timer -------------------------------------------------------------------- */
@@ -173,7 +173,7 @@ eos_err_t ek_task_init(ek_task_handle_t task,
                         void *parameter,
                         void *stack_start,
                         eos_u32_t stack_size,
-                        uint8_t priority,
+                        eos_u8_t priority,
                         eos_u32_t tick);
 
 /* mutex -------------------------------------------------------------------- */

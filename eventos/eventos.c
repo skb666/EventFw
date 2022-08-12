@@ -37,7 +37,7 @@
 
 EOS_TAG("EventOS")
 
-volatile int32_t critical_count = 0;
+volatile eos_s32_t critical_count = 0;
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,18 +102,18 @@ enum
 #endif
 
 /* Event atrribute ---------------------------------------------------------- */
-#define EOS_EVENT_ATTRIBUTE_GLOBAL          ((uint8_t)0x80U)
-#define EOS_EVENT_ATTRIBUTE_UNBLOCKED       ((uint8_t)0x20U)
-#define EOS_EVENT_ATTRIBUTE_TOPIC           ((uint8_t)0x00U)
+#define EOS_EVENT_ATTRIBUTE_GLOBAL          ((eos_u8_t)0x80U)
+#define EOS_EVENT_ATTRIBUTE_UNBLOCKED       ((eos_u8_t)0x20U)
+#define EOS_EVENT_ATTRIBUTE_TOPIC           ((eos_u8_t)0x00U)
 #define EOS_EVENT_ATTRIBUTE_VALUE           EOS_DB_ATTRIBUTE_VALUE
 #define EOS_EVENT_ATTRIBUTE_STREAM          EOS_DB_ATTRIBUTE_STREAM
 
 /* Task attribute ----------------------------------------------------------- */
-#define EOS_TASK_ATTRIBUTE_TASK             ((uint8_t)0x00U)
-#define EOS_TASK_ATTRIBUTE_REACTOR          ((uint8_t)0x01U)
-#define EOS_TASK_ATTRIBUTE_SM               ((uint8_t)0x02U)
+#define EOS_TASK_ATTRIBUTE_TASK             ((eos_u8_t)0x00U)
+#define EOS_TASK_ATTRIBUTE_REACTOR          ((eos_u8_t)0x01U)
+#define EOS_TASK_ATTRIBUTE_SM               ((eos_u8_t)0x02U)
 
-typedef uint32_t (* hash_algorithm_t)(const char *string);
+typedef eos_u32_t (* hash_algorithm_t)(const char *string);
 
 #if (EOS_USE_TIME_EVENT != 0)
 #define EOS_MS_NUM_30DAY                    (2592000000U)
@@ -121,7 +121,7 @@ typedef uint32_t (* hash_algorithm_t)(const char *string);
 
 typedef struct eos_owner
 {
-    uint8_t data[EOS_MAX_OWNER];
+    eos_u8_t data[EOS_MAX_OWNER];
 } eos_owner_t;
 
 enum
@@ -134,7 +134,7 @@ enum
     EosTimerUnit_Max
 };
 
-static const uint32_t timer_threshold[EosTimerUnit_Max] =
+static const eos_u32_t timer_threshold[EosTimerUnit_Max] =
 {
     60000,                                          /* 60 S */
     6000000,                                        /* 100 Minutes */
@@ -142,7 +142,7 @@ static const uint32_t timer_threshold[EosTimerUnit_Max] =
     1296000000,                                     /* 15 days */
 };
 
-static const uint32_t timer_unit[EosTimerUnit_Max] =
+static const eos_u32_t timer_unit[EosTimerUnit_Max] =
 {
     1, 100, 1000, 60000
 };
@@ -150,26 +150,26 @@ static const uint32_t timer_unit[EosTimerUnit_Max] =
 typedef struct eos_event_timer
 {
     const char *topic;
-    uint32_t oneshoot                      : 1;
-    uint32_t unit                          : 2;
-    uint32_t period                        : 16;
-    uint32_t timeout;
+    eos_u32_t oneshoot                      : 1;
+    eos_u32_t unit                          : 2;
+    eos_u32_t period                        : 16;
+    eos_u32_t timeout;
 } eos_event_timer_t;
 #endif
 
 typedef struct eos_heap_block
 {
     struct eos_heap_block *next;
-    uint32_t is_free                            : 1;
-    uint32_t size;
+    eos_u32_t is_free                            : 1;
+    eos_u32_t size;
 } eos_heap_block_t;
 
 typedef struct eos_heap_tag
 {
-    uint8_t *data;
+    eos_u8_t *data;
     eos_heap_block_t *list;
-    uint32_t size;                              /* total size */
-    uint32_t error_id                           : 3;
+    eos_u32_t size;                              /* total size */
+    eos_u32_t error_id                           : 3;
 } eos_heap_t;
 
 typedef struct eos_event_data
@@ -177,9 +177,9 @@ typedef struct eos_event_data
     struct eos_event_data *next;
     struct eos_event_data *last;
     eos_owner_t e_owner;
-    uint32_t time;
-    uint16_t id;
-    uint8_t type;
+    eos_u32_t time;
+    eos_u16_t id;
+    eos_u8_t type;
 } eos_event_data_t;
 
 enum
@@ -194,11 +194,11 @@ enum
 typedef struct eos_stream
 {
     void *data;
-    uint32_t head;
-    uint32_t tail;
+    eos_u32_t head;
+    eos_u32_t tail;
     bool empty;
 
-    uint32_t capacity;
+    eos_u32_t capacity;
 } eos_stream_t;
 
 struct eos_object;
@@ -225,9 +225,9 @@ typedef struct eos_object
 {
     const char *key;                                    /* Key */
     eos_ocb_t ocb;                                      /* object block */
-    uint32_t type                   : 8;                /* Object type */
-    uint32_t attribute              : 8;
-    uint32_t size                   : 16;               /* Value size */
+    eos_u32_t type                   : 8;                /* Object type */
+    eos_u32_t attribute              : 8;
+    eos_u32_t size                   : 16;               /* Value size */
     union
     {
         void *value;                                    /* for value-event */
@@ -240,20 +240,20 @@ typedef struct eos_tag
     /* Hash table */
     eos_object_t object[EOS_MAX_OBJECTS];
     hash_algorithm_t hash_func;
-    uint16_t prime_max;
-    uint8_t obj_task_occupy[EOS_MAX_TASK_OCCUPY];
+    eos_u16_t prime_max;
+    eos_u8_t obj_task_occupy[EOS_MAX_TASK_OCCUPY];
 
     /* Time event */
 #if (EOS_USE_TIME_EVENT != 0)
     eos_event_timer_t etimer[EOS_MAX_TIME_EVENT];
-    uint32_t timeout_min;
-    uint8_t timer_count;
+    eos_u32_t timeout_min;
+    eos_u8_t timer_count;
 #endif
 
     /* Heap */
 #if (EOS_USE_EVENT_DATA != 0)
     eos_heap_t heap;
-    uint8_t heap_data[EOS_SIZE_HEAP];
+    eos_u8_t heap_data[EOS_SIZE_HEAP];
 #endif
     eos_heap_t db;
     eos_event_data_t *e_queue;
@@ -261,8 +261,8 @@ typedef struct eos_tag
     eos_owner_t g_owner;
 
     /* flag */
-    uint8_t enabled                         : 1;
-    uint8_t running                         : 1;
+    eos_u8_t enabled                         : 1;
+    eos_u8_t running                         : 1;
 } eos_t;
 
 /* **eos end** ----------------------------------------------------------------- */
@@ -305,13 +305,13 @@ static const eos_event_t eos_event_table[Event_User] =
 /* static function ------------------------------------------------------------- */
 void eos_task_start_private(eos_task_handle_t const me,
                             eos_func_t func,
-                            uint8_t priority,
+                            eos_u8_t priority,
                             void *stack_addr,
-                            uint32_t stack_size,
+                            eos_u32_t stack_size,
                             void *parameter);
-static int8_t eos_event_give_(const char *task,
-                               uint32_t task_id,
-                               uint8_t give_type,
+static eos_s8_t eos_event_give_(const char *task,
+                               eos_u32_t task_id,
+                               eos_u8_t give_type,
                                const char *topic);
 static void eos_e_queue_delete_(eos_event_data_t const *item);
 static void eos_owner_global_(void);
@@ -319,34 +319,34 @@ static void eos_reactor_enter(eos_reactor_t *const me);
 static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic);
 static void eos_sm_enter(eos_sm_t *const me);
 static void eos_timer_poll(void);
-static int32_t eos_evttimer(void);
-static uint32_t eos_hash_time33(const char *string);
-static uint16_t eos_hash_insert(const char *string);
-static uint16_t eos_hash_get_index(const char *string);
+static eos_s32_t eos_evttimer(void);
+static eos_u32_t eos_hash_time33(const char *string);
+static eos_u16_t eos_hash_insert(const char *string);
+static eos_u16_t eos_hash_get_index(const char *string);
 static bool eos_hash_existed(const char *string);
 #if (EOS_USE_SM_MODE != 0)
 static void eos_sm_dispath(eos_sm_t *const me, eos_event_t const * const e);
 #if (EOS_USE_HSM_MODE != 0)
-static int32_t eos_sm_tran(eos_sm_t *const me, eos_state_handler path[EOS_MAX_HSM_NEST_DEPTH]);
+static eos_s32_t eos_sm_tran(eos_sm_t *const me, eos_state_handler path[EOS_MAX_HSM_NEST_DEPTH]);
 #endif
 #endif
 #if (EOS_USE_EVENT_DATA != 0)
-static void eos_heap_init(eos_heap_t *const me, void *data, uint32_t size);
-static void * eos_heap_malloc(eos_heap_t *const me, uint32_t size);
+static void eos_heap_init(eos_heap_t *const me, void *data, eos_u32_t size);
+static void * eos_heap_malloc(eos_heap_t *const me, eos_u32_t size);
 static void eos_heap_free(eos_heap_t *const me, void * data);
 #endif
 
-static int32_t eos_stream_init(eos_stream_t *const me, void *memory, uint32_t capacity);
-static int32_t eos_stream_push(eos_stream_t *me, void * data, uint32_t size);
-static int32_t eos_stream_pull_pop(eos_stream_t *me, void * data, uint32_t size);
+static eos_s32_t eos_stream_init(eos_stream_t *const me, void *memory, eos_u32_t capacity);
+static eos_s32_t eos_stream_push(eos_stream_t *me, void * data, eos_u32_t size);
+static eos_s32_t eos_stream_pull_pop(eos_stream_t *me, void * data, eos_u32_t size);
 static bool eos_stream_full(eos_stream_t *me);
-static int32_t eos_stream_size(eos_stream_t *me);
-static int32_t eos_stream_empty_size(eos_stream_t *me);
+static eos_s32_t eos_stream_size(eos_stream_t *me);
+static eos_s32_t eos_stream_empty_size(eos_stream_t *me);
 static inline void eos_task_delay_handle(void);
 
-static inline bool owner_is_occupied(eos_owner_t *owner, uint32_t t_id);
+static inline bool owner_is_occupied(eos_owner_t *owner, eos_u32_t t_id);
 static inline void owner_or(eos_owner_t *g_owner, eos_owner_t *owner);
-static inline void owner_set_bit(eos_owner_t *owner, uint32_t t_id, bool status);
+static inline void owner_set_bit(eos_owner_t *owner, eos_u32_t t_id, bool status);
 static inline bool owner_all_cleared(eos_owner_t *owner);
 static inline bool owner_not_cleared(eos_owner_t *owner);
 
@@ -371,10 +371,10 @@ void eos_init(void)
 #endif
 
     /* Find the maximum prime in the range of EOS_MAX_OBJECTS. */
-    for (int32_t i = EOS_MAX_OBJECTS; i > 0; i --)
+    for (eos_s32_t i = EOS_MAX_OBJECTS; i > 0; i --)
     {
         bool is_prime = true;
-        for (uint32_t j = 2; j < EOS_MAX_OBJECTS; j ++)
+        for (eos_u32_t j = 2; j < EOS_MAX_OBJECTS; j ++)
         {
             if (i <= j)
             {
@@ -394,7 +394,7 @@ void eos_init(void)
     }
     
     /* Initialize the hash table. */
-    for (uint32_t i = 0; i < EOS_MAX_OBJECTS; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_OBJECTS; i ++)
     {
         eos.object[i].key = (const char *)0;
     }
@@ -417,7 +417,7 @@ eos_err_t eos_task_init(eos_task_t *task,
     eos_base_t level = eos_hw_interrupt_disable();
 
     /* Get task id according to the event topic. */
-    uint16_t t_id = eos_hash_get_index(name);
+    eos_u16_t t_id = eos_hash_get_index(name);
     EOS_ASSERT(t_id == EOS_MAX_OBJECTS);
     /* Newly create one task in the hash table. */
     t_id = eos_hash_insert(name);
@@ -427,7 +427,7 @@ eos_err_t eos_task_init(eos_task_t *task,
     eos.obj_task_occupy[t_id / 8] |= (1 << (t_id % 8));
     
 #if (EOS_USE_3RD_KERNEL == 0)
-    task->task_handle = (uint32_t)(&task->task_);
+    task->task_handle = (eos_u32_t)(&task->task_);
 #endif
 
     eos_hw_interrupt_enable(level);
@@ -438,12 +438,12 @@ eos_err_t eos_task_init(eos_task_t *task,
                         priority, tick);
 }
 
-bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
+bool eos_task_wait_event(eos_event_t *const e_out, eos_u32_t time_ms)
 {
     EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
 
     eos_base_t level = eos_hw_interrupt_disable();
-    uint16_t t_id = eos_task_self()->t_id;
+    eos_u16_t t_id = eos_task_self()->t_id;
     eos_task_handle_t task = eos_task_self();
 
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
@@ -464,7 +464,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
                 eos_object_t *e_object = &eos.object[e_item->id];
                 if (e_object->type != EosObj_Event)
                 EOS_ASSERT(e_object->type == EosObj_Event);
-                uint8_t type = e_object->attribute & 0x03;
+                eos_u8_t type = e_object->attribute & 0x03;
                 /* Event out */
                 e_out->topic = e_object->key;
                 e_out->eid = e_item->id;
@@ -505,12 +505,12 @@ bool eos_task_wait_event(eos_event_t *const e_out, uint32_t time_ms)
 }
 
 bool eos_task_wait_specific_event(  eos_event_t *const e_out,
-                                    const char *topic, uint32_t time_ms)
+                                    const char *topic, eos_u32_t time_ms)
 {
     bool ret = false;
     eos_base_t level = eos_hw_interrupt_disable();
 
-    uint16_t e_id = eos_hash_get_index(topic);
+    eos_u16_t e_id = eos_hash_get_index(topic);
     /* If the topic is not existed in hash table. */
     if (e_id == EOS_MAX_OBJECTS)
     {
@@ -537,7 +537,7 @@ void eos_event_attribute_global(const char *topic)
 {
     eos_base_t level = eos_hw_interrupt_disable();
 
-    uint16_t e_id;
+    eos_u16_t e_id;
     if (eos_hash_existed(topic) == false)
     {
         e_id = eos_hash_insert(topic);
@@ -553,7 +553,7 @@ void eos_event_attribute_unblocked(const char *topic)
 {
     eos_base_t level = eos_hw_interrupt_disable();
 
-    uint16_t e_id;
+    eos_u16_t e_id;
     if (eos_hash_existed(topic) == false)
     {
         e_id = eos_hash_insert(topic);
@@ -566,12 +566,12 @@ void eos_event_attribute_unblocked(const char *topic)
 }
 
 #if (EOS_USE_TIME_EVENT != 0)
-int32_t eos_evttimer(void)
+eos_s32_t eos_evttimer(void)
 {
-    int32_t ret = EosRun_OK;
+    eos_s32_t ret = EosRun_OK;
 
     /* 获取当前时间，检查延时事件队列 */
-    uint32_t system_time = eos_tick_get_millisecond();
+    eos_u32_t system_time = eos_tick_get_millisecond();
     
     if (eos.etimer[0].topic == Event_Null)
     {
@@ -587,7 +587,7 @@ int32_t eos_evttimer(void)
     }
 
     /* 若时间到达，将此事件推入事件队列，同时在etimer里删除。 */
-    for (uint32_t i = 0; i < eos.timer_count; i ++)
+    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
     {
         if (eos.etimer[i].timeout <= system_time)
         {
@@ -606,7 +606,7 @@ int32_t eos_evttimer(void)
             }
             else
             {
-                uint32_t period = eos.etimer[i].period *
+                eos_u32_t period = eos.etimer[i].period *
                                         timer_unit[eos.etimer[i].unit];
                 eos.etimer[i].timeout += period;
             }
@@ -614,14 +614,14 @@ int32_t eos_evttimer(void)
     }
     if (eos.timer_count == 0)
     {
-        eos.timeout_min = UINT32_MAX;
+        eos.timeout_min = EOS_U32_MAX;
         ret = EosTimer_ChangeToEmpty;
         goto exit;
     }
 
     /* 寻找到最小的时间定时器 */
-    uint32_t min_time_out_ms = UINT32_MAX;
-    for (uint32_t i = 0; i < eos.timer_count; i ++)
+    eos_u32_t min_time_out_ms = EOS_U32_MAX;
+    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
     {
         if (min_time_out_ms > eos.etimer[i].timeout)
         {
@@ -640,7 +640,7 @@ static void eos_task_function(void *parameter)
     (void)parameter;
 
     eos_task_handle_t task_current = eos_task_self();
-    uint8_t type = eos.object[task_current->t_id].attribute;
+    eos_u8_t type = eos.object[task_current->t_id].attribute;
     /* Reactor exutes the event Enter. */
     if (type == EOS_TASK_ATTRIBUTE_REACTOR)
     {
@@ -721,7 +721,7 @@ static void eos_owner_global_(void)
     eos_event_data_t *e_item = eos.e_queue;
     while (e_item != EOS_NULL)
     {
-        for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
+        for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i ++)
         {
             eos.g_owner.data[i] |= e_item->e_owner.data[i];
         }
@@ -732,8 +732,8 @@ static void eos_owner_global_(void)
 /* 关于Reactor -------------------------------------------------------------- */
 void eos_reactor_init(  eos_reactor_t *const me,
                         const char *name,
-                        uint8_t priority,
-                        void *stack, uint32_t size)
+                        eos_u8_t priority,
+                        void *stack, eos_u32_t size)
 {
     eos_task_init(&me->super,
                     name,
@@ -762,8 +762,8 @@ void eos_reactor_start(eos_reactor_t *const me, eos_event_handler event_handler)
 #if (EOS_USE_SM_MODE != 0)
 void eos_sm_init(   eos_sm_t *const me,
                     const char *name,
-                    uint8_t priority,
-                    void *stack, uint32_t size)
+                    eos_u8_t priority,
+                    void *stack, eos_u32_t size)
 {
     eos_task_init(&me->super,
                     name,
@@ -816,7 +816,7 @@ static void eos_sm_enter(eos_sm_t *const me)
     t = eos_state_top;
     /* 由初始状态转移，引发的各层状态的进入 */
     /* 每一个循环，都代表着一个Event_Init的执行 */
-    int32_t ip = 0;
+    eos_s32_t ip = 0;
     ret = EOS_Ret_Null;
     do
     {
@@ -850,13 +850,13 @@ static void eos_sm_enter(eos_sm_t *const me)
 /* -----------------------------------------------------------------------------
 Event
 ----------------------------------------------------------------------------- */
-uint32_t count_test = 0;
-static int8_t eos_event_give_(const char *task, uint32_t task_id,
-                              uint8_t give_type,
+eos_u32_t count_test = 0;
+static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
+                              eos_u8_t give_type,
                               const char *topic)
 {
     /* Get the task id in the object hash table. */
-    uint16_t t_id;
+    eos_u16_t t_id;
     eos_task_handle_t tcb;
     eos_base_t level;
 
@@ -881,7 +881,7 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
             eos_task_get_state(tcb) == EOS_TASK_SUSPEND)
         {
             eos_hw_interrupt_enable(level);
-            return (int8_t)EosRun_OK;
+            return (eos_s8_t)EosRun_OK;
         }
         eos_hw_interrupt_enable(level);
     }
@@ -903,8 +903,8 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     level = eos_hw_interrupt_disable();
     
     /* Get event id according to the event topic. */
-    uint16_t e_id = eos_hash_get_index(topic);
-    uint8_t e_type;
+    eos_u16_t e_id = eos_hash_get_index(topic);
+    eos_u8_t e_type;
     if (e_id == EOS_MAX_OBJECTS)
     {
         /* Newly create one event in the hash table. */
@@ -941,15 +941,15 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
         memcpy(&g_owner, &eos.object[e_id].ocb.event.e_sub, sizeof(eos_owner_t));
         
         /* The suspended task does not receive any event. */
-        for (uint32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
+        for (eos_u32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
         {
             if (eos.obj_task_occupy[i] != 0)
             {
-                for (uint8_t j = 0; j < 8; j ++)
+                for (eos_u8_t j = 0; j < 8; j ++)
                 {
                     if ((eos.obj_task_occupy[i] & (1 << j)) == 0)
                     {
-                        uint16_t _t_id = i * 8 + j;
+                        eos_u16_t _t_id = i * 8 + j;
                         eos_object_t *obj = &eos.object[_t_id];
 
                         if (obj->ocb.task.tcb->event_recv_disable == true ||
@@ -968,15 +968,15 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
     }
 
     /* Check if the related tasks are waiting for the specific event or not. */
-    for (uint32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
     {
         if (eos.obj_task_occupy[i] != 0)
         {
-            for (uint8_t j = 0; j < 8; j ++)
+            for (eos_u8_t j = 0; j < 8; j ++)
             {
                 if ((eos.obj_task_occupy[i] & (1 << j)) == 0)
                 {
-                    uint16_t _t_id = i * 8 + j;
+                    eos_u16_t _t_id = i * 8 + j;
                     eos_object_t *obj = &eos.object[_t_id];
 
                     if (owner_is_occupied(&g_owner, _t_id) &&
@@ -1083,12 +1083,12 @@ static int8_t eos_event_give_(const char *task, uint32_t task_id,
 exit:
     eos_hw_interrupt_enable(level);
 
-    return (int8_t)EosRun_OK;
+    return (eos_s8_t)EosRun_OK;
 }
 
-uint32_t eos_get_task_id(const char *task)
+eos_u32_t eos_get_task_id(const char *task)
 {
-    uint16_t t_id = eos_hash_get_index(task);
+    eos_u16_t t_id = eos_hash_get_index(task);
     EOS_ASSERT_NAME(t_id != EOS_MAX_OBJECTS, task);
     EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
 
@@ -1100,7 +1100,7 @@ void eos_event_send(const char *task, const char *topic)
     eos_event_give_(task, EOS_MAX_OBJECTS, EosEventGiveType_Send, topic);
 }
 
-void eos_event_send_id(uint32_t task_id, const char *topic)
+void eos_event_send_id(eos_u32_t task_id, const char *topic)
 {
     eos_event_give_(NULL, task_id, EosEventGiveType_Send, topic);
 }
@@ -1115,7 +1115,7 @@ static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic)
     eos_base_t level = eos_hw_interrupt_disable();
 
     /* Find the object by the event topic. */
-    uint16_t index;
+    eos_u16_t index;
     index = eos_hash_get_index(topic);
     if (index == EOS_MAX_OBJECTS)
     {
@@ -1128,7 +1128,7 @@ static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic)
         EOS_ASSERT(eos.object[index].type == EosObj_Event);
 
         /* The stream event can only be subscribed by one task. */
-        uint8_t e_type = eos.object[index].attribute & 0x03;
+        eos_u8_t e_type = eos.object[index].attribute & 0x03;
         if (e_type == EOS_EVENT_ATTRIBUTE_STREAM)
         {
             EOS_ASSERT(owner_all_cleared(&eos.object[index].ocb.event.e_sub));
@@ -1153,7 +1153,7 @@ void eos_event_unsub(const char *topic)
     eos_base_t level = eos_hw_interrupt_disable();
 
     /* Find the matching object by the topic. */
-    uint16_t index = eos_hash_get_index(topic);
+    eos_u16_t index = eos_hash_get_index(topic);
     EOS_ASSERT(index != EosObj_Event);
     EOS_ASSERT(eos.object[index].type == EosObj_Event);
     EOS_ASSERT((eos.object[index].attribute & 0x03) != EOS_EVENT_ATTRIBUTE_STREAM);
@@ -1168,7 +1168,7 @@ void eos_event_unsub(const char *topic)
 
 #if (EOS_USE_TIME_EVENT != 0)
 static void eos_event_pub_time(const char *topic,
-                               uint32_t time_ms, bool oneshoot)
+                               eos_u32_t time_ms, bool oneshoot)
 {
     EOS_ASSERT(time_ms != 0);
     EOS_ASSERT(time_ms < EOS_TIME_FOREVER);
@@ -1178,15 +1178,15 @@ static void eos_event_pub_time(const char *topic,
     eos_base_t level = eos_hw_interrupt_disable();
 
     /* Repeated event timer is not repeated. */
-    for (uint32_t i = 0; i < eos.timer_count; i ++)
+    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
     {
         EOS_ASSERT(topic != eos.etimer[i].topic);
     }
 
-    uint32_t system_ms = eos_tick_get_millisecond();
-    uint8_t unit = EosTimerUnit_Ms;
-    uint16_t period;
-    for (uint8_t i = 0; i < EosTimerUnit_Max; i ++)
+    eos_u32_t system_ms = eos_tick_get_millisecond();
+    eos_u8_t unit = EosTimerUnit_Ms;
+    eos_u16_t period;
+    for (eos_u8_t i = 0; i < EosTimerUnit_Max; i ++)
     {
         if (time_ms <= timer_threshold[i])
         {
@@ -1201,7 +1201,7 @@ static void eos_event_pub_time(const char *topic,
             break;
         }
     }
-    uint32_t timeout = (system_ms + time_ms);
+    eos_u32_t timeout = (system_ms + time_ms);
     eos.etimer[eos.timer_count ++] = (eos_event_timer_t)
     {
         topic, oneshoot, unit, period, timeout
@@ -1215,27 +1215,27 @@ static void eos_event_pub_time(const char *topic,
     eos_hw_interrupt_enable(level);
 }
 
-void eos_event_publish_delay(const char *topic, uint32_t time_ms)
+void eos_event_publish_delay(const char *topic, eos_u32_t time_ms)
 {
     eos_event_pub_time(topic, time_ms, true);
 }
 
-void eos_event_publish_period(const char *topic, uint32_t time_ms_period)
+void eos_event_publish_period(const char *topic, eos_u32_t time_ms_period)
 {
     eos_event_pub_time(topic, time_ms_period, false);
 }
 
 void eos_event_send_delay(const char *task,
-                          const char *topic, uint32_t time_delay_ms)
+                          const char *topic, eos_u32_t time_delay_ms)
 {
     /* Get event id according the topic. */
-    uint16_t t_id = eos_hash_get_index(task);
+    eos_u16_t t_id = eos_hash_get_index(task);
     EOS_ASSERT(t_id != EOS_MAX_OBJECTS);
     EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
 
     /* Ensure the event is topic-type. */
-    uint16_t e_id = eos_hash_get_index(topic);
-    uint8_t e_type;
+    eos_u16_t e_id = eos_hash_get_index(topic);
+    eos_u8_t e_type;
     if (e_id == EOS_MAX_OBJECTS)
     {
         e_id = eos_hash_insert(topic);
@@ -1260,16 +1260,16 @@ void eos_event_send_delay(const char *task,
 }
 
 void eos_event_send_period(const char *task,
-                           const char *topic, uint32_t time_period_ms)
+                           const char *topic, eos_u32_t time_period_ms)
 {
     /* Get event id according the topic. */
-    uint16_t t_id = eos_hash_get_index(task);
+    eos_u16_t t_id = eos_hash_get_index(task);
     EOS_ASSERT(t_id != EOS_MAX_OBJECTS);
     EOS_ASSERT(eos.object[t_id].type == EosObj_Actor);
 
     /* Ensure the event is topic-type. */
-    uint16_t e_id = eos_hash_get_index(topic);
-    uint8_t e_type;
+    eos_u16_t e_id = eos_hash_get_index(topic);
+    eos_u8_t e_type;
     if (e_id == EOS_MAX_OBJECTS)
     {
         e_id = eos_hash_insert(topic);
@@ -1297,8 +1297,8 @@ void eos_event_time_cancel(const char *topic)
 {
     eos_base_t level = eos_hw_interrupt_disable();
         
-    uint32_t timeout_min = UINT32_MAX;
-    for (uint32_t i = 0; i < eos.timer_count; i ++)
+    eos_u32_t timeout_min = EOS_U32_MAX;
+    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
     {
         if (topic != eos.etimer[i].topic)
         {
@@ -1343,34 +1343,34 @@ bool eos_event_topic(eos_event_t const * const e, const char *topic)
 /* -----------------------------------------------------------------------------
 Database
 ----------------------------------------------------------------------------- */
-void eos_db_init(void *const memory, uint32_t size)
+void eos_db_init(void *const memory, eos_u32_t size)
 {
     eos_heap_init(&eos.db, memory, size);
 }
 
-static inline void __eos_db_write(uint8_t type,
+static inline void __eos_db_write(eos_u8_t type,
                                   const char *key, 
-                                  const void *memory, uint32_t size)
+                                  const void *memory, eos_u32_t size)
 {
     /* If in interrupt service function, disable the interrupt. */
     eos_base_t level = eos_hw_interrupt_disable();
 
     /* Get event id according the topic. */
-    uint16_t e_id = eos_hash_get_index(key);
+    eos_u16_t e_id = eos_hash_get_index(key);
     EOS_ASSERT(e_id != EOS_MAX_OBJECTS);
     EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
-    uint8_t attribute = eos.object[e_id].attribute;
+    eos_u8_t attribute = eos.object[e_id].attribute;
     EOS_ASSERT((attribute & type) != 0);
-    uint32_t bits = (1 << eos_task_get_priority(eos_task_self()));
+    eos_u32_t bits = (1 << eos_task_get_priority(eos_task_self()));
 
-    uint32_t size_remain;
+    eos_u32_t size_remain;
     /* Value type event key. */
     if (type == EOS_EVENT_ATTRIBUTE_VALUE)
     {
         /* Update the event's value. */
-        for (uint32_t i = 0; i < eos.object[e_id].size; i ++)
+        for (eos_u32_t i = 0; i < eos.object[e_id].size; i ++)
         {
-            ((uint8_t *)(eos.object[e_id].data.value))[i] = ((uint8_t *)memory)[i];
+            ((eos_u8_t *)(eos.object[e_id].data.value))[i] = ((eos_u8_t *)memory)[i];
         }
     }
     /* Stream type event key. */
@@ -1387,30 +1387,30 @@ static inline void __eos_db_write(uint8_t type,
     eos_hw_interrupt_enable(level);
 }
 
-static inline int32_t __eos_db_read(uint8_t type,
+static inline eos_s32_t __eos_db_read(eos_u8_t type,
                                     const char *key, 
-                                    const void *memory, uint32_t size)
+                                    const void *memory, eos_u32_t size)
 {
     /* If in interrupt service function, disable the interrupt. */
     eos_base_t level = eos_hw_interrupt_disable();
 
     /* Get event id according the topic. */
-    uint16_t e_id = eos_hash_get_index(key);
+    eos_u16_t e_id = eos_hash_get_index(key);
     EOS_ASSERT(e_id != EOS_MAX_OBJECTS);
     EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
-    uint8_t attribute = eos.object[e_id].attribute;
+    eos_u8_t attribute = eos.object[e_id].attribute;
     EOS_ASSERT((attribute & type) != 0);
-    uint32_t bits = (1 << eos_task_get_priority(eos_task_self()));
+    eos_u32_t bits = (1 << eos_task_get_priority(eos_task_self()));
 
     /* Value type. */
-    int32_t ret_size = 0;
+    eos_s32_t ret_size = 0;
     if (type == EOS_EVENT_ATTRIBUTE_VALUE)
     {
         /* Update the event's value. */
-        for (uint32_t i = 0; i < eos.object[e_id].size; i ++)
+        for (eos_u32_t i = 0; i < eos.object[e_id].size; i ++)
         {
-            ((uint8_t *)memory)[i] =
-                ((uint8_t *)(eos.object[e_id].data.value))[i];
+            ((eos_u8_t *)memory)[i] =
+                ((eos_u8_t *)(eos.object[e_id].data.value))[i];
         }
 
         ret_size = size;
@@ -1429,10 +1429,10 @@ static inline int32_t __eos_db_read(uint8_t type,
     return ret_size;
 }
 
-uint8_t eos_db_get_attribute(const char *key)
+eos_u8_t eos_db_get_attribute(const char *key)
 {
     /* Get event id according the topic. */
-    uint16_t e_id = eos_hash_get_index(key);
+    eos_u16_t e_id = eos_hash_get_index(key);
     EOS_ASSERT(e_id != EOS_MAX_OBJECTS);
     EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
     
@@ -1440,14 +1440,14 @@ uint8_t eos_db_get_attribute(const char *key)
     return eos.object[e_id].attribute;
 }
 
-void eos_db_set_attribute(const char *key, uint8_t attribute)
+void eos_db_set_attribute(const char *key, eos_u8_t attribute)
 {
     /* Check the argument. */
-    uint8_t temp8 = EOS_EVENT_ATTRIBUTE_VALUE | EOS_EVENT_ATTRIBUTE_STREAM;
+    eos_u8_t temp8 = EOS_EVENT_ATTRIBUTE_VALUE | EOS_EVENT_ATTRIBUTE_STREAM;
     EOS_ASSERT((attribute & temp8) != temp8);
 
     /* Get event id according the topic. */
-    uint16_t e_id = eos_hash_get_index(key);
+    eos_u16_t e_id = eos_hash_get_index(key);
     EOS_ASSERT(e_id != EOS_MAX_OBJECTS);
     EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
     
@@ -1455,15 +1455,15 @@ void eos_db_set_attribute(const char *key, uint8_t attribute)
     eos.object[e_id].attribute = attribute;
 }
 
-void eos_db_register(const char *key, uint32_t size, uint8_t attribute)
+void eos_db_register(const char *key, eos_u32_t size, eos_u8_t attribute)
 {
     /* Check the argument. */
-    uint8_t temp8 = EOS_EVENT_ATTRIBUTE_VALUE | EOS_EVENT_ATTRIBUTE_STREAM;
+    eos_u8_t temp8 = EOS_EVENT_ATTRIBUTE_VALUE | EOS_EVENT_ATTRIBUTE_STREAM;
     EOS_ASSERT((attribute & temp8) != temp8);
 
     /* Check the event key's attribute. */
     eos_base_t level = eos_hw_interrupt_disable();
-    uint16_t e_id = eos_hash_get_index(key);
+    eos_u16_t e_id = eos_hash_get_index(key);
     if (e_id == EOS_MAX_OBJECTS)
     {
         e_id = eos_hash_insert(key);
@@ -1495,7 +1495,7 @@ void eos_db_register(const char *key, uint32_t size, uint8_t attribute)
         eos.object[e_id].size = size;
 
         eos_stream_init(eos.object[e_id].data.stream,
-                        (void *)((uint32_t)data + sizeof(eos_stream_t)),
+                        (void *)((eos_u32_t)data + sizeof(eos_stream_t)),
                         eos.object[e_id].size);
 
         eos_owner_t *e_sub = &eos.object[e_id].ocb.event.e_sub;
@@ -1515,12 +1515,12 @@ void eos_db_block_write(const char *key, void * const data)
     __eos_db_write(EOS_DB_ATTRIBUTE_VALUE, key, data, 0);
 }
 
-int32_t eos_db_stream_read(const char *key, void *const buffer, uint32_t size)
+eos_s32_t eos_db_stream_read(const char *key, void *const buffer, eos_u32_t size)
 {
     return __eos_db_read(EOS_DB_ATTRIBUTE_STREAM, key, buffer, size);
 }
 
-void eos_db_stream_write(const char *key, void *const buffer, uint32_t size)
+void eos_db_stream_write(const char *key, void *const buffer, eos_u32_t size)
 {
     __eos_db_write(EOS_DB_ATTRIBUTE_STREAM, key, buffer, size);
 }
@@ -1615,7 +1615,7 @@ static void eos_sm_dispath(eos_sm_t *const me, eos_event_t const * const e)
         t = me->state; /* stateTgt_ holds the superstate */
     }
 
-    int32_t ip = eos_sm_tran(me, path); /* take the HSM transition */
+    eos_s32_t ip = eos_sm_tran(me, path); /* take the HSM transition */
 
     /* retrace the entry path in reverse (desired) order... */
     for (; ip >= 0; --ip)
@@ -1655,12 +1655,12 @@ static void eos_sm_dispath(eos_sm_t *const me, eos_event_t const * const e)
 }
 
 #if (EOS_USE_HSM_MODE != 0)
-static int32_t eos_sm_tran(eos_sm_t *const me,
+static eos_s32_t eos_sm_tran(eos_sm_t *const me,
                            eos_state_handler path[EOS_MAX_HSM_NEST_DEPTH])
 {
     /* transition entry path index */
-    int32_t ip = -1;
-    int32_t iq; /* helper transition entry path index */
+    eos_s32_t ip = -1;
+    eos_s32_t iq; /* helper transition entry path index */
     eos_state_handler t = path[0];
     eos_state_handler s = path[2];
     eos_ret_t r;
@@ -1793,15 +1793,15 @@ static int32_t eos_sm_tran(eos_sm_t *const me,
 /* -----------------------------------------------------------------------------
 Heap Library
 ----------------------------------------------------------------------------- */
-void eos_heap_init(eos_heap_t *const me, void *data, uint32_t size)
+void eos_heap_init(eos_heap_t *const me, void *data, eos_u32_t size)
 {
     EOS_ASSERT(data != EOS_NULL);
     EOS_ASSERT(size > sizeof(eos_heap_block_t));
 
-    uint32_t mod = ((uint32_t)data % 4);
+    eos_u32_t mod = ((eos_u32_t)data % 4);
     if (mod != 0)
     {
-        data = (void *)((uint32_t)data + 4 - mod);
+        data = (void *)((eos_u32_t)data + 4 - mod);
         size = size - 4;
     }
     
@@ -1815,11 +1815,11 @@ void eos_heap_init(eos_heap_t *const me, void *data, uint32_t size)
     eos_heap_block_t *block_1st;
     block_1st = (eos_heap_block_t *)me->data;
     block_1st->next = EOS_NULL;
-    block_1st->size = size - (uint32_t)sizeof(eos_heap_block_t);
+    block_1st->size = size - (eos_u32_t)sizeof(eos_heap_block_t);
     block_1st->is_free = 1;
 }
 
-void * eos_heap_malloc(eos_heap_t *const me, uint32_t size)
+void * eos_heap_malloc(eos_heap_t *const me, eos_u32_t size)
 {
     eos_heap_block_t *block;
     
@@ -1829,7 +1829,7 @@ void * eos_heap_malloc(eos_heap_t *const me, uint32_t size)
         return EOS_NULL;
     }
 
-    uint32_t mod = (size % 4);
+    eos_u32_t mod = (size % 4);
     if (mod != 0)
     {
         size = size + 4 - mod;
@@ -1857,7 +1857,7 @@ void * eos_heap_malloc(eos_heap_t *const me, uint32_t size)
     }
 
     /* If the block's byte number is NOT enough to create a new block. */
-    if (block->size <= (uint32_t)((uint32_t)size + sizeof(eos_heap_block_t)))
+    if (block->size <= (eos_u32_t)((eos_u32_t)size + sizeof(eos_heap_block_t)))
     {
         block->is_free = 0;
     }
@@ -1865,7 +1865,7 @@ void * eos_heap_malloc(eos_heap_t *const me, uint32_t size)
     else
     {
         eos_heap_block_t *new_block
-            = (eos_heap_block_t *)((uint32_t)block + size + sizeof(eos_heap_block_t));
+            = (eos_heap_block_t *)((eos_u32_t)block + size + sizeof(eos_heap_block_t));
         new_block->size = block->size - size - sizeof(eos_heap_block_t);
         new_block->is_free = 1;
         new_block->next = EOS_NULL;
@@ -1879,13 +1879,13 @@ void * eos_heap_malloc(eos_heap_t *const me, uint32_t size)
 
     me->error_id = 0;
 
-    return (void *)((uint32_t)block + (uint32_t)sizeof(eos_heap_block_t));
+    return (void *)((eos_u32_t)block + (eos_u32_t)sizeof(eos_heap_block_t));
 }
 
 void eos_heap_free(eos_heap_t *const me, void * data)
 {
     eos_heap_block_t *block_crt =
-        (eos_heap_block_t *)((uint32_t)data - sizeof(eos_heap_block_t));
+        (eos_heap_block_t *)((eos_u32_t)data - sizeof(eos_heap_block_t));
 
     /* Search for this block in the block-list. */
     eos_heap_block_t *block = me->list;
@@ -1922,7 +1922,7 @@ void eos_heap_free(eos_heap_t *const me, void * data)
     /* Check the block can be combined with the later one. */
     if (block->next != (eos_heap_block_t *)EOS_NULL && block->next->is_free == 1)
     {
-        block->size += (block->next->size + (uint32_t)sizeof(eos_heap_block_t));
+        block->size += (block->next->size + (eos_u32_t)sizeof(eos_heap_block_t));
         block->next = block->next->next;
         block->is_free = 1;
     }
@@ -1933,30 +1933,30 @@ void eos_heap_free(eos_heap_t *const me, void * data)
 /* -----------------------------------------------------------------------------
 Hash
 ----------------------------------------------------------------------------- */
-static uint32_t eos_hash_time33(const char *string)
+static eos_u32_t eos_hash_time33(const char *string)
 {
-    uint32_t hash = 5381;
+    eos_u32_t hash = 5381;
     while (*string)
     {
         hash += (hash << 5) + (*string ++);
     }
 
-    return (uint32_t)(hash & INT32_MAX);
+    return (eos_u32_t)(hash & (0x7fffffff));
 }
 
-static uint16_t eos_hash_insert(const char *string)
+static eos_u16_t eos_hash_insert(const char *string)
 {
-    uint16_t index = 0;
+    eos_u16_t index = 0;
 
     /* Calculate the hash value of the string. */
-    uint32_t hash = eos.hash_func(string);
-    uint16_t index_init = hash % eos.prime_max;
+    eos_u32_t hash = eos.hash_func(string);
+    eos_u16_t index_init = hash % eos.prime_max;
 
-    for (uint16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
+    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
     {
-        for (int8_t j = -1; j <= 1; j += 2)
+        for (eos_s8_t j = -1; j <= 1; j += 2)
         {
-            index = index_init + i * j + 2 * (int16_t)EOS_MAX_OBJECTS;
+            index = index_init + i * j + 2 * (eos_s16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;
 
             /* Find the empty object. */
@@ -1983,19 +1983,19 @@ exit:
     return index;
 }
 
-static uint16_t eos_hash_get_index(const char *string)
+static eos_u16_t eos_hash_get_index(const char *string)
 {
-    uint16_t index = 0;
+    eos_u16_t index = 0;
 
     /* Calculate the hash value of the string. */
-    uint32_t hash = eos.hash_func(string);
-    uint16_t index_init = hash % eos.prime_max;
+    eos_u32_t hash = eos.hash_func(string);
+    eos_u16_t index_init = hash % eos.prime_max;
 
-    for (uint16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
+    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
     {
-        for (int8_t j = -1; j <= 1; j += 2)
+        for (eos_s8_t j = -1; j <= 1; j += 2)
         {
-            index = index_init + i * j + 2 * (int16_t)EOS_MAX_OBJECTS;
+            index = index_init + i * j + 2 * (eos_s16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;
 
             if (eos.object[index].key != (const char *)0 &&
@@ -2022,14 +2022,14 @@ static bool eos_hash_existed(const char *string)
     bool ret = false;
 
     /* Calculate the hash value of the string. */
-    uint32_t hash = eos.hash_func(string);
-    uint16_t index_init = hash % eos.prime_max;
+    eos_u32_t hash = eos.hash_func(string);
+    eos_u16_t index_init = hash % eos.prime_max;
 
-    for (uint16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
+    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
     {
-        for (int8_t j = -1; j <= 1; j += 2)
+        for (eos_s8_t j = -1; j <= 1; j += 2)
         {
-            uint16_t index = index_init + i * j + 2 * (int16_t)EOS_MAX_OBJECTS;
+            eos_u16_t index = index_init + i * j + 2 * (eos_s16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;
 
             if (eos.object[index].key != (const char *)0 &&
@@ -2054,7 +2054,7 @@ exit:
 /* -----------------------------------------------------------------------------
 Stream library
 ----------------------------------------------------------------------------- */
-static int32_t eos_stream_init(eos_stream_t *const me, void *memory, uint32_t capacity)
+static eos_s32_t eos_stream_init(eos_stream_t *const me, void *memory, eos_u32_t capacity)
 {
     me->data = memory;
     me->capacity = capacity;
@@ -2065,7 +2065,7 @@ static int32_t eos_stream_init(eos_stream_t *const me, void *memory, uint32_t ca
     return Stream_OK;
 }
 
-static int32_t eos_stream_push(eos_stream_t *const me, void * data, uint32_t size)
+static eos_s32_t eos_stream_push(eos_stream_t *const me, void * data, eos_u32_t size)
 {
     if (eos_stream_full(me))
     {
@@ -2076,10 +2076,10 @@ static int32_t eos_stream_push(eos_stream_t *const me, void * data, uint32_t siz
         return Stream_NotEnough;
     }
 
-    uint8_t *stream = (uint8_t *)me->data;
+    eos_u8_t *stream = (eos_u8_t *)me->data;
     for (int i = 0; i < size; i ++)
     {
-        stream[me->head] = ((uint8_t *)data)[i];
+        stream[me->head] = ((eos_u8_t *)data)[i];
         me->head = ((me->head + 1) % me->capacity);
     }
     me->empty = false;
@@ -2087,20 +2087,20 @@ static int32_t eos_stream_push(eos_stream_t *const me, void * data, uint32_t siz
     return Stream_OK;
 }
 
-static int32_t eos_stream_pull_pop(eos_stream_t *const me, void * data, uint32_t size)
+static eos_s32_t eos_stream_pull_pop(eos_stream_t *const me, void * data, eos_u32_t size)
 {
     if (me->empty)
     {
         return 0;
     }
 
-    uint32_t size_stream = eos_stream_size(me);
+    eos_u32_t size_stream = eos_stream_size(me);
     size = (size_stream < size) ? size_stream : size;
 
-    uint8_t *stream = (uint8_t *)me->data;
+    eos_u8_t *stream = (eos_u8_t *)me->data;
     for (int i = 0; i < size; i ++)
     {
-        ((uint8_t *)data)[i] = stream[me->tail];
+        ((eos_u8_t *)data)[i] = stream[me->tail];
         me->tail = (me->tail + 1) % me->capacity;
     }
     
@@ -2116,7 +2116,7 @@ static int32_t eos_stream_pull_pop(eos_stream_t *const me, void * data, uint32_t
 
 static bool eos_stream_full(eos_stream_t *const me)
 {
-    int32_t size = me->head - me->tail;
+    eos_s32_t size = me->head - me->tail;
     if (size < 0)
     {
         size += me->capacity;
@@ -2125,14 +2125,14 @@ static bool eos_stream_full(eos_stream_t *const me)
     return (size == 0 && me->empty == false) ? true : false;
 }
 
-static int32_t eos_stream_size(eos_stream_t *const me)
+static eos_s32_t eos_stream_size(eos_stream_t *const me)
 {
     if (me->empty == true)
     {
         return 0;
     }
 
-    int32_t size = me->head - me->tail;
+    eos_s32_t size = me->head - me->tail;
     if (size <= 0)
     {
         size += me->capacity;
@@ -2141,12 +2141,12 @@ static int32_t eos_stream_size(eos_stream_t *const me)
     return size;
 }
 
-static int32_t eos_stream_empty_size(eos_stream_t *const me)
+static eos_s32_t eos_stream_empty_size(eos_stream_t *const me)
 {
     return me->capacity - eos_stream_size(me);
 }
 
-static inline bool owner_is_occupied(eos_owner_t *owner, uint32_t t_id)
+static inline bool owner_is_occupied(eos_owner_t *owner, eos_u32_t t_id)
 {
     if (owner->data[t_id >> 3] & (1 << (t_id % 8)))
     {
@@ -2160,13 +2160,13 @@ static inline bool owner_is_occupied(eos_owner_t *owner, uint32_t t_id)
 
 static inline void owner_or(eos_owner_t *g_owner, eos_owner_t *owner)
 {
-    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i ++)
     {
         g_owner->data[i] |= owner->data[i];
     }
 }
 
-static inline void owner_set_bit(eos_owner_t *owner, uint32_t t_id, bool status)
+static inline void owner_set_bit(eos_owner_t *owner, eos_u32_t t_id, bool status)
 {
     if (status == true)
     {
@@ -2181,7 +2181,7 @@ static inline void owner_set_bit(eos_owner_t *owner, uint32_t t_id, bool status)
 static inline bool owner_all_cleared(eos_owner_t *owner)
 {
     bool all_cleared = true;
-    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i ++)
     {
         if (owner->data[i] != 0)
         {
@@ -2196,7 +2196,7 @@ static inline bool owner_all_cleared(eos_owner_t *owner)
 static inline bool owner_not_cleared(eos_owner_t *owner)
 {
     bool not_cleared = false;
-    for (uint32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i ++)
     {
         if (owner->data[i] != 0)
         {

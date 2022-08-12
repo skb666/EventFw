@@ -15,8 +15,8 @@ void eos_hook_stop(void)
 
 }
 
-uint32_t assert_id = 0;
-void eos_port_assert(const char *tag, const char *name, uint32_t id)
+eos_u32_t assert_id = 0;
+void eos_port_assert(const char *tag, const char *name, eos_u32_t id)
 {
     eos_hw_interrupt_disable();
     
