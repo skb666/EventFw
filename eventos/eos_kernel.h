@@ -57,7 +57,7 @@ typedef struct eos_obj
     eos_u8_t flag;                          /**< flag of kernel object */
     eos_list_t list;                        /**< list node of kernel object */
 } eos_obj_t;
-typedef eos_obj_t *eos_object_t;    /**< Type for kernel objects. */
+typedef eos_obj_t *eos_obj_handle_t;    /**< Type for kernel objects. */
 
 /*
  * Defines the prototype to which the application task hook function must

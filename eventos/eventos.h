@@ -90,18 +90,18 @@ typedef uint64_t                        eos_pointer_t;
 /* -----------------------------------------------------------------------------
 EventOS
 ----------------------------------------------------------------------------- */
-extern volatile int32_t critical_count;
-#define eos_interrupt_disable() do {                                           \
-    __disable_irq();                                                           \
-    critical_count ++;                                                         \
-} while (0)
+// extern volatile int32_t critical_count;
+// #define eos_interrupt_disable() do {                                           \
+//     __disable_irq();                                                           \
+//     critical_count ++;                                                         \
+// } while (0)
 
-#define eos_interrupt_enable() do {                                            \
-    critical_count --;                                                         \
-    EOS_ASSERT(critical_count >= 0);                                           \
-    if (critical_count == 0)                                                   \
-        __enable_irq();                                                        \
-} while (0)
+// #define eos_interrupt_enable() do {                                            \
+//     critical_count --;                                                         \
+//     EOS_ASSERT(critical_count >= 0);                                           \
+//     if (critical_count == 0)                                                   \
+//         __enable_irq();                                                        \
+// } while (0)
 
 // EventOS initialization.
 void eos_init(void);
@@ -208,13 +208,15 @@ typedef struct eos_task
 {
 #if (EOS_USE_3RD_KERNEL == 0)
     ek_task_t task_;
-    eos_sem_t sem_;
 #endif
 
-    uint32_t task;
-    uint32_t sem;
+    uint32_t task_handle;
+    eos_sem_t sem;
 
-    uint16_t t_id;
+    uint16_t t_id;                          // task ID
+    bool event_recv_disable;
+    bool wait_specific_event;
+    const char *event_wait;
 } eos_task_t;
 
 typedef eos_task_t *eos_task_handle_t;
@@ -241,6 +243,7 @@ eos_err_t eos_task_control(eos_task_handle_t task, int cmd, void *arg);
 eos_err_t eos_task_suspend(eos_task_handle_t task);
 eos_err_t eos_task_resume(eos_task_handle_t task);
 eos_task_state_t eos_task_get_state(eos_task_handle_t task);
+eos_u8_t eos_task_get_priority(eos_task_handle_t task);
 
 // 启动任务，main函数或者任务函数中调用。
 void eos_task_start(eos_task_t * const me,

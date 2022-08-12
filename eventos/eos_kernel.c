@@ -240,7 +240,7 @@ void eos_object_init(eos_obj_t *object,
  *        and the memory of static object is not freed.
  * @param object the specified object to be detached.
  */
-void eos_object_detach(eos_object_t object)
+void eos_object_detach(eos_obj_handle_t object)
 {
     register eos_base_t temp;
 
@@ -267,7 +267,7 @@ void eos_object_detach(eos_object_t object)
  * @param object is the specified object to be judged.
  * @return EOS_True if a system object, EOS_False for others.
  */
-eos_bool_t eos_object_is_systemobject(eos_object_t object)
+eos_bool_t eos_object_is_systemobject(eos_obj_handle_t object)
 {
     eos_bool_t ret = EOS_False;
     
@@ -287,7 +287,7 @@ eos_bool_t eos_object_is_systemobject(eos_object_t object)
  * @param object is the specified object to be get type.
  * @return the type of object.
  */
-eos_u8_t eos_object_get_type(eos_object_t object)
+eos_u8_t eos_object_get_type(eos_obj_handle_t object)
 {
     /* object check */
     EOS_ASSERT(object != EOS_NULL);
@@ -860,7 +860,7 @@ static void _task_timeout(void *parameter)
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
     EOS_ASSERT((task->status & EOS_TASK_STAT_MASK) == EOS_TASK_SUSPEND);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
 
     /* disable interrupt */
     temp = eos_hw_interrupt_disable();
@@ -973,7 +973,7 @@ eos_err_t ek_task_init(ek_task_handle_t task,
     EOS_ASSERT(stack_start != EOS_NULL);
 
     /* initialize task object */
-    eos_object_init((eos_object_t)task, EOS_Object_Thread, name);
+    eos_object_init((eos_obj_handle_t)task, EOS_Object_Thread, name);
 
     return _task_init(task, name, entry, parameter, stack_start, stack_size,
                         priority,
@@ -1004,7 +1004,7 @@ eos_err_t eos_task_startup(eos_task_handle_t task)
     /* parameter check */
     EOS_ASSERT(task_ != EOS_NULL);
     EOS_ASSERT((task_->status & EOS_TASK_STAT_MASK) == EOS_TASK_INIT);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task_) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task_) == EOS_Object_Thread);
 
     /* calculate priority attribute */
     task_->number_mask = 1L << task_->current_priority;
@@ -1037,8 +1037,8 @@ eos_err_t eos_task_detach(eos_task_handle_t task_)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task) == EOS_Object_Thread);
-    EOS_ASSERT(eos_object_is_systemobject((eos_object_t)task));
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_is_systemobject((eos_obj_handle_t)task));
 
     if ((task->status & EOS_TASK_STAT_MASK) == EOS_TASK_CLOSE)
         return EOS_EOK;
@@ -1104,7 +1104,7 @@ eos_err_t eos_task_sleep(eos_u32_t tick)
     /* set to current task */
     task = (ek_task_handle_t)eos_task_self();
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
 
     /* disable interrupt */
     temp = eos_hw_interrupt_disable();
@@ -1160,7 +1160,7 @@ eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick)
     /* set to current task */
     task = (ek_task_handle_t)eos_task_self();
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
 
     /* disable interrupt */
     level = eos_hw_interrupt_disable();
@@ -1237,7 +1237,7 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
 
     switch (cmd)
     {
@@ -1283,7 +1283,7 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
         {
             eos_err_t eos_err;
 
-            if (eos_object_is_systemobject((eos_object_t)task) == EOS_True)
+            if (eos_object_is_systemobject((eos_obj_handle_t)task) == EOS_True)
             {
                 eos_err = eos_task_detach(task_);
             }
@@ -1317,7 +1317,7 @@ eos_err_t eos_task_suspend(eos_task_handle_t task_)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
     EOS_ASSERT(task == (ek_task_handle_t)eos_task_self());
 
     stat = task->status & EOS_TASK_STAT_MASK;
@@ -1356,7 +1356,7 @@ eos_err_t eos_task_resume(eos_task_handle_t task_)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_object_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
 
     if ((task->status & EOS_TASK_STAT_MASK) != EOS_TASK_SUSPEND)
     {
@@ -2282,10 +2282,10 @@ static void eos_defunct_execute(void)
         }
 
         /* if it's a system object, not delete it */
-        if (eos_object_is_systemobject((eos_object_t)task) == EOS_True)
+        if (eos_object_is_systemobject((eos_obj_handle_t)task) == EOS_True)
         {
             /* detach this object */
-            eos_object_detach((eos_object_t)task);
+            eos_object_detach((eos_obj_handle_t)task);
         }
         else
         {
@@ -3083,7 +3083,7 @@ eos_u32_t eos_tick_from_millisecond(eos_s32_t ms)
  *           provide the correct 1ms-based tick.
  * @return   Return passed millisecond from boot.
  */
-EOS_WEAK eos_u32_t eos_tick_get_millisecond(void)
+eos_u32_t eos_tick_get_millisecond(void)
 {
 #if 1000 % EOS_TICK_PER_SECOND == 0u
     return eos_tick_get() * (1000u / EOS_TICK_PER_SECOND);
@@ -3092,4 +3092,9 @@ EOS_WEAK eos_u32_t eos_tick_get_millisecond(void)
     please redefine this function in another file by using a high-precision hard-timer."
     return 0;
 #endif /* 1000 % EOS_TICK_PER_SECOND == 0u */
+}
+
+eos_u8_t eos_task_get_priority(eos_task_handle_t task)
+{
+    return ((ek_task_handle_t)task)->current_priority;
 }
