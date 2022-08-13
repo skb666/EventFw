@@ -199,6 +199,7 @@ typedef struct eos_task
     eos_sem_t sem;
 
     eos_u16_t t_id;                          // task ID
+    eos_u16_t index;
     bool event_recv_disable;
     bool wait_specific_event;
     const char *event_wait;

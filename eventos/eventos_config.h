@@ -41,7 +41,7 @@
 // <h> EventOS Nano's basic configuration
 //   <o>  The maximum number of tasks: 1 - 32
 #define EOS_MAX_PRIORITY                        32
-#define EOS_MAX_TASKS                           512
+#define EOS_MAX_TASKS                           32
 
 //   <o>  The maximum number of objects: 16 - 65536
 #define EOS_MAX_OBJECTS                         16
@@ -123,7 +123,7 @@
 #define EOS_USE_EVENT_DATA                      1
 
 //   <o>  The maximum size of event heap (128 - 32767) <128-32767>
-#define EOS_SIZE_HEAP                           512         // 设定堆大小
+#define EOS_SIZE_HEAP                           5120         // 设定堆大小
 
 /* Event Bridge Configuration ----------------------------------------------- */
 //   <o>  use event bridge (0 or 1) <0-1>

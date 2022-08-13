@@ -331,7 +331,7 @@ void eos_interrupt_leave(void)
  * context is interrupt context.
  * @return the number of nested interrupts.
  */
-EOS_WEAK eos_u8_t eos_interrupt_get_nest(void)
+eos_u8_t eos_interrupt_get_nest(void)
 {
     eos_u8_t ret;
     eos_base_t level;

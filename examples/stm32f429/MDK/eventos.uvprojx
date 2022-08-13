@@ -543,6 +543,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\test\test_10.c</FilePath>
             </File>
+            <File>
+              <FileName>test_sem.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test_sem.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

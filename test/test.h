@@ -23,6 +23,7 @@
 #define TEST_EN_09                      0
 #define TEST_EN_10                      0
 #define TEST_EN_11                      0
+#define TEST_EN_SEM                     0
 
 #else
 

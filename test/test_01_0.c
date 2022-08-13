@@ -28,6 +28,7 @@ typedef struct eos_test
     
     uint32_t send_give1_count;
     uint32_t send_give2_count;
+    uint32_t send_isr;
     
     uint32_t idle_count;
 } eos_test_t;
@@ -134,6 +135,8 @@ void timer_isr_1ms(void)
     if (eos_test.isr_func_enable != 0)
     {
         eos_event_send("TaskValue", "Event_One");
+        eos_test.send_count ++;
+        eos_test.send_isr ++;
     }
     
     eos_interrupt_leave();
