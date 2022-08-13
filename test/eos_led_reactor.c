@@ -3,6 +3,7 @@
 #include "eventos.h"
 #include <stdio.h>
 #include "test.h"
+#include <stdint.h>
 
 /* data structure ----------------------------------------------------------- */
 typedef struct eos_reactor_led_tag {
@@ -49,11 +50,11 @@ static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * cons
         evt_count ++;
         eos_reactor_count();
 
-        time1 = eos_time();
+        time1 = eos_tick_get_millisecond();
         me->status = (me->status == 0) ? 1 : 0;
-        eos_delay_ms(500);
+        eos_task_mdelay(500);
         
-        time2 = eos_time();
+        time2 = eos_tick_get_millisecond();
         me->status = (me->status == 0) ? 1 : 0;
     }
 }

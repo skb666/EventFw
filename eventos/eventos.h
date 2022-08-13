@@ -242,9 +242,9 @@ void eos_task_start(eos_task_t * const me,
 void eos_task_exit(void);
 // 任务等待某特定事件，其他事件均忽略。
 bool eos_task_wait_specific_event(  eos_event_t * const e_out,
-                                    const char *topic, eos_u32_t time_ms);
+                                    const char *topic, eos_s32_t time_ms);
 // 任务阻塞式等待事件
-bool eos_task_wait_event(eos_event_t * const e_out, eos_u32_t time_ms);
+bool eos_task_wait_event(eos_event_t * const e_out, eos_s32_t time_ms);
 
 /* defunct */
 void eos_task_defunct_enqueue(eos_task_handle_t task);

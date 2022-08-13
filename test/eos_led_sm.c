@@ -3,6 +3,7 @@
 #include "eventos.h"
 #include <stdio.h>
 #include "test.h"
+#include <stdint.h>
 
 #if (EOS_USE_SM_MODE != 0)
 /* data structure ----------------------------------------------------------- */

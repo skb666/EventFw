@@ -36,16 +36,16 @@
 
 /* basic data type ---------------------------------------------------------- */
 typedef unsigned int                    eos_u32_t;
-typedef int                             eos_s32_t;
+typedef signed int                      eos_s32_t;
 typedef unsigned short                  eos_u16_t;
-typedef short                           eos_s16_t;
+typedef signed short                    eos_s16_t;
 typedef unsigned char                   eos_u8_t;
-typedef char                            eos_s8_t;
+typedef signed char                     eos_s8_t;
 
 typedef unsigned int                    eos_size_t;      /**< Type for size number */
-typedef int                             eos_base_t;      /**< Nbit CPU related date type */
+typedef signed int                      eos_base_t;      /**< Nbit CPU related date type */
 typedef unsigned int                    eos_ubase_t;     /**< Nbit unsigned CPU related data type */
-typedef int                             eos_err_t;       /**< Type for error number */
+typedef signed int                      eos_err_t;       /**< Type for error number */
 
 typedef unsigned long long              eos_u64_t;
 typedef signed long long                eos_s64_t;
@@ -66,8 +66,6 @@ typedef enum eos_bool
 
 #define EOS_HEAP_MAX                    (0x7fffU)
 
-#define EOS_TIME_FOREVER                EOS_U32_MAX
-
 #define EOS_U8_MAX                      (0xffU)
 #define EOS_U8_MIN                      (0U)
 
@@ -75,7 +73,7 @@ typedef enum eos_bool
 
 #define EOS_HEAP_MAX                    (0x7fffU)
 
-#define EOS_TIME_FOREVER                EOS_U32_MAX
+#define EOS_TIME_FOREVER                (-1)
 
 #define EOS_UNUSED(x)                   ((void)x)
 

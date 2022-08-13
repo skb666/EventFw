@@ -15,9 +15,11 @@ int main(void)
     static uint8_t db_memory[5120];
     eos_db_init(db_memory, sizeof(db_memory));
 
+    eos_enter_critical();
     test_init();
+    eos_exit_critical();
 
-    eos_run();                                      // EventOS启动
+    eos_kernel_start();                             // EventOS启动
 
     return 0;
 }
@@ -25,13 +27,6 @@ int main(void)
 void SysTick_Handler(void)
 {
     eos_interrupt_enter();
-    eos_tick();
-    eos_interrupt_exit();
-}
-
-void HardFault_Handler(void)
-{
-    while (1)
-    {
-    }
+    eos_tick_increase();
+    eos_interrupt_leave();
 }

@@ -210,7 +210,7 @@ eos_base_t eos_hw_interrupt_disable(void)
 {
     if(hInterruptEventMutex != NULL)
     {
-        WaitForSingleObject(hInterruptEventMutex,INFINITE);
+        WaitForSingleObject(hInterruptEventMutex, INFINITE);
     }
 
     return 0;

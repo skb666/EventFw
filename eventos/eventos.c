@@ -428,7 +428,7 @@ eos_err_t eos_task_init(eos_task_t *task,
     task->task_handle = (eos_u32_t)(&task->task_);
 #endif
 
-    eos_sem_init(&task->sem, name, 0, EOS_IPC_FLAG_PRIO);
+    eos_sem_init(&task->sem, name, 0, EOS_IPC_FLAG_FIFO);
 
     eos_hw_interrupt_enable(level);
 
@@ -438,16 +438,13 @@ eos_err_t eos_task_init(eos_task_t *task,
                         priority, tick);
 }
 
-bool eos_task_wait_event(eos_event_t *const e_out, eos_u32_t time_ms)
+bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
 {
     EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
 
     eos_base_t level;
-    level = eos_hw_interrupt_disable();
     eos_u16_t t_id = eos_task_self()->t_id;
     eos_task_handle_t task = eos_task_self();
-
-    eos_hw_interrupt_enable(level);
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
     level = eos_hw_interrupt_disable();
     if (ret == EOS_EOK)
@@ -497,6 +494,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_u32_t time_ms)
                     eos_owner_global_();
                 }
                 
+                eos_hw_interrupt_enable(level);
                 return true;
             }
         }
@@ -508,7 +506,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_u32_t time_ms)
 }
 
 bool eos_task_wait_specific_event(  eos_event_t *const e_out,
-                                    const char *topic, eos_u32_t time_ms)
+                                    const char *topic, eos_s32_t time_ms)
 {
     bool ret = false;
     eos_base_t level = eos_hw_interrupt_disable();
@@ -878,8 +876,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
             t_id = task_id;
         }
         tcb = eos.object[t_id].ocb.task.tcb;
-        if (tcb->event_recv_disable == true ||
-            eos_task_get_state(tcb) == EOS_TASK_SUSPEND)
+        if (tcb->event_recv_disable == true)
         {
             eos_hw_interrupt_enable(level);
             return (eos_s8_t)EosRun_OK;
@@ -948,8 +945,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
                         eos_u16_t _t_id = i * 8 + j;
                         eos_object_t *obj = &eos.object[_t_id];
 
-                        if (obj->ocb.task.tcb->event_recv_disable == true ||
-                            eos_task_get_state(obj->ocb.task.tcb) == EOS_TASK_SUSPEND)
+                        if (obj->ocb.task.tcb->event_recv_disable == true)
                         {
                             owner_set_bit(&g_owner, _t_id, false);
                         }
@@ -964,6 +960,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
     }
 
     /* Check if the related tasks are waiting for the specific event or not. */
+    eos_err_t ret;
     for (eos_u32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
     {
         if (eos.obj_task_occupy[i] != 0)
@@ -1950,7 +1947,7 @@ static eos_u16_t eos_hash_insert(const char *string)
 
     for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
     {
-        for (eos_s8_t j = -1; j <= 1; j += 2)
+        for (eos_s16_t j = -1; j <= 1; j += 2)
         {
             index = index_init + i * j + 2 * (eos_s16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;
@@ -1989,7 +1986,7 @@ static eos_u16_t eos_hash_get_index(const char *string)
 
     for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
     {
-        for (eos_s8_t j = -1; j <= 1; j += 2)
+        for (eos_s16_t j = -1; j <= 1; j += 2)
         {
             index = index_init + i * j + 2 * (eos_s16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;
@@ -2023,7 +2020,7 @@ static bool eos_hash_existed(const char *string)
 
     for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
     {
-        for (eos_s8_t j = -1; j <= 1; j += 2)
+        for (eos_s16_t j = -1; j <= 1; j += 2)
         {
             eos_u16_t index = index_init + i * j + 2 * (eos_s16_t)EOS_MAX_OBJECTS;
             index %= EOS_MAX_OBJECTS;

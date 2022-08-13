@@ -45,13 +45,13 @@
 
 enum
 {
-    TaskPrio_Give1 = 1,
-    TaskPrio_Give2 = TaskPrio_Give1,
-    TaskPrio_Middle,
-    TaskPrio_Value,
-    TaskPrio_SmLed,
+    TaskPrio_High = 0,
     TaskPrio_ReacotrLed,
-    TaskPrio_High = (EOS_MAX_PRIORITY - 1),
+    TaskPrio_SmLed,
+    TaskPrio_Value,
+    TaskPrio_Middle,
+    TaskPrio_Give1,
+    TaskPrio_Give2 = TaskPrio_Give1,
 
     TaskPrio_Max
 };

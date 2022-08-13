@@ -129,17 +129,18 @@ void eos_idle_count(void)
 
 void timer_isr_1ms(void)
 {
-    eos_base_t level = eos_hw_interrupt_disable();
+    eos_interrupt_enter();
     
     if (eos_test.isr_func_enable != 0)
     {
         eos_event_send("TaskValue", "Event_One");
     }
     
-    eos_hw_interrupt_enable(level);
+    eos_interrupt_leave();
 }
 
 /* public function ---------------------------------------------------------- */
+bool send = false;
 static void task_func_e_give1(void *parameter)
 {
     (void)parameter;
@@ -153,8 +154,8 @@ static void task_func_e_give1(void *parameter)
         {
             eos_test.send_speed = eos_test.send_count / eos_test.time;
         }
+        
         eos_event_send("TaskValue", "Event_One");
-        eos_task_mdelay(1000);
     }
 }
 
@@ -173,8 +174,6 @@ static void task_func_e_give2(void *parameter)
         }
         
         eos_event_send("TaskValue", "Event_One");
-
-        eos_task_mdelay(1000);
     }
 }
 
@@ -194,7 +193,7 @@ static void task_func_e_value(void *parameter)
         if (eos_event_topic(&e, "Event_One"))
         {
             eos_test.e_one ++;
-            printf("task e value. eos_test.e_one: %u.\n", eos_test.e_one);
+            // printf("task e value. eos_test.e_one: %u.\n", eos_test.e_one);
         }
     }
 }
