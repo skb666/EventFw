@@ -313,8 +313,6 @@ static void eos_e_queue_delete_(eos_event_data_t const *item);
 static void eos_reactor_enter(eos_reactor_t *const me);
 static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic);
 static void eos_sm_enter(eos_sm_t *const me);
-static void eos_timer_poll(void);
-static eos_s32_t eos_evttimer(void);
 static eos_u32_t eos_hash_time33(const char *string);
 static eos_u16_t eos_hash_insert(const char *string);
 static eos_u16_t eos_hash_get_index(const char *string);
@@ -342,7 +340,6 @@ static inline bool owner_is_occupied(eos_owner_t *owner, eos_u32_t t_id);
 static inline void owner_or(eos_owner_t *g_owner, eos_owner_t *owner);
 static inline void owner_set_bit(eos_owner_t *owner, eos_u32_t t_id, bool status);
 static inline bool owner_all_cleared(eos_owner_t *owner);
-static inline bool owner_not_cleared(eos_owner_t *owner);
 
 void eos_kernel_init(void);
 
@@ -451,11 +448,11 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
 {
     EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
 
-    eos_base_t level;
     eos_u16_t t_id = eos_task_self()->t_id;
     eos_task_handle_t task = eos_task_self();
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
-    level = eos_hw_interrupt_disable();
+    eos_base_t level = eos_hw_interrupt_disable();
+
     if (ret == EOS_EOK)
     {
         EOS_ASSERT(eos.e_queue != EOS_NULL);
@@ -463,7 +460,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
         eos_event_data_t *e_item = eos.e_queue;
         while (e_item != EOS_NULL)
         {
-            if (!owner_is_occupied(&e_item->e_owner,t_id))
+            if (!owner_is_occupied(&e_item->e_owner, t_id))
             {
                 e_item = e_item->next;
             }
@@ -498,8 +495,9 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
                     /* Delete the event data from the e-queue. */
                     eos_e_queue_delete_(e_item);
                 }
-                
+
                 eos_hw_interrupt_enable(level);
+
                 return true;
             }
         }
@@ -570,76 +568,6 @@ void eos_event_attribute_unblocked(const char *topic)
 
     eos_hw_interrupt_enable(level);
 }
-
-#if (EOS_USE_TIME_EVENT != 0)
-eos_s32_t eos_evttimer(void)
-{
-    eos_s32_t ret = EosRun_OK;
-
-    /* 获取当前时间，检查延时事件队列 */
-    eos_u32_t system_time = eos_tick_get_millisecond();
-    
-    if (eos.etimer[0].topic == Event_Null)
-    {
-        ret = EosTimer_Empty;
-        goto exit;
-    }
-
-    /* 时间未到达 */
-    if (system_time < eos.timeout_min)
-    {
-        ret = EosTimer_NotTimeout;
-        goto exit;
-    }
-
-    /* 若时间到达，将此事件推入事件队列，同时在etimer里删除。 */
-    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
-    {
-        if (eos.etimer[i].timeout <= system_time)
-        {
-            eos_event_publish(eos.etimer[i].topic);
-            /* 清零标志位 */
-            if (eos.etimer[i].oneshoot != EOS_False)
-            {
-                if (i == (eos.timer_count - 1))
-                {
-                    eos.timer_count -= 1;
-                    break;
-                }
-                eos.etimer[i] = eos.etimer[eos.timer_count - 1];
-                eos.timer_count -= 1;
-                i --;
-            }
-            else
-            {
-                eos_u32_t period = eos.etimer[i].period *
-                                        timer_unit[eos.etimer[i].unit];
-                eos.etimer[i].timeout += period;
-            }
-        }
-    }
-    if (eos.timer_count == 0)
-    {
-        eos.timeout_min = EOS_U32_MAX;
-        ret = EosTimer_ChangeToEmpty;
-        goto exit;
-    }
-
-    /* 寻找到最小的时间定时器 */
-    eos_u32_t min_time_out_ms = EOS_U32_MAX;
-    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
-    {
-        if (min_time_out_ms > eos.etimer[i].timeout)
-        {
-            min_time_out_ms = eos.etimer[i].timeout;
-        }
-    }
-    eos.timeout_min = min_time_out_ms;
-
-exit:
-    return ret;
-}
-#endif
 
 static void eos_task_function(void *parameter)
 {
@@ -846,7 +774,11 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
     eos_s8_t ret = (eos_s8_t)EosRun_OK;
     bool sem_release = false;
     eos_sem_handle_t sem = NULL;
-    eos_base_t level = eos_hw_interrupt_disable();
+    eos_base_t level;
+    eos_u16_t e_id;
+    eos_u8_t e_type;
+    
+    level = eos_hw_interrupt_disable();
 
     /* Get the task id in the object hash table. */
     eos_u16_t t_id;
@@ -866,6 +798,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
         {
             t_id = task_id;
         }
+        
         tcb = eos.object[t_id].ocb.task.tcb;
         if (tcb->event_recv_disable == true)
         {
@@ -882,8 +815,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
     }
     
     /* Get event id according to the event topic. */
-    eos_u16_t e_id = eos_hash_get_index(topic);
-    eos_u8_t e_type;
+    e_id = eos_hash_get_index(topic);
     if (e_id == EOS_MAX_OBJECTS)
     {
         /* Newly create one event in the hash table. */
@@ -946,21 +878,40 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
     }
 
     /* Check if the related tasks are waiting for the specific event or not. */
-    if (eos_interrupt_get_nest() == 0)
+    for (eos_u32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
     {
-        for (eos_u32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
+        if (eos.obj_task_occupy[i] != 0)
         {
-            if (eos.obj_task_occupy[i] != 0)
+            for (eos_u8_t j = 0; j < 8; j ++)
             {
-                for (eos_u8_t j = 0; j < 8; j ++)
+                if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
                 {
-                    if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
-                    {
-                        eos_u16_t _t_id = i * 8 + j;
-                        eos_object_t *obj = &eos.object[_t_id];
+                    eos_u16_t _t_id = i * 8 + j;
+                    eos_object_t *obj = &eos.object[_t_id];
 
+                    if (eos_interrupt_get_nest() == 0)
+                    {
                         if (owner_is_occupied(&g_owner, _t_id) &&
                             obj->ocb.task.tcb != eos_task_self())
+                        {
+                            if (!obj->ocb.task.tcb->wait_specific_event)
+                            {
+                                sem_release = true;
+                                sem = &obj->ocb.task.tcb->sem;
+                            }
+                            else
+                            {
+                                if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
+                                {
+                                    sem_release = true;
+                                    sem = &obj->ocb.task.tcb->sem;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (owner_is_occupied(&g_owner, _t_id))
                         {
                             if (!obj->ocb.task.tcb->wait_specific_event)
                             {
@@ -1155,7 +1106,6 @@ static void eos_event_pub_time(const char *topic,
                                eos_u32_t time_ms, bool oneshoot)
 {
     EOS_ASSERT(time_ms != 0);
-    EOS_ASSERT(time_ms < EOS_TIME_FOREVER);
     EOS_ASSERT(time_ms <= timer_threshold[EosTimerUnit_Minute]);
     EOS_ASSERT(eos.timer_count < EOS_MAX_TIME_EVENT);
 
@@ -2175,21 +2125,6 @@ static inline bool owner_all_cleared(eos_owner_t *owner)
     }
 
     return all_cleared;
-}
-
-static inline bool owner_not_cleared(eos_owner_t *owner)
-{
-    bool not_cleared = false;
-    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i ++)
-    {
-        if (owner->data[i] != 0)
-        {
-            not_cleared = true;
-            break;
-        }
-    }
-
-    return not_cleared;
 }
 
 #ifdef __cplusplus

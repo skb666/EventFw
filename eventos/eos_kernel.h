@@ -147,7 +147,7 @@ typedef struct ek_task
     eos_u8_t status;                            /**< task status */
 
     /* priority */
-    eos_u8_t  current_priority;                 /**< current priority */
+    eos_u8_t current_priority;                 /**< current priority */
     eos_u32_t number_mask;
 
     eos_ubase_t init_tick;                      /**< task's initialized tick */

@@ -1382,7 +1382,9 @@ eos_err_t eos_task_resume(eos_task_handle_t task_)
 
 eos_task_state_t eos_task_get_state(eos_task_handle_t task)
 {
-    return (((ek_task_handle_t)task)->status & EOS_TASK_STAT_MASK);
+    return (eos_task_state_t)(
+                ((ek_task_handle_t)task)->status & (eos_u8_t)EOS_TASK_STAT_MASK
+            );
 }
 
 /**

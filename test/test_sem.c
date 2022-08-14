@@ -21,10 +21,10 @@ typedef struct eos_test
     uint32_t time;
     uint32_t send_speed;
 
+    uint32_t e_one;
     uint32_t send_count;
     uint32_t high_count;
     uint32_t middle_count;
-    uint32_t e_one;
     
     uint32_t send_give1_count;
     uint32_t send_give2_count;
@@ -72,26 +72,26 @@ static const task_test_info_t task_test_info[] =
         stack_e_give1, sizeof(stack_e_give1),
         task_func_e_give1
     },
-//    {
-//        &task_e_give2, "TaskGive2", TaskPrio_Give2,
-//        stack_e_give2, sizeof(stack_e_give2),
-//        task_func_e_give2
-//    },
+    {
+        &task_e_give2, "TaskGive2", TaskPrio_Give2,
+        stack_e_give2, sizeof(stack_e_give2),
+        task_func_e_give2
+    },
     {
         &task_e_value, "TaskValue", TaskPrio_Value,
         stack_e_value, sizeof(stack_e_value),
         task_func_e_value
     },
-//    {
-//        &task_high, "TaskHigh", TaskPrio_High,
-//        stack_high, sizeof(stack_high),
-//        task_func_high
-//    },
-//    {
-//        &task_middle, "TaskMiddle", TaskPrio_Middle,
-//        stack_middle, sizeof(stack_middle),
-//        task_func_middle
-//    },
+    {
+        &task_high, "TaskHigh", TaskPrio_High,
+        stack_high, sizeof(stack_high),
+        task_func_high
+    },
+    {
+        &task_middle, "TaskMiddle", TaskPrio_Middle,
+        stack_middle, sizeof(stack_middle),
+        task_func_middle
+    },
 };
 
 /* public function ---------------------------------------------------------- */
@@ -138,7 +138,9 @@ void timer_isr_1ms(void)
     
     if (eos_test.isr_func_enable != 0)
     {
+        eos_base_t temp = eos_hw_interrupt_disable();
         eos_sem_release(&sem_test);
+        eos_hw_interrupt_enable(temp);
         eos_test.send_count ++;
         eos_test.send_isr ++;
     }
@@ -162,7 +164,9 @@ static void task_func_e_give1(void *parameter)
             eos_test.send_speed = eos_test.send_count / eos_test.time;
         }
         
+        eos_base_t temp = eos_hw_interrupt_disable();
         eos_sem_release(&sem_test);
+        eos_hw_interrupt_enable(temp);
     }
 }
 
@@ -180,7 +184,9 @@ static void task_func_e_give2(void *parameter)
             eos_test.send_speed = eos_test.send_count / eos_test.time;
         }
         
+        eos_base_t temp = eos_hw_interrupt_disable();
         eos_sem_release(&sem_test);
+        eos_hw_interrupt_enable(temp);
     }
 }
 
@@ -191,6 +197,8 @@ static void task_func_e_value(void *parameter)
     while (1)
     {
         eos_sem_take(&sem_test, EOS_TIME_FOREVER);
+        eos_base_t temp = eos_hw_interrupt_disable();
+        eos_hw_interrupt_enable(temp);
         eos_test.e_one ++;
     }
 }
@@ -203,7 +211,9 @@ static void task_func_high(void *parameter)
     {
         eos_test.send_count ++;
         eos_test.high_count ++;
+        eos_base_t temp = eos_hw_interrupt_disable();
         eos_sem_release(&sem_test);
+        eos_hw_interrupt_enable(temp);
         eos_task_mdelay(1);
     }
 }
@@ -216,7 +226,9 @@ static void task_func_middle(void *parameter)
     {
         eos_test.send_count ++;
         eos_test.middle_count += 2;
+        eos_base_t temp = eos_hw_interrupt_disable();
         eos_sem_release(&sem_test);
+        eos_hw_interrupt_enable(temp);
         eos_task_mdelay(2);
     }
 }

@@ -77,16 +77,6 @@ EventOS Default Configuration
 #include <stdbool.h>
 
 /* -----------------------------------------------------------------------------
-Basic type
------------------------------------------------------------------------------ */
-#if (EOS_TEST_PLATFORM == 32)
-typedef eos_u32_t                        eos_pointer_t;
-#else
-#include <stdint.h>
-typedef uint64_t                        eos_pointer_t;
-#endif
-
-/* -----------------------------------------------------------------------------
 EventOS
 ----------------------------------------------------------------------------- */
 // EventOS initialization.
