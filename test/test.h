@@ -8,7 +8,7 @@
 
 #if (TEST_MODE == 0)
 
-#define TEST_EN_01_0                    1
+#define TEST_EN_01_0                    0
 #define TEST_EN_01_1                    0
 #define TEST_EN_02_0                    0
 #define TEST_EN_02_1                    0
@@ -19,28 +19,7 @@
 #define TEST_EN_05_1                    0
 #define TEST_EN_06                      0
 #define TEST_EN_07                      0
-#define TEST_EN_08                      0
-#define TEST_EN_09                      0
-#define TEST_EN_10                      0
-#define TEST_EN_11                      0
-#define TEST_EN_SEM                     0
-
-#else
-
-#define TEST_EN_01_0                    1
-#define TEST_EN_01_1                    2
-#define TEST_EN_02_0                    3
-#define TEST_EN_02_1                    4
-#define TEST_EN_02_2                    5
-#define TEST_EN_03                      6
-#define TEST_EN_04                      7
-#define TEST_EN_05_0                    8
-#define TEST_EN_05_1                    9
-#define TEST_EN_06                      10
-#define TEST_EN_07                      11
-#define TEST_EN_08                      12
-#define TEST_EN_09                      13
-#define TEST_EN_11                      14
+#define TEST_EN_09                      1
 
 #endif
 

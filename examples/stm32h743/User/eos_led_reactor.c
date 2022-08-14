@@ -44,11 +44,11 @@ static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * cons
     if (eos_event_topic(e, "Event_Time_1000ms")) {
         evt_count ++;
         
-        time1 = eos_time();
+        time1 = eos_tick_get_millisecond();
         me->status = (me->status == 0) ? 1 : 0;
         eos_delay_ms(500);
         
-        time2 = eos_time();
+        time2 = eos_tick_get_millisecond();
         me->status = (me->status == 0) ? 1 : 0;
     }
 }

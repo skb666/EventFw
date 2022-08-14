@@ -29,7 +29,7 @@ void SysTick_Handler(void)
     
     eos_interrupt_enter();
     eos_tick();
-    eos_interrupt_exit();
+    eos_interrupt_leave();
 }
 
 void HardFault_Handler(void)

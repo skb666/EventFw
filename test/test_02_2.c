@@ -71,26 +71,26 @@ static const task_test_info_t task_test_info[] =
         stack_e_give1, sizeof(stack_e_give1),
         task_func_e_give1
     },
-    {
-        &task_e_give2, "TaskGive2", TaskPrio_Give2,
-        stack_e_give2, sizeof(stack_e_give2),
-        task_func_e_give2
-    },
-    {
-        &task_e_value, "TaskValue", TaskPrio_Value,
-        stack_e_value, sizeof(stack_e_value),
-        task_func_e_value
-    },
-    {
-        &task_high, "TaskHigh", TaskPrio_High,
-        stack_high, sizeof(stack_high),
-        task_func_high
-    },
-    {
-        &task_middle, "TaskMiddle", TaskPrio_Middle,
-        stack_middle, sizeof(stack_middle),
-        task_func_middle
-    },
+    // {
+    //     &task_e_give2, "TaskGive2", TaskPrio_Give2,
+    //     stack_e_give2, sizeof(stack_e_give2),
+    //     task_func_e_give2
+    // },
+    // {
+    //     &task_e_value, "TaskValue", TaskPrio_Value,
+    //     stack_e_value, sizeof(stack_e_value),
+    //     task_func_e_value
+    // },
+    // {
+    //     &task_high, "TaskHigh", TaskPrio_High,
+    //     stack_high, sizeof(stack_high),
+    //     task_func_high
+    // },
+    // {
+    //     &task_middle, "TaskMiddle", TaskPrio_Middle,
+    //     stack_middle, sizeof(stack_middle),
+    //     task_func_middle
+    // },
 };
 
 /* public function ---------------------------------------------------------- */
@@ -100,13 +100,15 @@ void test_init(void)
          i < (sizeof(task_test_info) / sizeof(task_test_info_t));
          i ++)
     {
-        eos_task_start(task_test_info[i].task,
+        eos_task_init(task_test_info[i].task,
                        task_test_info[i].name,
                        task_test_info[i].func,
-                       task_test_info[i].prio,
+                       EOS_NULL,
                        task_test_info[i].stack,
                        task_test_info[i].stack_size,
-                       EOS_NULL);
+                       task_test_info[i].prio,
+                       10);
+        eos_task_startup(task_test_info[i].task);
     }
 
     eos_sm_led_init();
@@ -132,7 +134,7 @@ void timer_isr_1ms(void)
         eos_event_publish("Event_Time_500ms");
     }
     
-    eos_interrupt_exit();
+    eos_interrupt_leave();
 }
 
 void eos_idle_count(void)
@@ -147,7 +149,7 @@ static void task_func_e_give1(void *parameter)
     
     while (1)
     {
-        eos_test.time = eos_time();
+        eos_test.time = eos_tick_get_millisecond();
         eos_test.send_count ++;
         eos_test.send_give1_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
@@ -162,7 +164,7 @@ static void task_func_e_give2(void *parameter)
     
     while (1)
     {
-        eos_test.time = eos_time();
+        eos_test.time = eos_tick_get_millisecond();
         eos_test.send_count ++;
         eos_test.send_give2_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
@@ -180,7 +182,7 @@ static void task_func_e_value(void *parameter)
     while (1)
     {
         eos_event_t e;
-        if (eos_task_wait_event(&e, 10000) == false)
+        if (eos_task_wait_event(&e, EOS_TIME_FOREVER) == false)
         {
             eos_test.error = 1;
             continue;
@@ -202,7 +204,7 @@ static void task_func_high(void *parameter)
         eos_test.send_count ++;
         eos_test.high_count ++;
         eos_event_publish("Event_Time_500ms");
-        eos_delay_ms(1);
+        eos_task_mdelay(1);
     }
 }
 
@@ -215,7 +217,7 @@ static void task_func_middle(void *parameter)
         eos_test.send_count ++;
         eos_test.middle_count += 2;
         eos_event_publish("Event_Time_500ms");
-        eos_delay_ms(2);
+        eos_task_mdelay(2);
     }
 }
 

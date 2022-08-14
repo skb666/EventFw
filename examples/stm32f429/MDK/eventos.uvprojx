@@ -474,14 +474,14 @@
               <FilePath>..\..\..\test\test_01_0.c</FilePath>
             </File>
             <File>
-              <FileName>test_01_1.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_01_1.c</FilePath>
-            </File>
-            <File>
               <FileName>test_05_0.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\test\test_05_0.c</FilePath>
+            </File>
+            <File>
+              <FileName>test_01_1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\test\test_01_1.c</FilePath>
             </File>
             <File>
               <FileName>test_05_1.c</FileName>
@@ -524,29 +524,9 @@
               <FilePath>..\..\..\test\test_07.c</FilePath>
             </File>
             <File>
-              <FileName>test_08.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_08.c</FilePath>
-            </File>
-            <File>
               <FileName>test_09.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\test\test_09.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_11.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_11.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_10.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_10.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_sem.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_sem.c</FilePath>
             </File>
           </Files>
         </Group>
