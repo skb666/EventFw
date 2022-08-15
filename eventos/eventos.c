@@ -858,7 +858,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
             {
                 for (eos_u8_t j = 0; j < 8; j ++)
                 {
-                    if ((eos.obj_task_occupy[i] & (1 << j)) == 0)
+                    if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
                     {
                         eos_u16_t _t_id = i * 8 + j;
                         eos_object_t *obj = &eos.object[_t_id];
@@ -874,62 +874,6 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
         if (owner_all_cleared(&g_owner) == true)
         {
             goto exit;
-        }
-    }
-
-    /* Check if the related tasks are waiting for the specific event or not. */
-    for (eos_u32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
-    {
-        if (eos.obj_task_occupy[i] != 0)
-        {
-            for (eos_u8_t j = 0; j < 8; j ++)
-            {
-                if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
-                {
-                    eos_u16_t _t_id = i * 8 + j;
-                    eos_object_t *obj = &eos.object[_t_id];
-
-                    if (eos_interrupt_get_nest() == 0)
-                    {
-                        if (owner_is_occupied(&g_owner, _t_id) &&
-                            obj->ocb.task.tcb != eos_task_self())
-                        {
-                            if (!obj->ocb.task.tcb->wait_specific_event)
-                            {
-                                sem_release = true;
-                                sem = &obj->ocb.task.tcb->sem;
-                            }
-                            else
-                            {
-                                if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
-                                {
-                                    sem_release = true;
-                                    sem = &obj->ocb.task.tcb->sem;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (owner_is_occupied(&g_owner, _t_id))
-                        {
-                            if (!obj->ocb.task.tcb->wait_specific_event)
-                            {
-                                sem_release = true;
-                                sem = &obj->ocb.task.tcb->sem;
-                            }
-                            else
-                            {
-                                if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
-                                {
-                                    sem_release = true;
-                                    sem = &obj->ocb.task.tcb->sem;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -1011,11 +955,75 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
         EOS_ASSERT(0);
     }
 
+    /* Check if the related tasks are waiting for the specific event or not. */
+    for (eos_u32_t i = 0; i < EOS_MAX_TASK_OCCUPY; i ++)
+    {
+        if (eos.obj_task_occupy[i] != 0)
+        {
+            for (eos_u8_t j = 0; j < 8; j ++)
+            {
+                if ((eos.obj_task_occupy[i] & (1 << j)) != 0)
+                {
+                    eos_u16_t _t_id = i * 8 + j;
+                    eos_object_t *obj = &eos.object[_t_id];
+
+                    if (eos_interrupt_get_nest() == 0)
+                    {
+                        if (owner_is_occupied(&g_owner, _t_id) &&
+                            obj->ocb.task.tcb != eos_task_self())
+                        {
+                            if (!obj->ocb.task.tcb->wait_specific_event)
+                            {
+                                sem_release = true;
+                                sem = &obj->ocb.task.tcb->sem;
+                                eos_sem_release(sem);
+                                eos_hw_interrupt_enable(level);
+                                level = eos_hw_interrupt_disable();
+                            }
+                            else
+                            {
+                                if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
+                                {
+                                    sem_release = true;
+                                    sem = &obj->ocb.task.tcb->sem;
+                                    eos_sem_release(sem);
+                                    eos_hw_interrupt_enable(level);
+                                    level = eos_hw_interrupt_disable();
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (owner_is_occupied(&g_owner, _t_id))
+                        {
+                            if (!obj->ocb.task.tcb->wait_specific_event)
+                            {
+                                sem_release = true;
+                                sem = &obj->ocb.task.tcb->sem;
+                                eos_sem_release(sem);
+                            }
+                            else
+                            {
+                                if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
+                                {
+                                    sem_release = true;
+                                    sem = &obj->ocb.task.tcb->sem;
+                                    eos_sem_release(sem);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 exit:
     eos_hw_interrupt_enable(level);
     if (sem_release)
     {
-        eos_sem_release(sem);
+        // eos_sem_release(sem);
     }
 
     return ret;

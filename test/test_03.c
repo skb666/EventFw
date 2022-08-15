@@ -30,6 +30,7 @@ typedef struct eos_test
 
     uint32_t send_give1_count;
     uint32_t send_give2_count;
+    uint32_t send_isr;
     
     uint32_t isr_count;
     uint32_t idle_count;
@@ -74,26 +75,26 @@ static const task_test_info_t task_test_info[] =
         stack_e_give1, sizeof(stack_e_give1),
         task_func_e_give1
     },
-    {
-        &task_e_give2, "TaskGive2", TaskPrio_Give2,
-        stack_e_give2, sizeof(stack_e_give2),
-        task_func_e_give2
-    },
+//    {
+//        &task_e_give2, "TaskGive2", TaskPrio_Give2,
+//        stack_e_give2, sizeof(stack_e_give2),
+//        task_func_e_give2
+//    },
     {
         &task_e_value, "TaskValue", TaskPrio_Value,
         stack_e_value, sizeof(stack_e_value),
         task_func_e_value
     },
-    {
-        &task_high, "TaskHigh", TaskPrio_High,
-        stack_high, sizeof(stack_high),
-        task_func_high
-    },
-    {
-        &task_middle, "TaskMiddle", TaskPrio_Middle,
-        stack_middle, sizeof(stack_middle),
-        task_func_middle
-    },
+//    {
+//        &task_high, "TaskHigh", TaskPrio_High,
+//        stack_high, sizeof(stack_high),
+//        task_func_high
+//    },
+//    {
+//        &task_middle, "TaskMiddle", TaskPrio_Middle,
+//        stack_middle, sizeof(stack_middle),
+//        task_func_middle
+//    },
 };
 
 /* public function ---------------------------------------------------------- */
@@ -140,6 +141,7 @@ void timer_isr_1ms(void)
     if (eos_test.isr_func_enable != 0)
     {
         eos_test.isr_count ++;
+        eos_test.send_isr ++;
         eos_db_stream_write("Event_One", "1", 1);
         eos_event_send("TaskValue", "Event_One");
     }
