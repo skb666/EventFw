@@ -494,6 +494,8 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
                     eos.object[e_item->id].ocb.event.e_item = EOS_NULL;
                     /* Delete the event data from the e-queue. */
                     eos_e_queue_delete_(e_item);
+
+                    eos_sem_reset(&task->sem, 0);
                 }
 
                 eos_hw_interrupt_enable(level);

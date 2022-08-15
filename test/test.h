@@ -13,9 +13,9 @@
 #define TEST_EN_02_0                    0
 #define TEST_EN_02_1                    0
 #define TEST_EN_02_2                    0
-#define TEST_EN_03                      1
+#define TEST_EN_03                      0
 #define TEST_EN_04                      0
-#define TEST_EN_05_0                    0
+#define TEST_EN_05_0                    1
 #define TEST_EN_05_1                    0
 #define TEST_EN_06                      0
 #define TEST_EN_07                      0
