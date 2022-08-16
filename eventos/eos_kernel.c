@@ -2180,8 +2180,7 @@ eos_err_t eos_mutex_release(eos_mutex_handle_t mutex_)
 static eos_list_t _eos_task_defunct = EOS_LIST_OBJECT_INIT(_eos_task_defunct);
 
 static ek_task_t idle[_CPUS_NR];
-ALIGN(EOS_ALIGN_SIZE)
-static eos_u8_t eos_task_stack[_CPUS_NR][IDLE_THREAD_STACK_SIZE];
+static eos_u32_t eos_task_stack[_CPUS_NR][IDLE_THREAD_STACK_SIZE / 4];
 
 #ifndef SYSTEM_THREAD_STACK_SIZE
 #endif
@@ -2362,8 +2361,7 @@ static eos_u8_t _soft_timer_status = EOS_SOFT_TIMER_IDLE;
 /* soft timer list */
 static eos_list_t _soft_timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
 static ek_task_t _timer_task;
-ALIGN(EOS_ALIGN_SIZE)
-static eos_u8_t _timer_task_stack[EOS_TIMER_THREAD_STACK_SIZE];
+static eos_u32_t _timer_task_stack[EOS_TIMER_THREAD_STACK_SIZE / 4];
 #endif /* EOS_USING_TIMER_SOFT */
 
 /**

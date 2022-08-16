@@ -110,7 +110,8 @@ typedef enum eos_bool
     #define eos_inline                  static __inline
     #define RTT_API
 #else
-    #error not supported tool chain
+    #define eos_inline                  static inline
+    #define ALIGN(n)                    __attribute__((aligned(n)))
 #endif
 
 

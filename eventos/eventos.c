@@ -448,10 +448,11 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
 {
     EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
 
-    eos_u16_t t_id = eos_task_self()->t_id;
     eos_task_handle_t task = eos_task_self();
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
+    
     eos_base_t level = eos_hw_interrupt_disable();
+    eos_u16_t t_id = task->t_id;
 
     if (ret == EOS_EOK)
     {
@@ -468,7 +469,6 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
             {
                 /* Meet one event */
                 eos_object_t *e_object = &eos.object[e_item->id];
-                if (e_object->type != EosObj_Event)
                 EOS_ASSERT(e_object->type == EosObj_Event);
                 eos_u8_t type = e_object->attribute & 0x03;
                 /* Event out */
@@ -513,27 +513,88 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
 bool eos_task_wait_specific_event(  eos_event_t *const e_out,
                                     const char *topic, eos_s32_t time_ms)
 {
-    bool ret = false;
-    eos_base_t level = eos_hw_interrupt_disable();
+    EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
 
-    eos_u16_t e_id = eos_hash_get_index(topic);
-    /* If the topic is not existed in hash table. */
-    if (e_id == EOS_MAX_OBJECTS)
+    eos_task_handle_t task = eos_task_self();
+    while (1)
     {
-        e_id = eos_hash_insert(topic);
-        eos.object[e_id].type = EosObj_Event;
-        eos.object[e_id].attribute = EOS_EVENT_ATTRIBUTE_TOPIC;
+        eos_err_t ret = eos_sem_take(&task->sem, time_ms);
+        
+        eos_base_t level = eos_hw_interrupt_disable();
+        eos_u16_t t_id = task->t_id;
+
+        if (ret == EOS_EOK)
+        {
+            EOS_ASSERT(eos.e_queue != EOS_NULL);
+            /* Find the first event data in e-queue and set it as handled. */
+            eos_event_data_t *e_item = eos.e_queue;
+            while (e_item != EOS_NULL)
+            {
+                if (!owner_is_occupied(&e_item->e_owner, t_id))
+                {
+                    e_item = e_item->next;
+                }
+                else
+                {
+                    bool correct_event = false;
+
+                    /* Meet one event */
+                    eos_object_t *e_object = &eos.object[e_item->id];
+                    EOS_ASSERT(e_object->type == EosObj_Event);
+                    if (strcmp(e_object->key, topic) == 0)
+                    {
+                        correct_event = true;
+                    }
+
+                    if (correct_event)
+                    {
+                        eos_u8_t type = e_object->attribute & 0x03;
+                        /* Event out */
+                        e_out->topic = e_object->key;
+                        e_out->eid = e_item->id;
+                        if (type == EOS_EVENT_ATTRIBUTE_TOPIC)
+                        {
+                            e_out->size = 0;
+                        }
+                        else if (type == EOS_EVENT_ATTRIBUTE_VALUE)
+                        {
+                            e_out->size = e_object->size;
+                        }
+                        else if (type == EOS_EVENT_ATTRIBUTE_STREAM)
+                        {
+                            e_out->size = eos_stream_size(e_object->data.stream);
+                        }
+                    }
+
+                    /* If the event data is just the current task's event. */
+                    owner_set_bit(&e_item->e_owner, t_id, false);
+                    if (owner_all_cleared(&e_item->e_owner))
+                    {
+                        eos.object[e_item->id].ocb.event.e_item = EOS_NULL;
+                        /* Delete the event data from the e-queue. */
+                        eos_e_queue_delete_(e_item);
+
+                        eos_sem_reset(&task->sem, 0);
+                    }
+
+                    if (correct_event)
+                    {
+                        eos_hw_interrupt_enable(level);
+                        return true;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        eos_hw_interrupt_enable(level);
+        break;
     }
 
-    bool ret_wait = eos_task_wait_event(e_out, time_ms);
-    if (ret_wait && strcmp(e_out->topic, topic) == 0)
-    {
-        ret = true;
-    }
-
-    eos_hw_interrupt_enable(level);
-
-    return ret;
+    return false;
 }
 
 /* -----------------------------------------------------------------------------
