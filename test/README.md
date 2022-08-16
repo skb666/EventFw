@@ -12,7 +12,7 @@
 5-0 从一个任务Give，满负荷向另一个任务Value，同时从0.8ms中断中，和高优先级任务High与Middle中，发送两个事件，一个是任务特定接收的事件，一个不是。
 5-1 从一个任务Give，满负荷向另一个任务Value，同时从0.8ms中断中，和高优先级任务High与Middle中，发布两个事件，一个是任务特定接收的事件，一个不是。
 6 从一个任务Give，满负荷向另一个任务Value，同时从0.8ms中断中，和高优先级任务High与Middle中，发送值事件。
-7 从一个任务Give，满负荷向另一个任务Value，同时从0.8ms中断中，和高优先级任务High与Middle中，发送值事件，同时Value订阅1ms周期事件。
+7 从一个任务Give，满负荷向另一个任务Value，同时从0.8ms中断中，和高优先级任务High与Middle中，发布值事件，同时Value订阅1ms周期事件。
 9 测试task_delay_no_event。
 
 以上的任务优先级：High > Reactor > Sm > Value > Middle > Give = GiveSame

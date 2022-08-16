@@ -410,7 +410,7 @@ eos_err_t eos_task_init(eos_task_t *task,
                         eos_u8_t priority,
                         eos_u32_t tick)
 {
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     /* Get task id according to the event topic. */
     eos_u16_t t_id = eos_hash_get_index(name);
@@ -451,7 +451,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
     eos_task_handle_t task = eos_task_self();
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
     
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
     eos_u16_t t_id = task->t_id;
 
     if (ret == EOS_EOK)
@@ -520,7 +520,7 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
     {
         eos_err_t ret = eos_sem_take(&task->sem, time_ms);
         
-        eos_base_t level = eos_hw_interrupt_disable();
+        register eos_base_t level = eos_hw_interrupt_disable();
         eos_u16_t t_id = task->t_id;
 
         if (ret == EOS_EOK)
@@ -602,7 +602,7 @@ Event
 ----------------------------------------------------------------------------- */
 void eos_event_attribute_global(const char *topic)
 {
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     eos_u16_t e_id;
     if (eos_hash_existed(topic) == false)
@@ -618,7 +618,7 @@ void eos_event_attribute_global(const char *topic)
 
 void eos_event_attribute_unblocked(const char *topic)
 {
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     eos_u16_t e_id;
     if (eos_hash_existed(topic) == false)
@@ -676,7 +676,7 @@ static void eos_e_queue_delete_(eos_event_data_t const *item)
     EOS_ASSERT(eos.e_queue != EOS_NULL);
     EOS_ASSERT(item != EOS_NULL);
 
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
     
     /* If the event data is only one in queue. */
     if (item->last == EOS_NULL && item->next == EOS_NULL)
@@ -835,9 +835,8 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
                                 const char *topic)
 {
     eos_s8_t ret = (eos_s8_t)EosRun_OK;
-    bool sem_release = false;
     eos_sem_handle_t sem = NULL;
-    eos_base_t level;
+    register eos_base_t level;
     eos_u16_t e_id;
     eos_u8_t e_type;
     
@@ -1037,7 +1036,6 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
                         {
                             if (!obj->ocb.task.tcb->wait_specific_event)
                             {
-                                sem_release = true;
                                 sem = &obj->ocb.task.tcb->sem;
                                 eos_sem_release(sem);
                                 eos_hw_interrupt_enable(level);
@@ -1047,7 +1045,6 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
                             {
                                 if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
                                 {
-                                    sem_release = true;
                                     sem = &obj->ocb.task.tcb->sem;
                                     eos_sem_release(sem);
                                     eos_hw_interrupt_enable(level);
@@ -1062,7 +1059,6 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
                         {
                             if (!obj->ocb.task.tcb->wait_specific_event)
                             {
-                                sem_release = true;
                                 sem = &obj->ocb.task.tcb->sem;
                                 eos_sem_release(sem);
                             }
@@ -1070,7 +1066,6 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
                             {
                                 if (strcmp(topic, obj->ocb.task.tcb->event_wait) == 0)
                                 {
-                                    sem_release = true;
                                     sem = &obj->ocb.task.tcb->sem;
                                     eos_sem_release(sem);
                                 }
@@ -1084,10 +1079,6 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
 
 exit:
     eos_hw_interrupt_enable(level);
-    if (sem_release)
-    {
-        // eos_sem_release(sem);
-    }
 
     return ret;
 }
@@ -1118,7 +1109,7 @@ void eos_event_publish(const char *topic)
 
 static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic)
 {
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     /* Find the object by the event topic. */
     eos_u16_t index;
@@ -1156,7 +1147,7 @@ void eos_event_sub(const char *topic)
 
 void eos_event_unsub(const char *topic)
 {
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     /* Find the matching object by the topic. */
     eos_u16_t index = eos_hash_get_index(topic);
@@ -1180,7 +1171,7 @@ static void eos_event_pub_time(const char *topic,
     EOS_ASSERT(time_ms <= timer_threshold[EosTimerUnit_Minute]);
     EOS_ASSERT(eos.timer_count < EOS_MAX_TIME_EVENT);
 
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     /* Repeated event timer is not repeated. */
     for (eos_u32_t i = 0; i < eos.timer_count; i ++)
@@ -1300,7 +1291,7 @@ void eos_event_send_period(const char *task,
 
 void eos_event_time_cancel(const char *topic)
 {
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
         
     eos_u32_t timeout_min = EOS_U32_MAX;
     for (eos_u32_t i = 0; i < eos.timer_count; i ++)
@@ -1358,7 +1349,7 @@ static inline void __eos_db_write(eos_u8_t type,
                                   const void *memory, eos_u32_t size)
 {
     /* If in interrupt service function, disable the interrupt. */
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     /* Get event id according the topic. */
     eos_u16_t e_id = eos_hash_get_index(key);
@@ -1397,7 +1388,7 @@ static inline eos_s32_t __eos_db_read(eos_u8_t type,
                                     const void *memory, eos_u32_t size)
 {
     /* If in interrupt service function, disable the interrupt. */
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
 
     /* Get event id according the topic. */
     eos_u16_t e_id = eos_hash_get_index(key);
@@ -1467,7 +1458,7 @@ void eos_db_register(const char *key, eos_u32_t size, eos_u8_t attribute)
     EOS_ASSERT((attribute & temp8) != temp8);
 
     /* Check the event key's attribute. */
-    eos_base_t level = eos_hw_interrupt_disable();
+    register eos_base_t level = eos_hw_interrupt_disable();
     eos_u16_t e_id = eos_hash_get_index(key);
     if (e_id == EOS_MAX_OBJECTS)
     {

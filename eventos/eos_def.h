@@ -85,17 +85,14 @@ typedef enum eos_bool
     #define ALIGN(n)                    __attribute__((aligned(n)))
     #define EOS_WEAK                    __attribute__((weak))
     #define eos_inline                  static __inline
-    /* module compiling */
-    #define RTT_API                     __declspec(dllexport)
 #elif defined (__IAR_SYSTEMS_ICC__)     /* for IAR Compiler */
     #include <stdarg.h>
-    #define EOS_SECTION(x)               @ x
-    #define EOS_USED                     __root
+    #define EOS_SECTION(x)              @ x
+    #define EOS_USED                    __root
     #define PRAGMA(x)                   _Pragma(#x)
     #define ALIGN(n)                    PRAGMA(data_alignment=n)
     #define EOS_WEAK                     __weak
     #define eos_inline                   static inline
-    #define RTT_API
 #elif defined (__GNUC__)                /* GNU GCC Compiler */
     /* the version of GNU GCC must be greater than 4.x */
     typedef __builtin_va_list           __gnuc_va_list;
@@ -108,7 +105,6 @@ typedef enum eos_bool
     #define ALIGN(n)                    __attribute__((aligned(n)))
     #define EOS_WEAK                    __attribute__((weak))
     #define eos_inline                  static __inline
-    #define RTT_API
 #else
     #define eos_inline                  static inline
     #define ALIGN(n)                    __attribute__((aligned(n)))
