@@ -106,7 +106,7 @@ typedef struct eos_event
 /**
  * timer structure
  */
-typedef struct eos_timer
+typedef struct ek_timer
 {
     eos_obj_t super;
 
@@ -117,8 +117,8 @@ typedef struct eos_timer
 
     eos_u32_t init_tick;
     eos_u32_t timeout_tick;
-} eos_timer_t;
-typedef struct eos_timer *eos_timer_handle_t;
+} ek_timer_t;
+typedef struct ek_timer *ek_timer_handle_t;
 
 /* Task --------------------------------------------------------------------- */
 
@@ -157,7 +157,7 @@ typedef struct ek_task
     eos_u64_t duration_tick;                    /**< cpu usage tick */
 #endif
 
-    eos_timer_t task_timer;                     /**< built-in task timer */
+    ek_timer_t task_timer;                      /**< built-in task timer */
     
     void (*cleanup)(struct ek_task *tid);      /**< cleanup function when task exit */
 

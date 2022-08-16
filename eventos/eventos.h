@@ -170,6 +170,47 @@ eos_err_t eos_sem_reset(eos_sem_handle_t sem, eos_ubase_t value);
 Task
 ----------------------------------------------------------------------------- */
 /**
+ * clock & timer macros
+ */
+#define EOS_TIMER_FLAG_DEACTIVATED       0x0             /**< timer is deactive */
+#define EOS_TIMER_FLAG_ACTIVATED         0x1             /**< timer is active */
+#define EOS_TIMER_FLAG_ONE_SHOT          0x0             /**< one shot timer */
+#define EOS_TIMER_FLAG_PERIODIC          0x2             /**< periodic timer */
+
+#define EOS_TIMER_FLAG_HARD_TIMER        0x0             /**< hard timer,the timer's callback function will be called in tick isr. */
+#define EOS_TIMER_FLAG_SOFT_TIMER        0x4             /**< soft timer,the timer's callback function will be called in timer task. */
+
+#define EOS_TIMER_CTRL_SET_TIME          0x0             /**< set timer control command */
+#define EOS_TIMER_CTRL_GET_TIME          0x1             /**< get timer control command */
+#define EOS_TIMER_CTRL_SET_ONESHOT       0x2             /**< change timer to one shot */
+#define EOS_TIMER_CTRL_SET_PERIODIC      0x3             /**< change timer to periodic */
+#define EOS_TIMER_CTRL_GET_STATE         0x4             /**< get timer run state active or deactive*/
+#define EOS_TIMER_CTRL_GET_REMAIN_TIME   0x5             /**< get the remaining hang time */
+
+#ifndef EOS_TIMER_SKIP_LIST_LEVEL
+#define EOS_TIMER_SKIP_LIST_LEVEL        1
+#endif
+
+/* 1 or 3 */
+#ifndef EOS_TIMER_SKIP_LIST_MASK
+#define EOS_TIMER_SKIP_LIST_MASK         0x3
+#endif
+
+/**
+ * timer structure
+ */
+typedef struct eos_timer
+{
+#if (EOS_USE_3RD_KERNEL == 0)
+    ek_timer_t timer_;
+#endif
+
+    eos_u32_t timer_handle;
+} eos_timer_t;
+
+typedef struct eos_timer *eos_timer_handle_t;
+
+/**
  * task control command definitions
  */
 #define EOS_TASK_CTRL_STARTUP          0x00                /**< Startup task. */
@@ -243,12 +284,12 @@ eos_task_handle_t eos_task_defunct_dequeue(void);
 /* -----------------------------------------------------------------------------
 Timer
 ----------------------------------------------------------------------------- */
-void eos_timer_init(eos_timer_handle_t  timer,
-                   const char *name,
-                   void (*timeout)(void *parameter),
-                   void *parameter,
-                   eos_u32_t time,
-                   eos_u8_t flag);
+void eos_timer_init(eos_timer_handle_t timer,
+                    const char *name,
+                    void (*timeout)(void *parameter),
+                    void *parameter,
+                    eos_u32_t time,
+                    eos_u8_t flag);
 eos_err_t eos_timer_detach(eos_timer_handle_t timer);
 eos_err_t eos_timer_start(eos_timer_handle_t timer);
 eos_err_t eos_timer_stop(eos_timer_handle_t timer);

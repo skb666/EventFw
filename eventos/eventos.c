@@ -37,8 +37,6 @@
 
 EOS_TAG("EventOS")
 
-volatile eos_s32_t critical_count = 0;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,13 +44,9 @@ extern "C" {
 /* eos define ------------------------------------------------------------------ */
 enum
 {
-    EosObj_Actor = 0,
-    EosObj_Event,
-    EosObj_Timer,
-    EosObj_Device,
-    EosObj_Heap,
-    EosObj_Mutex,
-    EosObj_Other,
+    EosObj_Actor = 0,                           // prefix A
+    EosObj_Event,                               // prefix E
+    EosObj_Timer,                               // prefix T
 };
 
 enum
@@ -60,8 +54,6 @@ enum
     EosEventGiveType_Send = 0,
     EosEventGiveType_Publish,
 };
-
-#define EOS_MAGIC                       0xDEADBEEFU
 
 /* **eos** ------------------------------------------------------------------ */
 enum
@@ -123,38 +115,6 @@ typedef struct eos_owner
 {
     eos_u8_t data[EOS_MAX_OWNER];
 } eos_owner_t;
-
-enum
-{
-    EosTimerUnit_Ms                         = 0,    /* 60S, ms */
-    EosTimerUnit_100Ms,                             /* 100Min, 50ms */
-    EosTimerUnit_Sec,                               /* 16h, 500ms */
-    EosTimerUnit_Minute,                            /* 15day, 30S */
-
-    EosTimerUnit_Max
-};
-
-static const eos_u32_t timer_threshold[EosTimerUnit_Max] =
-{
-    60000,                                          /* 60 S */
-    6000000,                                        /* 100 Minutes */
-    57600000,                                       /* 16 hours */
-    1296000000,                                     /* 15 days */
-};
-
-static const eos_u32_t timer_unit[EosTimerUnit_Max] =
-{
-    1, 100, 1000, 60000
-};
-
-typedef struct eos_event_timer
-{
-    const char *topic;
-    eos_u32_t oneshoot                      : 1;
-    eos_u32_t unit                          : 2;
-    eos_u32_t period                        : 16;
-    eos_u32_t timeout;
-} eos_event_timer_t;
 #endif
 
 typedef struct eos_heap_block
@@ -214,20 +174,21 @@ typedef union eos_obj_block
     struct
     {
         eos_task_handle_t tcb;
-        eos_sem_t event_sem;
-        bool event_recv_disable;
-        bool wait_specific_event;
-        const char *event_wait;
     } task;
+    struct
+    {
+        const char *topic;
+        eos_timer_t timer;
+    } timer;
 } eos_ocb_t;
 
 typedef struct eos_object
 {
     const char *key;                                    /* Key */
     eos_ocb_t ocb;                                      /* object block */
-    eos_u32_t type                   : 8;                /* Object type */
+    eos_u32_t type                   : 8;               /* Object type */
     eos_u32_t attribute              : 8;
-    eos_u32_t size                   : 16;               /* Value size */
+    eos_u32_t size                   : 16;              /* Value size */
     union
     {
         void *value;                                    /* for value-event */
@@ -242,13 +203,6 @@ typedef struct eos_tag
     hash_algorithm_t hash_func;
     eos_u16_t prime_max;
     eos_u8_t obj_task_occupy[EOS_MAX_TASK_OCCUPY];
-
-    /* Time event */
-#if (EOS_USE_TIME_EVENT != 0)
-    eos_event_timer_t etimer[EOS_MAX_TIME_EVENT];
-    eos_u32_t timeout_min;
-    eos_u8_t timer_count;
-#endif
     
     eos_u16_t t_id[EOS_MAX_TASKS];
 
@@ -306,9 +260,9 @@ void eos_task_start_private(eos_task_handle_t const me,
                             eos_u32_t stack_size,
                             void *parameter);
 static eos_s8_t eos_event_give_(const char *task,
-                               eos_u32_t task_id,
-                               eos_u8_t give_type,
-                               const char *topic);
+                                eos_u32_t task_id,
+                                eos_u8_t give_type,
+                                const char *topic);
 static void eos_e_queue_delete_(eos_event_data_t const *item);
 static void eos_reactor_enter(eos_reactor_t *const me);
 static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic);
@@ -348,10 +302,6 @@ EventOS
 ----------------------------------------------------------------------------- */
 void eos_init(void)
 {
-#if (EOS_USE_TIME_EVENT != 0)
-    eos.timer_count = 0;
-#endif
-
     eos.hash_func = eos_hash_time33;
     eos.e_queue = EOS_NULL;
     for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i ++)
@@ -600,7 +550,10 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
                         /* Delete the event data from the e-queue. */
                         eos_e_queue_delete_(e_item);
 
-                        eos_sem_reset(&task->sem, 0);
+                        if (equeue_no_current_task_event(t_id))
+                        {
+                            eos_sem_reset(&task->sem, 0);
+                        }
                     }
 
                     if (correct_event)
@@ -1193,48 +1146,7 @@ void eos_event_unsub(const char *topic)
 static void eos_event_pub_time(const char *topic,
                                eos_u32_t time_ms, bool oneshoot)
 {
-    EOS_ASSERT(time_ms != 0);
-    EOS_ASSERT(time_ms <= timer_threshold[EosTimerUnit_Minute]);
-    EOS_ASSERT(eos.timer_count < EOS_MAX_TIME_EVENT);
 
-    register eos_base_t level = eos_hw_interrupt_disable();
-
-    /* Repeated event timer is not repeated. */
-    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
-    {
-        EOS_ASSERT(topic != eos.etimer[i].topic);
-    }
-
-    eos_u32_t system_ms = eos_tick_get_millisecond();
-    eos_u8_t unit = EosTimerUnit_Ms;
-    eos_u16_t period;
-    for (eos_u8_t i = 0; i < EosTimerUnit_Max; i ++)
-    {
-        if (time_ms <= timer_threshold[i])
-        {
-            unit = i;
-            
-            if (i == EosTimerUnit_Ms)
-            {
-                period = time_ms;
-                break;
-            }
-            period = (time_ms + (timer_unit[i] >> 1)) / timer_unit[i];
-            break;
-        }
-    }
-    eos_u32_t timeout = (system_ms + time_ms);
-    eos.etimer[eos.timer_count ++] = (eos_event_timer_t)
-    {
-        topic, oneshoot, unit, period, timeout
-    };
-    
-    if (eos.timeout_min > timeout)
-    {
-        eos.timeout_min = timeout;
-    }
-
-    eos_hw_interrupt_enable(level);
 }
 
 void eos_event_publish_delay(const char *topic, eos_u32_t time_ms)
@@ -1317,36 +1229,7 @@ void eos_event_send_period(const char *task,
 
 void eos_event_time_cancel(const char *topic)
 {
-    register eos_base_t level = eos_hw_interrupt_disable();
-        
-    eos_u32_t timeout_min = EOS_U32_MAX;
-    for (eos_u32_t i = 0; i < eos.timer_count; i ++)
-    {
-        if (topic != eos.etimer[i].topic)
-        {
-            timeout_min =   timeout_min > eos.etimer[i].timeout ?
-                            eos.etimer[i].timeout :
-                            timeout_min;
-        }
-        else
-        {
-            if (i == (eos.timer_count - 1))
-            {
-                eos.timer_count --;
-                break;
-            }
-            else
-            {
-                eos.etimer[i] = eos.etimer[eos.timer_count - 1];
-                eos.timer_count -= 1;
-                i --;
-            }
-        }
-    }
 
-    eos.timeout_min = timeout_min;
-
-    eos_hw_interrupt_enable(level);
 }
 #endif
 

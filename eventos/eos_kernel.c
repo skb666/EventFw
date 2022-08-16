@@ -830,7 +830,7 @@ static void _task_exit(void)
     eos_schedule_remove_task(task);
 
     /* remove it from timer list */
-    eos_timer_detach(&task->task_timer);
+    eos_timer_detach((eos_timer_handle_t)&task->task_timer);
 
     /* change stat */
     task->status = EOS_TASK_CLOSE;
@@ -931,12 +931,12 @@ static eos_err_t _task_init(ek_task_handle_t task,
     task->user_data = EOS_NULL;
 
     /* initialize task timer */
-    eos_timer_init(&(task->task_timer),
-                  NULL,
-                  _task_timeout,
-                  task,
-                  0,
-                  EOS_TIMER_FLAG_ONE_SHOT);
+    eos_timer_init((eos_timer_handle_t)&(task->task_timer),
+                    NULL,
+                    _task_timeout,
+                    task,
+                    0,
+                    EOS_TIMER_FLAG_ONE_SHOT);
 
 #ifdef EOS_USING_CPU_USAGE
     task->duration_tick = 0;
@@ -1053,7 +1053,7 @@ eos_err_t eos_task_detach(eos_task_handle_t task_)
     lock = eos_hw_interrupt_disable();
 
     /* release task timer */
-    eos_timer_detach(&(task->task_timer));
+    eos_timer_detach((eos_timer_handle_t)&(task->task_timer));
 
     /* change stat */
     task->status = EOS_TASK_CLOSE;
@@ -1090,11 +1090,13 @@ eos_err_t eos_task_yield(void)
 }
 
 /**
- * @brief   This function will let current task sleep for some ticks. Change current task state to suspend,
- *          when the task timer reaches the tick value, scheduler will awaken this task.
+ * @brief   This function will let current task sleep for some ticks. Change
+ *          current task state to suspend, when the task timer reaches the tick
+ *           value, scheduler will awaken this task.
  * @param   tick is the sleep ticks.
- * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
- *          If the return value is any other values, it means this operation failed.
+ * @return  Return the operation status. If the return value is EOS_EOK, the
+ *          function is successfully executed. If the return value is any other 
+ *          values, it means this operation failed.
  */
 eos_err_t eos_task_sleep(eos_u32_t tick)
 {
@@ -1116,8 +1118,10 @@ eos_err_t eos_task_sleep(eos_u32_t tick)
     eos_task_suspend((eos_task_handle_t)task);
 
     /* reset the timeout of task timer and start it */
-    eos_timer_control(&(task->task_timer), EOS_TIMER_CTRL_SET_TIME, &tick);
-    eos_timer_start(&(task->task_timer));
+    eos_timer_control((eos_timer_handle_t)&(task->task_timer),
+                        EOS_TIMER_CTRL_SET_TIME,
+                        &tick);
+    eos_timer_start((eos_timer_handle_t)&(task->task_timer));
 
     /* enable interrupt */
     eos_hw_interrupt_enable(temp);
@@ -1180,8 +1184,10 @@ eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick)
         eos_task_suspend((eos_task_handle_t)task);
 
         /* reset the timeout of task timer and start it */
-        eos_timer_control(&(task->task_timer), EOS_TIMER_CTRL_SET_TIME, &left_tick);
-        eos_timer_start(&(task->task_timer));
+        eos_timer_control((eos_timer_handle_t)&(task->task_timer),
+                            EOS_TIMER_CTRL_SET_TIME,
+                            &left_tick);
+        eos_timer_start((eos_timer_handle_t)&(task->task_timer));
 
         /* enable interrupt */
         eos_hw_interrupt_enable(level);
@@ -1334,7 +1340,7 @@ eos_err_t eos_task_suspend(eos_task_handle_t task_)
     task->status = EOS_TASK_SUSPEND | (task->status & ~EOS_TASK_STAT_MASK);
 
     /* stop task timer anyway */
-    eos_timer_stop(&(task->task_timer));
+    eos_timer_stop((eos_timer_handle_t)&(task->task_timer));
 
     /* enable interrupt */
     eos_hw_interrupt_enable(temp);
@@ -1369,7 +1375,7 @@ eos_err_t eos_task_resume(eos_task_handle_t task_)
     /* remove from suspend list */
     eos_list_remove(&(task->tlist));
 
-    eos_timer_stop(&task->task_timer);
+    eos_timer_stop((eos_timer_handle_t)&task->task_timer);
 
     /* insert to schedule ready list */
     eos_schedule_inseeos_task(task);
@@ -1696,10 +1702,10 @@ eos_err_t eos_sem_take(eos_sem_handle_t sem_, eos_s32_t time)
             {
 
                 /* reset the timeout of task timer and start it */
-                eos_timer_control(&(task->task_timer),
+                eos_timer_control((eos_timer_handle_t)&(task->task_timer),
                                  EOS_TIMER_CTRL_SET_TIME,
                                  &time);
-                eos_timer_start(&(task->task_timer));
+                eos_timer_start((eos_timer_handle_t)&(task->task_timer));
             }
 
             /* enable interrupt */
@@ -2004,10 +2010,10 @@ eos_err_t eos_mutex_take(eos_mutex_handle_t mutex_, eos_s32_t time)
                 if (time > 0)
                 {
                     /* reset the timeout of task timer and start it */
-                    eos_timer_control(&(task->task_timer),
+                    eos_timer_control((eos_timer_handle_t)&(task->task_timer),
                                         EOS_TIMER_CTRL_SET_TIME,
                                         &time);
-                    eos_timer_start(&(task->task_timer));
+                    eos_timer_start((eos_timer_handle_t)&(task->task_timer));
                 }
 
                 /* enable interrupt */
@@ -2374,10 +2380,10 @@ static eos_u32_t _timer_task_stack[EOS_TIMER_THREAD_STACK_SIZE / 4];
  * @param time is the tick of timer
  * @param flag the flag of timer
  */
-static void _timer_init(eos_timer_handle_t timer,
+static void _timer_init(ek_timer_handle_t timer,
                            void (*timeout)(void *parameter),
-                           void      *parameter,
-                           eos_u32_t  time,
+                           void *parameter,
+                           eos_u32_t time,
                            eos_u8_t flag)
 {
     /* set flag */
@@ -2409,7 +2415,7 @@ static void _timer_init(eos_timer_handle_t timer,
  */
 static eos_err_t _timer_list_next_timeout(eos_list_t timer_list[], eos_u32_t *timeout_tick)
 {
-    eos_timer_handle_t timer;
+    ek_timer_handle_t timer;
     register eos_base_t level;
 
     /* disable interrupt */
@@ -2418,7 +2424,7 @@ static eos_err_t _timer_list_next_timeout(eos_list_t timer_list[], eos_u32_t *ti
     if (!eos_list_isempty(&timer_list[EOS_TIMER_SKIP_LIST_LEVEL - 1]))
     {
         timer = eos_list_entry(timer_list[EOS_TIMER_SKIP_LIST_LEVEL - 1].next,
-                                struct eos_timer,
+                                ek_timer_t,
                                 row[EOS_TIMER_SKIP_LIST_LEVEL - 1]);
         *timeout_tick = timer->timeout_tick;
 
@@ -2438,8 +2444,10 @@ static eos_err_t _timer_list_next_timeout(eos_list_t timer_list[], eos_u32_t *ti
  * @brief Remove the timer
  * @param timer the point of the timer
  */
-eos_inline void _timer_remove(eos_timer_handle_t timer)
+eos_inline void _timer_remove(eos_timer_handle_t timer_)
 {
+    ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
+
     for (eos_u32_t i = 0; i < EOS_TIMER_SKIP_LIST_LEVEL; i++)
     {
         eos_list_remove(&timer->row[i]);
@@ -2478,7 +2486,7 @@ void eos_timer_dump(eos_list_t timer_heads[])
          list = list->next)
     {
         eos_timer_handle_t timer = eos_list_entry(list,
-                                               struct eos_timer,
+                                               ek_timer_t,
                                                row[EOS_TIMER_SKIP_LIST_LEVEL - 1]);
         eos_kprintf("%d", _timer_count_height(timer));
     }
@@ -2497,13 +2505,15 @@ void eos_timer_dump(eos_list_t timer_heads[])
  *             NOTE: The max timeout tick should be no more than (EOS_TICK_MAX/2 - 1).
  * @param flag is the flag of timer
  */
-void eos_timer_init(eos_timer_handle_t  timer,
+void eos_timer_init(eos_timer_handle_t timer_,
                    const char *name,
                    void (*timeout)(void *parameter),
-                   void       *parameter,
+                   void *parameter,
                    eos_u32_t time,
                    eos_u8_t flag)
 {
+    ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
+
     /* parameter check */
     EOS_ASSERT(timer != EOS_NULL);
     EOS_ASSERT(timeout != EOS_NULL);
@@ -2520,9 +2530,10 @@ void eos_timer_init(eos_timer_handle_t  timer,
  * @param timer is the timer to be detached
  * @return the status of detach
  */
-eos_err_t eos_timer_detach(eos_timer_handle_t timer)
+eos_err_t eos_timer_detach(eos_timer_handle_t timer_)
 {
     register eos_base_t level;
+    ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
 
     /* parameter check */
     EOS_ASSERT(timer != EOS_NULL);
@@ -2532,7 +2543,7 @@ eos_err_t eos_timer_detach(eos_timer_handle_t timer)
     /* disable interrupt */
     level = eos_hw_interrupt_disable();
 
-    _timer_remove(timer);
+    _timer_remove(timer_);
     /* stop timer */
     timer->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
 
@@ -2549,7 +2560,7 @@ eos_err_t eos_timer_detach(eos_timer_handle_t timer)
  * @param timer the timer to be started
  * @return the operation status, EOS_EOK on OK, EOS_ERROR on error
  */
-eos_err_t eos_timer_start(eos_timer_handle_t timer)
+eos_err_t eos_timer_start(eos_timer_handle_t timer_)
 {
     unsigned int row_lvl;
     eos_list_t *timer_list;
@@ -2558,6 +2569,7 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer)
     eos_list_t *row_head[EOS_TIMER_SKIP_LIST_LEVEL];
     unsigned int tst_nr;
     static unsigned int random_nr;
+    ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
 
     /* parameter check */
     EOS_ASSERT(timer != EOS_NULL);
@@ -2568,7 +2580,7 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer)
     /* stop timer firstly */
     level = eos_hw_interrupt_disable();
     /* remove timer from list */
-    _timer_remove(timer);
+    _timer_remove(timer_);
     /* change status of timer */
     timer->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
 
@@ -2593,11 +2605,11 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer)
         for (; row_head[row_lvl] != timer_list[row_lvl].prev;
              row_head[row_lvl]  = row_head[row_lvl]->next)
         {
-            eos_timer_handle_t t;
+            ek_timer_handle_t t;
             eos_list_t *p = row_head[row_lvl]->next;
 
             /* fix up the entry pointer */
-            t = eos_list_entry(p, struct eos_timer, row[row_lvl]);
+            t = eos_list_entry(p, ek_timer_t, row[row_lvl]);
 
             /* If we have two timers that timeout at the same time, it's
              * preferred that the timer inserted early get called early.
@@ -2672,9 +2684,10 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer)
  * @param timer the timer to be stopped
  * @return the operation status, EOS_EOK on OK, EOS_ERROR on error
  */
-eos_err_t eos_timer_stop(eos_timer_handle_t timer)
+eos_err_t eos_timer_stop(eos_timer_handle_t timer_)
 {
     register eos_base_t level;
+    ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
 
     /* parameter check */
     EOS_ASSERT(timer != EOS_NULL);
@@ -2686,7 +2699,7 @@ eos_err_t eos_timer_stop(eos_timer_handle_t timer)
     /* disable interrupt */
     level = eos_hw_interrupt_disable();
 
-    _timer_remove(timer);
+    _timer_remove(timer_);
     /* change status */
     timer->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
 
@@ -2703,9 +2716,10 @@ eos_err_t eos_timer_stop(eos_timer_handle_t timer)
  * @param arg the argument
  * @return the statu of control
  */
-eos_err_t eos_timer_control(eos_timer_handle_t timer, int cmd, void *arg)
+eos_err_t eos_timer_control(eos_timer_handle_t timer_, int cmd, void *arg)
 {
     register eos_base_t level;
+    ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
 
     /* parameter check */
     EOS_ASSERT(timer != EOS_NULL);
@@ -2761,7 +2775,7 @@ eos_err_t eos_timer_control(eos_timer_handle_t timer, int cmd, void *arg)
  */
 void eos_timer_check(void)
 {
-    eos_timer_handle_t t;
+    ek_timer_handle_t t;
     eos_u32_t current_tick;
     register eos_base_t level;
     eos_list_t list;
@@ -2776,7 +2790,7 @@ void eos_timer_check(void)
     while (!eos_list_isempty(&_timer_list[EOS_TIMER_SKIP_LIST_LEVEL - 1]))
     {
         t = eos_list_entry(_timer_list[EOS_TIMER_SKIP_LIST_LEVEL - 1].next,
-                          struct eos_timer, row[EOS_TIMER_SKIP_LIST_LEVEL - 1]);
+                          ek_timer_t, row[EOS_TIMER_SKIP_LIST_LEVEL - 1]);
 
         /*
          * It supposes that the new tick shall less than the half duration of
@@ -2785,7 +2799,7 @@ void eos_timer_check(void)
         if ((current_tick - t->timeout_tick) < EOS_TICK_MAX / 2)
         {
             /* remove timer from timer list firstly */
-            _timer_remove(t);
+            _timer_remove((eos_timer_handle_t)t);
             if (!(t->super.flag & EOS_TIMER_FLAG_PERIODIC))
             {
                 t->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
@@ -2809,7 +2823,7 @@ void eos_timer_check(void)
             {
                 /* start it */
                 t->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
-                eos_timer_start(t);
+                eos_timer_start((eos_timer_handle_t)t);
             }
         }
         else
@@ -2841,7 +2855,7 @@ eos_u32_t eos_timer_next_timeout_tick(void)
 void eos_soft_timer_check(void)
 {
     eos_u32_t current_tick;
-    eos_timer_handle_t t;
+    ek_timer_handle_t t;
     register eos_base_t level;
     eos_list_t list;
 
@@ -2853,7 +2867,7 @@ void eos_soft_timer_check(void)
     while (!eos_list_isempty(&_soft_timer_list[EOS_TIMER_SKIP_LIST_LEVEL - 1]))
     {
         t = eos_list_entry(_soft_timer_list[EOS_TIMER_SKIP_LIST_LEVEL - 1].next,
-                            struct eos_timer, row[EOS_TIMER_SKIP_LIST_LEVEL - 1]);
+                            ek_timer_t, row[EOS_TIMER_SKIP_LIST_LEVEL - 1]);
 
         current_tick = eos_tick_get();
 
@@ -2864,7 +2878,7 @@ void eos_soft_timer_check(void)
         if ((current_tick - t->timeout_tick) < EOS_TICK_MAX / 2)
         {
             /* remove timer from timer list firstly */
-            _timer_remove(t);
+            _timer_remove((eos_timer_handle_t)t);
             if (!(t->super.flag & EOS_TIMER_FLAG_PERIODIC))
             {
                 t->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
@@ -2894,7 +2908,7 @@ void eos_soft_timer_check(void)
             {
                 /* start it */
                 t->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
-                eos_timer_start(t);
+                eos_timer_start((eos_timer_handle_t)t);
             }
         }
         else
