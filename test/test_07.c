@@ -66,26 +66,26 @@ static const task_test_info_t task_test_info[] =
         stack_e_give1, sizeof(stack_e_give1),
         task_func_e_give1
     },
-//    {
-//        &task_e_give2, "TaskGive2", TaskPrio_Give2,
-//        stack_e_give2, sizeof(stack_e_give2),
-//        task_func_e_give2
-//    },
+    {
+        &task_e_give2, "TaskGive2", TaskPrio_Give2,
+        stack_e_give2, sizeof(stack_e_give2),
+        task_func_e_give2
+    },
     {
         &task_e_value, "TaskValue", TaskPrio_Value,
         stack_e_value, sizeof(stack_e_value),
         task_func_e_value
     },
-//    {
-//        &task_high, "TaskHigh", TaskPrio_High,
-//        stack_high, sizeof(stack_high),
-//        task_func_high
-//    },
-//    {
-//        &task_middle, "TaskMiddle", TaskPrio_Middle,
-//        stack_middle, sizeof(stack_middle),
-//        task_func_middle
-//    },
+    {
+        &task_high, "TaskHigh", TaskPrio_High,
+        stack_high, sizeof(stack_high),
+        task_func_high
+    },
+    {
+        &task_middle, "TaskMiddle", TaskPrio_Middle,
+        stack_middle, sizeof(stack_middle),
+        task_func_middle
+    },
 };
 
 /* public function ---------------------------------------------------------- */
@@ -159,7 +159,7 @@ static void task_func_e_give2(void *parameter)
 {
     (void)parameter;
 
-    // eos_event_publish_period("Event_Time_500ms", 1);
+    eos_event_publish_period("Event_Time_500ms", 1);
     
     while (1)
     {

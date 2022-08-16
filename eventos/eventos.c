@@ -444,6 +444,29 @@ eos_err_t eos_task_init(eos_task_t *task,
                         priority, tick);
 }
 
+static bool equeue_no_current_task_event(eos_u16_t t_id)
+{
+    if (eos.e_queue == EOS_NULL)
+    {
+        return true;
+    }
+    else
+    {
+        eos_event_data_t *e_item = eos.e_queue;
+        while (e_item != EOS_NULL)
+        {
+            if (!owner_is_occupied(&e_item->e_owner, t_id))
+            {
+                e_item = e_item->next;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+}
+
 bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
 {
     EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
@@ -495,7 +518,10 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
                     /* Delete the event data from the e-queue. */
                     eos_e_queue_delete_(e_item);
 
-                    eos_sem_reset(&task->sem, 0);
+                    if (equeue_no_current_task_event(t_id))
+                    {
+                        eos_sem_reset(&task->sem, 0);
+                    }
                 }
 
                 eos_hw_interrupt_enable(level);
