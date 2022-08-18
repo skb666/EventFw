@@ -1153,6 +1153,8 @@ static void eos_event_time(const char *task,
                             const char *topic,
                             eos_u32_t time_ms, bool oneshoot)
 {
+    register eos_base_t level = eos_hw_interrupt_disable();
+
     /* Get event id according the topic. */
     eos_u16_t t_id;
     if (task != EOS_NULL)
@@ -1211,6 +1213,8 @@ static void eos_event_time(const char *task,
                     &eos.object[tim_id],
                     time_ms, flag_timer);
     eos_timer_start(timer);
+
+    eos_hw_interrupt_enable(level);
 }
 
 void eos_event_publish_delay(const char *topic, eos_u32_t time_ms)
