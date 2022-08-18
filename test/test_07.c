@@ -142,7 +142,7 @@ static void task_func_e_give1(void *parameter)
 {
     (void)parameter;
 
-    // eos_event_publish_period("Event_Time_500ms", 1);
+    eos_event_publish_period("Event_Time_500ms", 1);
     
     while (1)
     {
@@ -158,8 +158,6 @@ static void task_func_e_give1(void *parameter)
 static void task_func_e_give2(void *parameter)
 {
     (void)parameter;
-
-    eos_event_publish_period("Event_Time_500ms", 1);
     
     while (1)
     {

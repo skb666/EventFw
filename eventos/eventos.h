@@ -324,16 +324,14 @@ eos_err_t eos_mutex_trytake(eos_mutex_handle_t mutex);
 eos_err_t eos_mutex_release(eos_mutex_handle_t mutex);
 #endif
 
-/* -----------------------------------------------------------------------------
-Event
------------------------------------------------------------------------------ */
-// 事件的直接发送 -----------------------------------------
-// 直接发送事件。允许在中断中调用。
+/* Event interface ---------------------------------------------------------- */
 void eos_event_send(const char *task, const char *topic);
-// 延迟发送事件。
-void eos_event_send_delay(const char *task, const char *topic, eos_u32_t time_delay_ms);
-// 周期发送事件。
-void eos_event_send_period(const char *task, const char *topic, eos_u32_t time_period_ms);
+void eos_event_send_delay(const char *task,
+                            const char *topic,
+                            eos_u32_t time_delay_ms);
+void eos_event_send_period(const char *task,
+                            const char *topic,
+                            eos_u32_t time_period_ms);
 
 // 事件的发布 --------------------------------------------
 // 发布主题事件。允许在中断中调用。
