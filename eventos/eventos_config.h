@@ -44,7 +44,7 @@
 #define EOS_MAX_TASKS                           32
 
 //   <o>  The maximum number of objects: 16 - 65536
-#define EOS_MAX_OBJECTS                         16
+#define EOS_MAX_OBJECTS                         128
 #define EOS_MAX_HASH_SEEK_TIMES                 5
 
 //   <o>  The platform type: 32 ort 64 bits.

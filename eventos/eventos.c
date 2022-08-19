@@ -86,15 +86,10 @@ enum
 #define EOS_TASK_ATTRIBUTE_REACTOR          ((eos_u8_t)0x01U)
 #define EOS_TASK_ATTRIBUTE_SM               ((eos_u8_t)0x02U)
 
-#if (EOS_USE_TIME_EVENT != 0)
-#define EOS_MS_NUM_30DAY                    (2592000000U)
-#define EOS_MS_NUM_15DAY                    (1296000000U)
-
 typedef struct eos_owner
 {
     eos_u8_t data[EOS_MAX_OWNER];
 } eos_owner_t;
-#endif
 
 typedef struct eos_heap_block
 {
@@ -383,7 +378,7 @@ eos_err_t eos_task_init(eos_task_t *task,
                         priority, tick);
 }
 
-static bool equeue_no_current_task_event(eos_u16_t t_id)
+static bool equeue_no_current_task_event(eos_u16_t t_index)
 {
     if (eos.e_queue == EOS_NULL)
     {
@@ -394,7 +389,7 @@ static bool equeue_no_current_task_event(eos_u16_t t_id)
         eos_event_data_t *e_item = eos.e_queue;
         while (e_item != EOS_NULL)
         {
-            if (!owner_is_occupied(&e_item->e_owner, t_id))
+            if (!owner_is_occupied(&e_item->e_owner, t_index))
             {
                 e_item = e_item->next;
             }
@@ -408,13 +403,10 @@ static bool equeue_no_current_task_event(eos_u16_t t_id)
 
 bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
 {
-    EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
-
     eos_task_handle_t task = eos_task_self();
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
     
     register eos_base_t level = eos_hw_interrupt_disable();
-    eos_u16_t t_id = eos.t_id[task->index];
 
     if (ret == EOS_EOK)
     {
@@ -423,7 +415,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
         eos_event_data_t *e_item = eos.e_queue;
         while (e_item != EOS_NULL)
         {
-            if (!owner_is_occupied(&e_item->e_owner, t_id))
+            if (!owner_is_occupied(&e_item->e_owner, task->index))
             {
                 e_item = e_item->next;
             }
@@ -450,14 +442,14 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
                 }
 
                 /* If the event data is just the current task's event. */
-                owner_set_bit(&e_item->e_owner, t_id, false);
+                owner_set_bit(&e_item->e_owner, task->index, false);
                 if (owner_all_cleared(&e_item->e_owner))
                 {
                     eos.object[e_item->id].ocb.event.e_item = EOS_NULL;
                     /* Delete the event data from the e-queue. */
                     eos_e_queue_delete_(e_item);
 
-                    if (equeue_no_current_task_event(t_id))
+                    if (equeue_no_current_task_event(task->index))
                     {
                         eos_sem_reset(&task->sem, 0);
                     }
@@ -475,18 +467,15 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
     return false;
 }
 
-bool eos_task_wait_specific_event(  eos_event_t *const e_out,
+bool eos_task_wait_specific_event(eos_event_t *const e_out,
                                     const char *topic, eos_s32_t time_ms)
 {
-    EOS_ASSERT(time_ms <= EOS_MS_NUM_30DAY || time_ms == EOS_TIME_FOREVER);
-
     eos_task_handle_t task = eos_task_self();
     while (1)
     {
         eos_err_t ret = eos_sem_take(&task->sem, time_ms);
         
         register eos_base_t level = eos_hw_interrupt_disable();
-        eos_u16_t t_id = eos.t_id[task->index];
 
         if (ret == EOS_EOK)
         {
@@ -495,7 +484,7 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
             eos_event_data_t *e_item = eos.e_queue;
             while (e_item != EOS_NULL)
             {
-                if (!owner_is_occupied(&e_item->e_owner, t_id))
+                if (!owner_is_occupied(&e_item->e_owner, task->index))
                 {
                     e_item = e_item->next;
                 }
@@ -532,14 +521,14 @@ bool eos_task_wait_specific_event(  eos_event_t *const e_out,
                     }
 
                     /* If the event data is just the current task's event. */
-                    owner_set_bit(&e_item->e_owner, t_id, false);
+                    owner_set_bit(&e_item->e_owner, task->index, false);
                     if (owner_all_cleared(&e_item->e_owner))
                     {
                         eos.object[e_item->id].ocb.event.e_item = EOS_NULL;
                         /* Delete the event data from the e-queue. */
                         eos_e_queue_delete_(e_item);
 
-                        if (equeue_no_current_task_event(t_id))
+                        if (equeue_no_current_task_event(task->index))
                         {
                             eos_sem_reset(&task->sem, 0);
                         }
@@ -877,7 +866,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
         {
             goto exit;
         }
-        g_owner.data[t_id / 8] = (1 << (t_id % 8));
+        g_owner.data[tcb->index / 8] = (1 << (tcb->index % 8));
     }
     /* The publish-type event. */
     else if (give_type == EosEventGiveType_Publish)
@@ -894,7 +883,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
 
                 if (obj->ocb.task.tcb->event_recv_disable == true)
                 {
-                    owner_set_bit(&g_owner, _t_id, false);
+                    owner_set_bit(&g_owner, i, false);
                 }
             }
         }
@@ -993,7 +982,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
 
             if (eos_interrupt_get_nest() == 0)
             {
-                if (owner_is_occupied(&g_owner, _t_id) &&
+                if (owner_is_occupied(&g_owner, obj->ocb.task.tcb->index) &&
                     obj->ocb.task.tcb != eos_task_self())
                 {
                     if (!obj->ocb.task.tcb->wait_specific_event)
@@ -1017,7 +1006,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
             }
             else
             {
-                if (owner_is_occupied(&g_owner, _t_id))
+                if (owner_is_occupied(&g_owner, obj->ocb.task.tcb->index))
                 {
                     if (!obj->ocb.task.tcb->wait_specific_event)
                     {
@@ -1093,8 +1082,8 @@ static inline void eos_event_sub_(eos_task_handle_t const me, const char *topic)
     }
 
     /* Write the subscribing information into the object data. */
-    eos_u16_t t_id = eos.t_id[eos_task_self()->index];
-    owner_set_bit(&eos.object[index].ocb.event.e_sub, t_id, true);
+    owner_set_bit(&eos.object[index].ocb.event.e_sub,
+                    eos_task_self()->index, true);
 
     eos_hw_interrupt_enable(level);
 }
@@ -1115,8 +1104,7 @@ void eos_event_unsub(const char *topic)
     EOS_ASSERT((eos.object[index].attribute & 0x03) != EOS_EVENT_ATTRIBUTE_STREAM);
 
     /* Clear the subscirbe flag. */
-    eos_u16_t t_id = eos.t_id[eos_task_self()->index];
-    owner_set_bit(&eos.object[index].ocb.event.e_sub, t_id, false);
+    owner_set_bit(&eos.object[index].ocb.event.e_sub, eos_task_self()->index, false);
 
     eos_hw_interrupt_enable(level);
 }
@@ -2050,9 +2038,9 @@ static eos_s32_t eos_stream_empty_size(eos_stream_t *const me)
 }
 
 /* private owner function --------------------------------------------------- */
-static inline bool owner_is_occupied(eos_owner_t *owner, eos_u32_t t_id)
+static inline bool owner_is_occupied(eos_owner_t *owner, eos_u32_t t_index)
 {
-    if (owner->data[t_id >> 3] & (1 << (t_id % 8)))
+    if (owner->data[t_index >> 3] & (1 << (t_index % 8)))
     {
         return true;
     }

@@ -2506,11 +2506,11 @@ void eos_timer_dump(eos_list_t timer_heads[])
  * @param flag is the flag of timer
  */
 void eos_timer_init(eos_timer_handle_t timer_,
-                   const char *name,
-                   void (*timeout)(void *parameter),
-                   void *parameter,
-                   eos_u32_t time,
-                   eos_u8_t flag)
+                    const char *name,
+                    void (*timeout)(void *parameter),
+                    void *parameter,
+                    eos_u32_t time,
+                    eos_u8_t flag)
 {
     ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
 
