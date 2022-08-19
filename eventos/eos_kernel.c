@@ -11,18 +11,40 @@ All copyrights in ek.c and ek.h belongs to RT-Thread Development Team. Sincere
 thanks to the RT-Thread Team.
 */
 
-#include "eventos.h"
+#include "eos.h"
 #include <string.h>
 #include <stdio.h>
 
 EOS_TAG("EosKernel")
 
+/**
+ *  The object type can be one of the follows with specific
+ *  macros enabled:
+ *  - Thread
+ *  - Semaphore
+ *  - Mutex
+ *  - Timer
+ *  - Unknown
+ *  - Static
+ */
+enum ek_obj_type
+{
+    EOS_Object_Null          = 0x00,        /**< The object is not used. */
+    EOS_Object_Thread        = 0x01,        /**< The object is a task. */
+    EOS_Object_Semaphore     = 0x02,        /**< The object is a semaphore. */
+    EOS_Object_Mutex         = 0x03,        /**< The object is a mutex. */
+    EOS_Object_Timer         = 0x04,        /**< The object is a timer. */
+    EOS_Object_Static        = 0x80         /**< The object is a static object. */
+};
+
 #define EOS_TASK_STAT_YIELD            0x08                /**< indicate whether remaining_tick has been reloaded since last schedule */
 #define EOS_TASK_STAT_YIELD_MASK       EOS_TASK_STAT_YIELD
 
 void eos_schedule(void);
-void eos_schedule_inseeos_task(ek_task_t *task);
+void eos_schedule_insert_task(ek_task_t *task);
 void eos_schedule_remove_task(ek_task_t *task);
+
+static eos_u32_t eos_tick_from_millisecond(eos_s32_t ms);
 
 eos_u8_t *eos_hw_stack_init(void *entry,
                             void *parameter,
@@ -31,15 +53,15 @@ eos_u8_t *eos_hw_stack_init(void *entry,
 /*
  * Context interfaces
  */
-void eos_hw_context_switch(eos_ubase_t from, eos_ubase_t to);
-void eos_hw_context_switch_to(eos_ubase_t to);
-void eos_hw_context_switch_interrupt(eos_ubase_t from, eos_ubase_t to);
+void eos_task_switch(eos_ubase_t from, eos_ubase_t to);
+void eos_task_switch_to(eos_ubase_t to);
+void eos_task_switch_interrupt(eos_ubase_t from, eos_ubase_t to);
 
 /**
- * eos_container_of - return the member address of ptr, if the type of ptr is the
+ * ek_container_of - return the member address of ptr, if the type of ptr is the
  * struct type.
  */
-#define eos_container_of(ptr, type, member)                                    \
+#define ek_container_of(ptr, type, member)                                    \
     ((type *)((char *)(ptr) - (unsigned long)(&((type *)0)->member)))
 
 /**
@@ -51,7 +73,7 @@ void eos_hw_context_switch_interrupt(eos_ubase_t from, eos_ubase_t to);
  * @brief initialize a list
  * @param l list to be initialized
  */
-eos_inline void eos_list_init(eos_list_t *l)
+eos_inline void eos_list_init(ek_list_t *l)
 {
     l->next = l->prev = l;
 }
@@ -61,7 +83,7 @@ eos_inline void eos_list_init(eos_list_t *l)
  * @param l list to insert it
  * @param n new node to be inserted
  */
-eos_inline void eos_list_inseeos_after(eos_list_t *l, eos_list_t *n)
+eos_inline void eos_list_insert_after(ek_list_t *l, ek_list_t *n)
 {
     l->next->prev = n;
     n->next = l->next;
@@ -75,7 +97,7 @@ eos_inline void eos_list_inseeos_after(eos_list_t *l, eos_list_t *n)
  * @param n new node to be inserted
  * @param l list to insert it
  */
-eos_inline void eos_list_inseeos_before(eos_list_t *l, eos_list_t *n)
+eos_inline void eos_list_insert_before(ek_list_t *l, ek_list_t *n)
 {
     l->prev->next = n;
     n->prev = l->prev;
@@ -88,7 +110,7 @@ eos_inline void eos_list_inseeos_before(eos_list_t *l, eos_list_t *n)
  * @brief remove node from list.
  * @param n the node to remove from the list.
  */
-eos_inline void eos_list_remove(eos_list_t *n)
+eos_inline void eos_list_remove(ek_list_t *n)
 {
     n->next->prev = n->prev;
     n->prev->next = n->next;
@@ -100,7 +122,7 @@ eos_inline void eos_list_remove(eos_list_t *n)
  * @brief tests whether a list is empty
  * @param l the list to test.
  */
-eos_inline int eos_list_isempty(const eos_list_t *l)
+eos_inline int eos_list_isempty(const ek_list_t *l)
 {
     return l->next == l;
 }
@@ -111,7 +133,7 @@ eos_inline int eos_list_isempty(const eos_list_t *l)
  * @param type the type of structure
  * @param member the name of list in structure
  */
-#define eos_list_entry(node, type, member) eos_container_of(node, type, member)
+#define eos_list_entry(node, type, member) ek_container_of(node, type, member)
 
 /*
  * define object_info for the number of _object_container items.
@@ -133,7 +155,7 @@ enum eos_object_info_type
 #define _OBJ_CONTAINER_LIST_INIT(c)     \
     {&(_object_container[c].object_list), &(_object_container[c].object_list)}
 
-static struct eos_obj_info _object_container[EosObjInfo_Max] =
+static struct ek_obj_info _object_container[EosObjInfo_Max] =
 {
     /* initialize object container - task */
     {
@@ -171,17 +193,20 @@ static struct eos_obj_info _object_container[EosObjInfo_Max] =
  *             EOS_Object_Thread/Semaphore/Mutex... etc
  * @return the object type information or EOS_NULL
  */
-struct eos_obj_info *eos_object_get_info(enum eos_obj_type type)
+struct ek_obj_info *eos_object_get_info(enum ek_obj_type type)
 {
+    struct ek_obj_info *obj_info = EOS_NULL;
+
     for (eos_u32_t i = 0; i < EosObjInfo_Max; i ++)
     {
         if (_object_container[i].type == type)
         {
-            return &_object_container[i];
+            obj_info = &_object_container[i];
+            break;
         }
     }
 
-    return EOS_NULL;
+    return obj_info;
 }
 
 /**
@@ -189,15 +214,12 @@ struct eos_obj_info *eos_object_get_info(enum eos_obj_type type)
  *        management.
  * @param object is the specified object to be initialized.
  * @param type is the object type.
- * @param name is the object name. In system, the object's name must be unique.
  */
-void eos_object_init(eos_obj_t *object,
-                     enum eos_obj_type type,
-                     const char *name)
+void eos_object_init(ek_obj_t *object, enum ek_obj_type type)
 {
     register eos_base_t temp;
-    struct eos_list_node *node = EOS_NULL;
-    struct eos_obj_info *information;
+    struct ek_list_node *node = EOS_NULL;
+    struct ek_obj_info *information;
 
     /* get object information */
     information = eos_object_get_info(type);
@@ -210,9 +232,9 @@ void eos_object_init(eos_obj_t *object,
             node != &(information->object_list);
             node  = node->next)
     {
-        eos_obj_t *obj;
+        ek_obj_t *obj;
 
-        obj = eos_list_entry(node, eos_obj_t, list);
+        obj = eos_list_entry(node, ek_obj_t, list);
         if (obj) /* skip warning when disable debug */
         {
             EOS_ASSERT(obj != object);
@@ -229,7 +251,7 @@ void eos_object_init(eos_obj_t *object,
     temp = eos_hw_interrupt_disable();
 
     /* insert object into information object list */
-    eos_list_inseeos_after(&(information->object_list), &(object->list));
+    eos_list_insert_after(&(information->object_list), &(object->list));
 
     /* unlock interrupt */
     eos_hw_interrupt_enable(temp);
@@ -240,7 +262,7 @@ void eos_object_init(eos_obj_t *object,
  *        and the memory of static object is not freed.
  * @param object the specified object to be detached.
  */
-void eos_object_detach(eos_obj_handle_t object)
+void eos_object_detach(ek_obj_handle_t object)
 {
     register eos_base_t temp;
 
@@ -265,18 +287,18 @@ void eos_object_detach(eos_obj_handle_t object)
  * @note  Normally, the system object is a static object and the type
  *        of object set to EOS_Object_Static.
  * @param object is the specified object to be judged.
- * @return EOS_True if a system object, EOS_False for others.
+ * @return true if a system object, false for others.
  */
-eos_bool_t eos_object_is_systemobject(eos_obj_handle_t object)
+eos_bool_t eos_object_is_systemobject(ek_obj_handle_t object)
 {
-    eos_bool_t ret = EOS_False;
+    eos_bool_t ret = false;
     
     /* object check */
     EOS_ASSERT(object != EOS_NULL);
 
     if (object->type & EOS_Object_Static)
     {
-        ret = EOS_True;
+        ret = true;
     }
 
     return ret;
@@ -287,7 +309,7 @@ eos_bool_t eos_object_is_systemobject(eos_obj_handle_t object)
  * @param object is the specified object to be get type.
  * @return the type of object.
  */
-eos_u8_t eos_object_get_type(eos_obj_handle_t object)
+eos_u8_t eos_object_get_type(ek_obj_handle_t object)
 {
     /* object check */
     EOS_ASSERT(object != EOS_NULL);
@@ -340,82 +362,6 @@ eos_u8_t eos_interrupt_get_nest(void)
     ret = eos_interrupt_nest;
     eos_hw_interrupt_enable(level);
     return ret;
-}
-
-/* global errno in EventOS Kernel */
-static volatile int __eos_errno;
-
-/**
- * This function gets the global errno for the current task.
- * @return errno
- */
-eos_err_t eos_get_errno(void)
-{
-    eos_err_t ret;
-    ek_task_handle_t tid = (ek_task_handle_t)eos_task_self();
-
-    if (eos_interrupt_get_nest() != 0)
-    {
-        /* it's in interrupt context */
-        ret = __eos_errno;
-        goto exit;
-    }
-
-    if (tid == EOS_NULL)
-    {
-        ret = __eos_errno;
-        goto exit;
-    }
-
-    ret = tid->error;
-
-exit:
-    return ret;
-}
-
-/**
- * This function sets the global errno for the current task.
- * @param error is the errno shall be set.
- */
-void eos_set_errno(eos_err_t error)
-{
-    ek_task_handle_t tid;
-
-    if (eos_interrupt_get_nest() != 0)
-    {
-        /* it's in interrupt context */
-        __eos_errno = error;
-
-        return;
-    }
-
-    tid = (ek_task_handle_t)eos_task_self();
-    if (tid == EOS_NULL)
-    {
-        __eos_errno = error;
-
-        return;
-    }
-
-    tid->error = error;
-}
-
-/**
- * This function returns the address of the current task errno.
- * @return The errno address.
- */
-int *_eos_errno(void)
-{
-    ek_task_handle_t tid;
-
-    if (eos_interrupt_get_nest() != 0)
-        return (int *)&__eos_errno;
-
-    tid = (ek_task_handle_t)eos_task_self();
-    if (tid != EOS_NULL)
-        return (int *) & (tid->error);
-
-    return (int *)&__eos_errno;
 }
 
 #ifndef EOS_USING_CPU_FFS
@@ -489,7 +435,7 @@ int __eos_ffs(int value)
 #endif /* EOS_USING_TINY_FFS */
 #endif /* EOS_USING_CPU_FFS */
 
-eos_list_t eos_task_priority_table[EOS_TASK_PRIORITY_MAX];
+ek_list_t eos_task_priority_table[EOS_MAX_PRIORITY];
 eos_u32_t eos_task_ready_priority_group;
 
 extern volatile eos_u8_t eos_interrupt_nest;
@@ -559,7 +505,7 @@ void eos_kernel_init(void)
 
     eos_scheduler_lock_nest = 0;
 
-    for (offset = 0; offset < EOS_TASK_PRIORITY_MAX; offset ++)
+    for (offset = 0; offset < EOS_MAX_PRIORITY; offset ++)
     {
         eos_list_init(&eos_task_priority_table[offset]);
     }
@@ -585,13 +531,11 @@ void eos_kernel_start(void)
     to_task->status = EOS_TASK_RUNNING;
 
     /* switch to new task */
-    eos_hw_context_switch_to((eos_ubase_t)&to_task->sp);
+    eos_task_switch_to((eos_ubase_t)&to_task->sp);
 
     /* never come back */
 }
 
-#ifdef EOS_USING_OVERFLOW_CHECK
-#endif /* EOS_USING_OVERFLOW_CHECK */
 /**
  * @brief This function will perform scheduling once. It will select one task
  *        with the highest priority, and switch to it immediately.
@@ -612,8 +556,8 @@ void eos_schedule(void)
 
         if (eos_task_ready_priority_group != 0)
         {
-            /* need_inseeos_from_task: need to insert from_task to ready queue */
-            int need_inseeos_from_task = 0;
+            /* need_insert_from_task: need to insert from_task to ready queue */
+            int need_insert_from_task = 0;
 
             to_task = _scheduler_get_highest_task(&highest_ready_priority);
 
@@ -623,13 +567,14 @@ void eos_schedule(void)
                 {
                     to_task = eos_current_task;
                 }
-                else if (eos_current_task->current_priority == highest_ready_priority && (eos_current_task->status & EOS_TASK_STAT_YIELD_MASK) == 0)
+                else if (eos_current_task->current_priority == highest_ready_priority &&
+                            (eos_current_task->status & EOS_TASK_STAT_YIELD_MASK) == 0)
                 {
                     to_task = eos_current_task;
                 }
                 else
                 {
-                    need_inseeos_from_task = 1;
+                    need_insert_from_task = 1;
                 }
                 eos_current_task->status &= ~EOS_TASK_STAT_YIELD_MASK;
             }
@@ -641,9 +586,9 @@ void eos_schedule(void)
                 from_task         = eos_current_task;
                 eos_current_task   = to_task;
 
-                if (need_inseeos_from_task)
+                if (need_insert_from_task)
                 {
-                    eos_schedule_inseeos_task(from_task);
+                    eos_schedule_insert_task(from_task);
                 }
 
                 eos_schedule_remove_task(to_task);
@@ -661,7 +606,7 @@ void eos_schedule(void)
 
             
 
-                    eos_hw_context_switch((eos_ubase_t)&from_task->sp,
+                    eos_task_switch((eos_ubase_t)&from_task->sp,
                             (eos_ubase_t)&to_task->sp);
 
                     /* enable interrupt */
@@ -672,7 +617,7 @@ void eos_schedule(void)
                 else
                 {
 
-                    eos_hw_context_switch_interrupt((eos_ubase_t)&from_task->sp,
+                    eos_task_switch_interrupt((eos_ubase_t)&from_task->sp,
                             (eos_ubase_t)&to_task->sp);
                 }
             }
@@ -699,7 +644,7 @@ __exit:
  * @param task is the task to be inserted.
  * @note  Please do not invoke this function in user application.
  */
-void eos_schedule_inseeos_task(ek_task_handle_t task)
+void eos_schedule_insert_task(ek_task_handle_t task)
 {
     register eos_base_t temp;
 
@@ -718,7 +663,7 @@ void eos_schedule_inseeos_task(ek_task_handle_t task)
     /* READY task, insert to ready queue */
     task->status = EOS_TASK_READY | (task->status & ~EOS_TASK_STAT_MASK);
     /* insert task to ready list */
-    eos_list_inseeos_before(&(eos_task_priority_table[task->current_priority]),
+    eos_list_insert_before(&(eos_task_priority_table[task->current_priority]),
                           &(task->tlist));
 
     /* set priority mask */
@@ -813,8 +758,6 @@ eos_u16_t eos_critical_level(void)
     return eos_scheduler_lock_nest;
 }
 
-#include <stddef.h>
-
 static void _task_exit(void)
 {
     ek_task_handle_t task;
@@ -860,7 +803,7 @@ static void _task_timeout(void *parameter)
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
     EOS_ASSERT((task->status & EOS_TASK_STAT_MASK) == EOS_TASK_SUSPEND);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Thread);
 
     /* disable interrupt */
     temp = eos_hw_interrupt_disable();
@@ -872,7 +815,7 @@ static void _task_timeout(void *parameter)
     eos_list_remove(&(task->tlist));
 
     /* insert to schedule ready list */
-    eos_schedule_inseeos_task(task);
+    eos_schedule_insert_task(task);
 
     /* enable interrupt */
     eos_hw_interrupt_enable(temp);
@@ -882,7 +825,6 @@ static void _task_timeout(void *parameter)
 }
 
 static eos_err_t _task_init(ek_task_handle_t task,
-                             const char *name,
                              void (*entry)(void *parameter),
                              void *parameter,
                              void *stack_start,
@@ -913,7 +855,7 @@ static eos_err_t _task_init(ek_task_handle_t task,
 #endif /* ARCH_CPU_STACK_GROWS_UPWARD */
 
     /* priority init */
-    EOS_ASSERT(priority < EOS_TASK_PRIORITY_MAX);
+    EOS_ASSERT(priority < EOS_MAX_PRIORITY);
     task->current_priority = priority;
 
     task->number_mask = 0;
@@ -932,7 +874,6 @@ static eos_err_t _task_init(ek_task_handle_t task,
 
     /* initialize task timer */
     eos_timer_init((eos_timer_handle_t)&(task->task_timer),
-                    NULL,
                     _task_timeout,
                     task,
                     0,
@@ -946,10 +887,9 @@ static eos_err_t _task_init(ek_task_handle_t task,
 }
 
 /**
- * @brief   This function will initialize a task. It's used to initialize a
- *          static task object.
+ * @brief   This function will initialize a task. It's used to initialize a static
+ *          task object.
  * @param   task is the static task object.
- * @param   name is the name of task, which shall be unique.
  * @param   entry is the entry function of task.
  * @param   parameter is the parameter of task enter function.
  * @param   stack_start is the start address of task stack.
@@ -960,7 +900,6 @@ static eos_err_t _task_init(ek_task_handle_t task,
  *          If the return value is any other values, it means this operation failed.
  */
 eos_err_t ek_task_init(ek_task_handle_t task,
-                        const char *name,
                         void (*entry)(void *parameter),
                         void *parameter,
                         void *stack_start,
@@ -973,9 +912,9 @@ eos_err_t ek_task_init(ek_task_handle_t task,
     EOS_ASSERT(stack_start != EOS_NULL);
 
     /* initialize task object */
-    eos_object_init((eos_obj_handle_t)task, EOS_Object_Thread, name);
+    eos_object_init((ek_obj_handle_t)task, EOS_Object_Thread);
 
-    return _task_init(task, name, entry, parameter, stack_start, stack_size,
+    return _task_init(task, entry, parameter, stack_start, stack_size,
                         priority,
                         tick);
 }
@@ -1004,7 +943,7 @@ eos_err_t eos_task_startup(eos_task_handle_t task)
     /* parameter check */
     EOS_ASSERT(task_ != EOS_NULL);
     EOS_ASSERT((task_->status & EOS_TASK_STAT_MASK) == EOS_TASK_INIT);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task_) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task_) == EOS_Object_Thread);
 
     /* calculate priority attribute */
     task_->number_mask = 1L << task_->current_priority;
@@ -1037,8 +976,8 @@ eos_err_t eos_task_detach(eos_task_handle_t task_)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
-    EOS_ASSERT(eos_object_is_systemobject((eos_obj_handle_t)task));
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_is_systemobject((ek_obj_handle_t)task));
 
     if ((task->status & EOS_TASK_STAT_MASK) == EOS_TASK_CLOSE)
         return EOS_EOK;
@@ -1106,7 +1045,7 @@ eos_err_t eos_task_sleep(eos_u32_t tick)
     /* set to current task */
     task = (ek_task_handle_t)eos_task_self();
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Thread);
 
     /* disable interrupt */
     temp = eos_hw_interrupt_disable();
@@ -1164,7 +1103,7 @@ eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick)
     /* set to current task */
     task = (ek_task_handle_t)eos_task_self();
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Thread);
 
     /* disable interrupt */
     level = eos_hw_interrupt_disable();
@@ -1215,7 +1154,7 @@ eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick)
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
-eos_err_t eos_task_mdelay(eos_s32_t ms)
+eos_err_t eos_task_delay_ms(eos_s32_t ms)
 {
     eos_u32_t tick;
 
@@ -1243,7 +1182,7 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Thread);
 
     switch (cmd)
     {
@@ -1265,7 +1204,7 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
                 task->number_mask = 1 << task->current_priority;
 
                 /* insert task to schedule queue again */
-                eos_schedule_inseeos_task(task);
+                eos_schedule_insert_task(task);
             }
             else
             {
@@ -1289,7 +1228,7 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
         {
             eos_err_t eos_err;
 
-            if (eos_object_is_systemobject((eos_obj_handle_t)task) == EOS_True)
+            if (eos_object_is_systemobject((ek_obj_handle_t)task) == true)
             {
                 eos_err = eos_task_detach(task_);
             }
@@ -1323,7 +1262,7 @@ eos_err_t eos_task_suspend(eos_task_handle_t task_)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Thread);
     EOS_ASSERT(task == (ek_task_handle_t)eos_task_self());
 
     stat = task->status & EOS_TASK_STAT_MASK;
@@ -1362,7 +1301,7 @@ eos_err_t eos_task_resume(eos_task_handle_t task_)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT(eos_object_get_type((eos_obj_handle_t)task) == EOS_Object_Thread);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Thread);
 
     if ((task->status & EOS_TASK_STAT_MASK) != EOS_TASK_SUSPEND)
     {
@@ -1378,7 +1317,7 @@ eos_err_t eos_task_resume(eos_task_handle_t task_)
     eos_timer_stop((eos_timer_handle_t)&task->task_timer);
 
     /* insert to schedule ready list */
-    eos_schedule_inseeos_task(task);
+    eos_schedule_insert_task(task);
 
     /* enable interrupt */
     eos_hw_interrupt_enable(temp);
@@ -1414,15 +1353,6 @@ eos_inline eos_err_t _ipc_object_init(struct ek_ipc_object *ipc)
  * @brief    This function will suspend a task to a IPC object list.
  * @param    list is a pointer to a suspended task list of the IPC object.
  * @param    task is a pointer to the task object to be suspended.
- * @param    flag is a flag for the task object to be suspended. It determines how the task is suspended.
- *           The flag can be ONE of the following values:
- *               EOS_IPC_FLAG_PRIO          The pending tasks will queue in order of priority.
- *               EOS_IPC_FLAG_FIFO          The pending tasks will queue in the first-in-first-out method
- *                                         (also known as first-come-first-served (FCFS) scheduling strategy).
- *               NOTE: EOS_IPC_FLAG_FIFO is a non-real-time scheduling mode. It is strongly recommended to use
- *               EOS_IPC_FLAG_PRIO to ensure the task is real-time UNLESS your applications concern about
- *               the first-in-first-out principle, and you clearly understand that all tasks involved in
- *               this semaphore will become non-real-time tasks.
  * @return   Return the operation status. When the return value is EOS_EOK, the function is successfully executed.
  *           When the return value is any other values, it means the initialization failed.
  * @warning  This function can ONLY be called in the task context, you can use EOS_DEBUG_IN_THREAD_CONTEXT to
@@ -1430,51 +1360,34 @@ eos_inline eos_err_t _ipc_object_init(struct ek_ipc_object *ipc)
  *           In addition, this function is generally called by the following functions:
  *           eos_sem_take(),  eos_mutex_take(),
  */
-eos_inline eos_err_t _ipc_list_suspend(eos_list_t *list,
-                                        ek_task_handle_t task,
-                                        eos_u8_t flag)
+eos_inline eos_err_t _ipc_list_suspend(ek_list_t *list, ek_task_handle_t task)
 {
     /* suspend task */
     eos_task_suspend((eos_task_handle_t)task);
+    
+    struct ek_list_node *n;
+    ek_task_handle_t stask;
 
-    switch (flag)
+    /* find a suitable position */
+    for (n = list->next; n != list; n = n->next)
     {
-    case EOS_IPC_FLAG_FIFO:
-        eos_list_inseeos_before(list, &(task->tlist));
-        break; /* EOS_IPC_FLAG_FIFO */
+        stask = eos_list_entry(n, ek_task_t, tlist);
 
-    case EOS_IPC_FLAG_PRIO:
+        /* find out */
+        if (task->current_priority < stask->current_priority)
         {
-            struct eos_list_node *n;
-            ek_task_handle_t stask;
-
-            /* find a suitable position */
-            for (n = list->next; n != list; n = n->next)
-            {
-                stask = eos_list_entry(n, ek_task_t, tlist);
-
-                /* find out */
-                if (task->current_priority < stask->current_priority)
-                {
-                    /* insert this task before the stask */
-                    eos_list_inseeos_before(&(stask->tlist), &(task->tlist));
-                    break;
-                }
-            }
-
-            /*
-             * not found a suitable position,
-             * append to the end of suspend_task list
-             */
-            if (n == list)
-                eos_list_inseeos_before(list, &(task->tlist));
+            /* insert this task before the stask */
+            eos_list_insert_before(&(stask->tlist), &(task->tlist));
+            break;
         }
-        break;/* EOS_IPC_FLAG_PRIO */
-
-    default:
-        EOS_ASSERT(0);
-        break;
     }
+
+    /*
+     * not found a suitable position,
+     * append to the end of suspend_task list
+     */
+    if (n == list)
+        eos_list_insert_before(list, &(task->tlist));
 
     return EOS_EOK;
 }
@@ -1493,7 +1406,7 @@ eos_inline eos_err_t _ipc_list_suspend(eos_list_t *list,
  *              eos_sem_release(),
  *              eos_mutex_release(),
  */
-eos_inline eos_err_t _ipc_list_resume(eos_list_t *list)
+eos_inline eos_err_t _ipc_list_resume(ek_list_t *list)
 {
     ek_task_handle_t task;
 
@@ -1516,7 +1429,7 @@ eos_inline eos_err_t _ipc_list_resume(eos_list_t *list)
  * @return   Return the operation status. When the return value is EOS_EOK, the function is successfully executed.
  *           When the return value is any other values, it means this operation failed.
  */
-eos_inline eos_err_t _ipc_list_resume_all(eos_list_t *list)
+eos_inline eos_err_t _ipc_list_resume_all(ek_list_t *list)
 {
     ek_task_handle_t task;
     register eos_ubase_t temp;
@@ -1556,46 +1469,28 @@ eos_inline eos_err_t _ipc_list_resume_all(eos_list_t *list)
  * @see      eos_sem_create()
  * @param    sem is a pointer to the semaphore to initialize. It is assumed that storage for the semaphore will be
  *           allocated in your application.
- * @param    name is a pointer to the name you would like to give the semaphore.
  * @param    value is the initial value for the semaphore.
  *           If used to share resources, you should initialize the value as the number of available resources.
  *           If used to signal the occurrence of an event, you should initialize the value as 0.
- * @param    flag is the semaphore flag, which determines the queuing way of how multiple tasks wait
- *           when the semaphore is not available.
- *           The semaphore flag can be ONE of the following values:
- *               EOS_IPC_FLAG_PRIO          The pending tasks will queue in order of priority.
- *               EOS_IPC_FLAG_FIFO          The pending tasks will queue in the first-in-first-out method
- *                                         (also known as first-come-first-served (FCFS) scheduling strategy).
- *               NOTE: EOS_IPC_FLAG_FIFO is a non-real-time scheduling mode. It is strongly recommended to
- *               use EOS_IPC_FLAG_PRIO to ensure the task is real-time UNLESS your applications concern about
- *               the first-in-first-out principle, and you clearly understand that all tasks involved in
- *               this semaphore will become non-real-time tasks.
  * @return   Return the operation status. When the return value is EOS_EOK, the initialization is successful.
  *           If the return value is any other values, it represents the initialization failed.
  * @warning  This function can ONLY be called from tasks.
  */
-eos_err_t eos_sem_init(eos_sem_handle_t sem_,
-                        const char *name,
-                        eos_u32_t value,
-                        eos_u8_t flag)
+eos_err_t eos_sem_init(eos_sem_handle_t sem_, eos_u32_t value)
 {
     ek_sem_handle_t sem = (ek_sem_handle_t)sem_;
 
     EOS_ASSERT(sem != EOS_NULL);
     EOS_ASSERT(value < 0x10000U);
-    EOS_ASSERT((flag == EOS_IPC_FLAG_FIFO) || (flag == EOS_IPC_FLAG_PRIO));
 
     /* initialize object */
-    eos_object_init(&(sem->super.super), EOS_Object_Semaphore, name);
+    eos_object_init(&(sem->super.super), EOS_Object_Semaphore);
 
     /* initialize ipc object */
     _ipc_object_init(&(sem->super));
 
     /* set initial value */
     sem->value = (eos_u16_t)value;
-
-    /* set super */
-    sem->super.super.flag = flag;
 
     return EOS_EOK;
 }
@@ -1643,9 +1538,9 @@ eos_err_t eos_sem_detach(eos_sem_handle_t sem_)
  * @param    time is a timeout period (unit: an OS tick). If the semaphore is unavailable, the task will wait for
  *           the semaphore up to the amount of time specified by this parameter.
  *           NOTE:
- *           If use Macro EOS_WAITING_FOREVER to set this parameter, which means that when the
+ *           If use Macro EOS_WAIT_FOREVER to set this parameter, which means that when the
  *           message is unavailable in the queue, the task will be waiting forever.
- *           If use macro EOS_WAITING_NO to set this parameter, which means that this
+ *           If use macro EOS_WAIT_NO to set this parameter, which means that this
  *           function is non-blocking and will return immediately.
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the semaphore take failed.
@@ -1693,9 +1588,7 @@ eos_err_t eos_sem_take(eos_sem_handle_t sem_, eos_s32_t time)
             task->error = EOS_EOK;
 
             /* suspend task */
-            _ipc_list_suspend(&(sem->super.suspend_task),
-                                task,
-                                sem->super.super.flag);
+            _ipc_list_suspend(&(sem->super.suspend_task), task);
 
             /* has waiting time, start task timer */
             if (time > 0)
@@ -1736,7 +1629,7 @@ eos_err_t eos_sem_take(eos_sem_handle_t sem_, eos_s32_t time)
  */
 eos_err_t eos_sem_trytake(eos_sem_handle_t sem)
 {
-    return eos_sem_take(sem, EOS_WAITING_NO);
+    return eos_sem_take(sem, EOS_WAIT_NO);
 }
 
 /**
@@ -1760,7 +1653,7 @@ eos_err_t eos_sem_release(eos_sem_handle_t sem_)
     EOS_ASSERT(eos_object_get_type(&sem->super.super) == EOS_Object_Semaphore);
 
 
-    need_schedule = EOS_False;
+    need_schedule = false;
 
     /* disable interrupt */
     temp = eos_hw_interrupt_disable();
@@ -1769,7 +1662,7 @@ eos_err_t eos_sem_release(eos_sem_handle_t sem_)
     {
         /* resume the suspended task */
         _ipc_list_resume(&(sem->super.suspend_task));
-        need_schedule = EOS_True;
+        need_schedule = true;
     }
     else
     {
@@ -1788,7 +1681,7 @@ eos_err_t eos_sem_release(eos_sem_handle_t sem_)
     eos_hw_interrupt_enable(temp);
 
     /* resume a task, re-schedule */
-    if (need_schedule == EOS_True)
+    if (need_schedule == true)
     {
         eos_schedule();
     }
@@ -1834,26 +1727,19 @@ eos_err_t eos_sem_reset(eos_sem_handle_t sem_, eos_ubase_t value)
  * @see      eos_mutex_create()
  * @param    mutex is a pointer to the mutex to initialize. It is assumed that storage for the mutex will be
  *           allocated in your application.
- * @param    name is a pointer to the name that given to the mutex.
- * @param    flag is the mutex flag, which determines the queuing way of how multiple tasks wait
- *           when the mutex is not available.
- *           NOTE: This parameter has been obsoleted. It can be EOS_IPC_FLAG_PRIO, EOS_IPC_FLAG_FIFO or EOS_NULL.
  * @return   Return the operation status. When the return value is EOS_EOK, the initialization is successful.
  *           If the return value is any other values, it represents the initialization failed.
  * @warning  This function can ONLY be called from tasks.
  */
-eos_err_t eos_mutex_init(eos_mutex_handle_t mutex_, const char *name, eos_u8_t flag)
+eos_err_t eos_mutex_init(eos_mutex_handle_t mutex_)
 {
     ek_mutex_handle_t mutex = (ek_mutex_handle_t)mutex_;
-
-    /* flag parameter has been obsoleted */
-    EOS_UNUSED(flag);
 
     /* parameter check */
     EOS_ASSERT(mutex != EOS_NULL);
 
     /* initialize object */
-    eos_object_init(&(mutex->super.super), EOS_Object_Mutex, name);
+    eos_object_init(&(mutex->super.super), EOS_Object_Mutex);
 
     /* initialize ipc object */
     _ipc_object_init(&(mutex->super));
@@ -1862,9 +1748,6 @@ eos_err_t eos_mutex_init(eos_mutex_handle_t mutex_, const char *name, eos_u8_t f
     mutex->owner = EOS_NULL;
     mutex->prio_bkp = 0xFF;
     mutex->hold  = 0;
-
-    /* flag can only be EOS_IPC_FLAG_PRIO. EOS_IPC_FLAG_FIFO cannot solve the unbounded priority inversion problem */
-    mutex->super.super.flag = EOS_IPC_FLAG_PRIO;
 
     return EOS_EOK;
 }
@@ -1911,7 +1794,7 @@ eos_err_t eos_mutex_detach(eos_mutex_handle_t mutex_)
  * @param    mutex is a pointer to a mutex object.
  * @param    time is a timeout period (unit: an OS tick). If the mutex is unavailable, the task will wait for
  *           the mutex up to the amount of time specified by the argument.
- *           NOTE: Generally, we set this parameter to EOS_WAITING_FOREVER, which means that when the mutex is unavailable,
+ *           NOTE: Generally, we set this parameter to EOS_WAIT_FOREVER, which means that when the mutex is unavailable,
  *           the task will be waitting forever.
  * @return   Return the operation status. ONLY When the return value is EOS_EOK, the operation is successful.
  *           If the return value is any other values, it means that the mutex take failed.
@@ -2002,9 +1885,7 @@ eos_err_t eos_mutex_take(eos_mutex_handle_t mutex_, eos_s32_t time)
                 }
 
                 /* suspend current task */
-                _ipc_list_suspend(&(mutex->super.suspend_task),
-                                    task,
-                                    mutex->super.super.flag);
+                _ipc_list_suspend(&(mutex->super.suspend_task), task);
 
                 /* has waiting time, start task timer */
                 if (time > 0)
@@ -2057,7 +1938,7 @@ eos_err_t eos_mutex_take(eos_mutex_handle_t mutex_, eos_s32_t time)
  */
 eos_err_t eos_mutex_trytake(eos_mutex_handle_t mutex)
 {
-    return eos_mutex_take(mutex, EOS_WAITING_NO);
+    return eos_mutex_take(mutex, EOS_WAIT_NO);
 }
 
 /**
@@ -2081,7 +1962,7 @@ eos_err_t eos_mutex_release(eos_mutex_handle_t mutex_)
     EOS_ASSERT(mutex != EOS_NULL);
     EOS_ASSERT(eos_object_get_type(&mutex->super.super) == EOS_Object_Mutex);
 
-    need_schedule = EOS_False;
+    need_schedule = false;
 
     /* get current task */
     task = (ek_task_handle_t)eos_task_self();
@@ -2138,7 +2019,7 @@ eos_err_t eos_mutex_release(eos_mutex_handle_t mutex_)
             /* resume task */
             _ipc_list_resume(&(mutex->super.suspend_task));
 
-            need_schedule = EOS_True;
+            need_schedule = true;
         }
         else
         {
@@ -2163,7 +2044,7 @@ eos_err_t eos_mutex_release(eos_mutex_handle_t mutex_)
     eos_hw_interrupt_enable(temp);
 
     /* perform a schedule */
-    if (need_schedule == EOS_True)
+    if (need_schedule == true)
         eos_schedule();
 
     return EOS_EOK;
@@ -2183,7 +2064,7 @@ eos_err_t eos_mutex_release(eos_mutex_handle_t mutex_)
 
 #define _CPUS_NR                1
 
-static eos_list_t _eos_task_defunct = EOS_LIST_OBJECT_INIT(_eos_task_defunct);
+static ek_list_t _eos_task_defunct = EOS_LIST_OBJECT_INIT(_eos_task_defunct);
 
 static ek_task_t idle[_CPUS_NR];
 static eos_u32_t eos_task_stack[_CPUS_NR][IDLE_THREAD_STACK_SIZE / 4];
@@ -2238,7 +2119,7 @@ eos_err_t eos_task_idle_sethook(void (*hook)(void))
 void eos_task_defunct_enqueue(eos_task_handle_t task)
 {
     ek_task_handle_t task_ = (ek_task_handle_t)task;
-    eos_list_inseeos_after(&_eos_task_defunct, &task_->tlist);
+    eos_list_insert_after(&_eos_task_defunct, &task_->tlist);
 }
 
 /**
@@ -2248,7 +2129,7 @@ eos_task_handle_t eos_task_defunct_dequeue(void)
 {
     register eos_base_t lock;
     ek_task_handle_t task = EOS_NULL;
-    eos_list_t *l = &_eos_task_defunct;
+    ek_list_t *l = &_eos_task_defunct;
 
     if (l->next != l)
     {
@@ -2289,10 +2170,10 @@ static void eos_defunct_execute(void)
         }
 
         /* if it's a system object, not delete it */
-        if (eos_object_is_systemobject((eos_obj_handle_t)task) == EOS_True)
+        if (eos_object_is_systemobject((ek_obj_handle_t)task) == true)
         {
             /* detach this object */
-            eos_object_detach((eos_obj_handle_t)task);
+            eos_object_detach((ek_obj_handle_t)task);
         }
         else
         {
@@ -2317,10 +2198,7 @@ static void eos_task_idle_entry(void *parameter)
         }
 #endif /* EOS_USING_IDLE_HOOK */
 
-#ifndef EOS_USING_SMP
         eos_defunct_execute();
-#endif /* EOS_USING_SMP */
-
     }
 }
 
@@ -2333,13 +2211,12 @@ void eos_task_idle_init(void)
     for (eos_u32_t i = 0; i < _CPUS_NR; i++)
     {
         ek_task_init(&idle[i],
-                        "___t_idle",
                         eos_task_idle_entry,
                         EOS_NULL,
                         &eos_task_stack[i][0],
                         sizeof(eos_task_stack[i]),
-                        EOS_TASK_PRIORITY_MAX - 1,
-                        32);
+                        EOS_MAX_PRIORITY - 1,
+                        EOS_TIMESLICE);
         /* startup */
         eos_task_startup((eos_task_handle_t)&idle[i]);
     }
@@ -2347,9 +2224,9 @@ void eos_task_idle_init(void)
 }
 
 /* hard timer list */
-static eos_list_t _timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
+static ek_list_t _timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
 
-#ifdef EOS_USING_TIMER_SOFT
+#ifdef EOS_USING_SOFT_TIMER
 
 #define EOS_SOFT_TIMER_IDLE              1
 #define EOS_SOFT_TIMER_BUSY              0
@@ -2365,10 +2242,10 @@ static eos_list_t _timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
 /* soft timer status */
 static eos_u8_t _soft_timer_status = EOS_SOFT_TIMER_IDLE;
 /* soft timer list */
-static eos_list_t _soft_timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
+static ek_list_t _soft_timer_list[EOS_TIMER_SKIP_LIST_LEVEL];
 static ek_task_t _timer_task;
 static eos_u32_t _timer_task_stack[EOS_TIMER_THREAD_STACK_SIZE / 4];
-#endif /* EOS_USING_TIMER_SOFT */
+#endif /* EOS_USING_SOFT_TIMER */
 
 /**
  * @brief [internal] The init funtion of timer
@@ -2413,7 +2290,7 @@ static void _timer_init(ek_timer_handle_t timer,
  * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
  *          If the return value is any other values, it means this operation failed.
  */
-static eos_err_t _timer_list_next_timeout(eos_list_t timer_list[], eos_u32_t *timeout_tick)
+static eos_err_t _timer_list_next_timeout(ek_list_t timer_list[], eos_u32_t *timeout_tick)
 {
     ek_timer_handle_t timer;
     register eos_base_t level;
@@ -2477,9 +2354,9 @@ static int _timer_count_height(eos_timer_handle_t timer)
  * @brief dump the all timer information
  * @param timer_heads the head of timer
  */
-void eos_timer_dump(eos_list_t timer_heads[])
+void eos_timer_dump(ek_list_t timer_heads[])
 {
-    eos_list_t *list;
+    ek_list_t *list;
 
     for (list = timer_heads[EOS_TIMER_SKIP_LIST_LEVEL - 1].next;
          list != &timer_heads[EOS_TIMER_SKIP_LIST_LEVEL - 1];
@@ -2498,7 +2375,6 @@ void eos_timer_dump(eos_list_t timer_heads[])
  * @brief This function will initialize a timer
  *        normally this function is used to initialize a static timer object.
  * @param timer is the point of timer
- * @param name is a pointer to the name of the timer
  * @param timeout is the callback of timer
  * @param parameter is the param of the callback
  * @param time is timeout ticks of timer
@@ -2506,7 +2382,6 @@ void eos_timer_dump(eos_list_t timer_heads[])
  * @param flag is the flag of timer
  */
 void eos_timer_init(eos_timer_handle_t timer_,
-                    const char *name,
                     void (*timeout)(void *parameter),
                     void *parameter,
                     eos_u32_t time,
@@ -2520,7 +2395,7 @@ void eos_timer_init(eos_timer_handle_t timer_,
     EOS_ASSERT(time < EOS_TICK_MAX / 2);
 
     /* timer object initialization */
-    eos_object_init(&(timer->super), EOS_Object_Timer, name);
+    eos_object_init(&(timer->super), EOS_Object_Timer);
 
     _timer_init(timer, timeout, parameter, time, flag);
 }
@@ -2563,10 +2438,10 @@ eos_err_t eos_timer_detach(eos_timer_handle_t timer_)
 eos_err_t eos_timer_start(eos_timer_handle_t timer_)
 {
     unsigned int row_lvl;
-    eos_list_t *timer_list;
+    ek_list_t *timer_list;
     register eos_base_t level;
     register eos_bool_t need_schedule;
-    eos_list_t *row_head[EOS_TIMER_SKIP_LIST_LEVEL];
+    ek_list_t *row_head[EOS_TIMER_SKIP_LIST_LEVEL];
     unsigned int tst_nr;
     static unsigned int random_nr;
     ek_timer_handle_t timer = (ek_timer_handle_t)timer_;
@@ -2575,7 +2450,7 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer_)
     EOS_ASSERT(timer != EOS_NULL);
     EOS_ASSERT(eos_object_get_type(&timer->super) == EOS_Object_Timer);
 
-    need_schedule = EOS_False;
+    need_schedule = false;
 
     /* stop timer firstly */
     level = eos_hw_interrupt_disable();
@@ -2586,14 +2461,14 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer_)
 
     timer->timeout_tick = eos_tick_get() + timer->init_tick;
 
-#ifdef EOS_USING_TIMER_SOFT
+#ifdef EOS_USING_SOFT_TIMER
     if (timer->super.flag & EOS_TIMER_FLAG_SOFT_TIMER)
     {
         /* insert timer to soft timer list */
         timer_list = _soft_timer_list;
     }
     else
-#endif /* EOS_USING_TIMER_SOFT */
+#endif /* EOS_USING_SOFT_TIMER */
     {
         /* insert timer to system timer list */
         timer_list = _timer_list;
@@ -2606,7 +2481,7 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer_)
              row_head[row_lvl]  = row_head[row_lvl]->next)
         {
             ek_timer_handle_t t;
-            eos_list_t *p = row_head[row_lvl]->next;
+            ek_list_t *p = row_head[row_lvl]->next;
 
             /* fix up the entry pointer */
             t = eos_list_entry(p, ek_timer_t, row[row_lvl]);
@@ -2638,12 +2513,12 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer_)
     random_nr++;
     tst_nr = random_nr;
 
-    eos_list_inseeos_after(row_head[EOS_TIMER_SKIP_LIST_LEVEL - 1],
+    eos_list_insert_after(row_head[EOS_TIMER_SKIP_LIST_LEVEL - 1],
                          &(timer->row[EOS_TIMER_SKIP_LIST_LEVEL - 1]));
     for (row_lvl = 2; row_lvl <= EOS_TIMER_SKIP_LIST_LEVEL; row_lvl++)
     {
         if (!(tst_nr & EOS_TIMER_SKIP_LIST_MASK))
-            eos_list_inseeos_after(row_head[EOS_TIMER_SKIP_LIST_LEVEL - row_lvl],
+            eos_list_insert_after(row_head[EOS_TIMER_SKIP_LIST_LEVEL - row_lvl],
                                  &(timer->row[EOS_TIMER_SKIP_LIST_LEVEL - row_lvl]));
         else
             break;
@@ -2654,7 +2529,7 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer_)
 
     timer->super.flag |= EOS_TIMER_FLAG_ACTIVATED;
 
-#ifdef EOS_USING_TIMER_SOFT
+#ifdef EOS_USING_SOFT_TIMER
     if (timer->super.flag & EOS_TIMER_FLAG_SOFT_TIMER)
     {
         /* check whether timer task is ready */
@@ -2663,10 +2538,10 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer_)
         {
             /* resume timer task to check soft timer */
             eos_task_resume((eos_task_handle_t)&_timer_task);
-            need_schedule = EOS_True;
+            need_schedule = true;
         }
     }
-#endif /* EOS_USING_TIMER_SOFT */
+#endif /* EOS_USING_SOFT_TIMER */
 
     /* enable interrupt */
     eos_hw_interrupt_enable(level);
@@ -2778,7 +2653,7 @@ void eos_timer_check(void)
     ek_timer_handle_t t;
     eos_u32_t current_tick;
     register eos_base_t level;
-    eos_list_t list;
+    ek_list_t list;
 
     eos_list_init(&list);
 
@@ -2805,7 +2680,7 @@ void eos_timer_check(void)
                 t->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
             }
             /* add timer to temporary list  */
-            eos_list_inseeos_after(&list, &(t->row[EOS_TIMER_SKIP_LIST_LEVEL - 1]));
+            eos_list_insert_after(&list, &(t->row[EOS_TIMER_SKIP_LIST_LEVEL - 1]));
             /* call timeout function */
             t->timeout_func(t->parameter);
 
@@ -2847,7 +2722,7 @@ eos_u32_t eos_timer_next_timeout_tick(void)
     return next_timeout;
 }
 
-#ifdef EOS_USING_TIMER_SOFT
+#ifdef EOS_USING_SOFT_TIMER
 /**
  * @brief This function will check software-timer list, if a timeout event happens, the
  *        corresponding timeout function will be invoked.
@@ -2857,7 +2732,7 @@ void eos_soft_timer_check(void)
     eos_u32_t current_tick;
     ek_timer_handle_t t;
     register eos_base_t level;
-    eos_list_t list;
+    ek_list_t list;
 
     eos_list_init(&list);
 
@@ -2884,7 +2759,7 @@ void eos_soft_timer_check(void)
                 t->super.flag &= ~EOS_TIMER_FLAG_ACTIVATED;
             }
             /* add timer to temporary list  */
-            eos_list_inseeos_after(&list, &(t->row[EOS_TIMER_SKIP_LIST_LEVEL - 1]));
+            eos_list_insert_after(&list, &(t->row[EOS_TIMER_SKIP_LIST_LEVEL - 1]));
 
             _soft_timer_status = EOS_SOFT_TIMER_BUSY;
             /* enable interrupt */
@@ -2956,7 +2831,7 @@ static void _timer_task_entry(void *parameter)
         eos_soft_timer_check();
     }
 }
-#endif /* EOS_USING_TIMER_SOFT */
+#endif /* EOS_USING_SOFT_TIMER */
 
 /**
  * @ingroup SystemInit
@@ -2976,7 +2851,7 @@ void eos_system_timer_init(void)
  */
 void eos_system_timer_task_init(void)
 {
-#ifdef EOS_USING_TIMER_SOFT
+#ifdef EOS_USING_SOFT_TIMER
     for (eos_u32_t i = 0;
          i < sizeof(_soft_timer_list) / sizeof(_soft_timer_list[0]);
          i++)
@@ -2986,17 +2861,16 @@ void eos_system_timer_task_init(void)
 
     /* start software timer task */
     ek_task_init(&_timer_task,
-                   "timer",
                    _timer_task_entry,
                    EOS_NULL,
                    &_timer_task_stack[0],
                    sizeof(_timer_task_stack),
                    EOS_TIMER_THREAD_PRIO,
-                   10);
+                   EOS_TIMESLICE);
 
     /* startup */
     eos_task_startup((eos_task_handle_t)&_timer_task);
-#endif /* EOS_USING_TIMER_SOFT */
+#endif /* EOS_USING_SOFT_TIMER */
 }
 
 static volatile eos_u32_t eos_tick_ = 0;
@@ -3072,13 +2946,13 @@ void eos_tick_increase(void)
  *              - Max 0x7fffffff
  * @return   Return the calculated tick.
  */
-eos_u32_t eos_tick_from_millisecond(eos_s32_t ms)
+static eos_u32_t eos_tick_from_millisecond(eos_s32_t ms)
 {
     eos_u32_t tick;
 
     if (ms < 0)
     {
-        tick = (eos_u32_t)EOS_WAITING_FOREVER;
+        tick = (eos_u32_t)EOS_WAIT_FOREVER;
     }
     else
     {
@@ -3097,7 +2971,7 @@ eos_u32_t eos_tick_from_millisecond(eos_s32_t ms)
  *           provide the correct 1ms-based tick.
  * @return   Return passed millisecond from boot.
  */
-eos_u32_t eos_tick_get_millisecond(void)
+eos_u32_t eos_tick_get_ms(void)
 {
 #if 1000 % EOS_TICK_PER_SECOND == 0u
     return eos_tick_get() * (1000u / EOS_TICK_PER_SECOND);

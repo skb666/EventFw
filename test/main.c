@@ -1,6 +1,6 @@
 /* include ------------------------------------------------------------------ */
 #include "bsp.h"
-#include "eventos.h"
+#include "eos.h"
 #include <string.h>
 #include "test.h"
 

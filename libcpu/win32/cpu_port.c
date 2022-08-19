@@ -14,7 +14,7 @@
 *                                             INCLUDE FILES
 *********************************************************************************************************
 */
-#include  "eventos.h"
+#include  "eos.h"
 #include  <windows.h>
 #include  <mmsystem.h>
 #include  <stdio.h>

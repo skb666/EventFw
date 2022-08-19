@@ -18,7 +18,7 @@ test_05_1.c ^
 test_06.c ^
 test_07.c ^
 test_09.c ^
-..\eventos\eventos.c ^
+..\eventos\eos.c ^
 ..\eventos\eos_kernel.c ^
 ..\libcpu\win32\cpu_port.c ^
 -I ..\eventos ^

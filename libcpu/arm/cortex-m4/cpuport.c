@@ -1,5 +1,5 @@
 
-#include <eventos.h>
+#include <eos.h>
 
 EOS_TAG("CpuPort")
 

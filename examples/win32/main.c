@@ -78,6 +78,6 @@ static void main_thread_entry(void *parameter)
         {
             printf("count_cpu: %d.\n", count_cpu);
         }
-        eos_task_mdelay(10);
+        eos_task_delay_ms(10);
     }
 }

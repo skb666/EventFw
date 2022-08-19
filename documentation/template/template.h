@@ -57,7 +57,7 @@ typedef struct eos_enum {
     EosEnum_Maxd
 } eos_enum_t;
 
-typedef eos_s32_t (* eos_hook_t)(eos_obj_t *me, void *data, eos_u32_t size);
+typedef eos_s32_t (* eos_hook_t)(ek_obj_t *me, void *data, eos_u32_t size);
 
 // API -------------------------------------------------------------------------
 eos_s32_t eos_module_init(void);

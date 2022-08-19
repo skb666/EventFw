@@ -1,7 +1,7 @@
 #ifndef TEST_H
 #define TEST_H
 
-#include "eventos_config.h"
+#include "eos_config.h"
 
 #define TEST_TIME_MAX                   10000
 #define TEST_MODE                       0
@@ -17,9 +17,9 @@
 #define TEST_EN_04                      0
 #define TEST_EN_05_0                    0
 #define TEST_EN_05_1                    0
-#define TEST_EN_06                      0
+#define TEST_EN_06                      1
 #define TEST_EN_07                      0
-#define TEST_EN_09                      1
+#define TEST_EN_09                      0
 
 #endif
 

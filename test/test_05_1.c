@@ -1,6 +1,6 @@
 #include "test.h"
 #include <stdint.h>
-#include "eventos.h"
+#include "eos.h"
 #include "bsp.h"
 
 #if (TEST_EN_05_1 != 0)
@@ -107,8 +107,7 @@ void test_init(void)
                        EOS_NULL,
                        task_test_info[i].stack,
                        task_test_info[i].stack_size,
-                       task_test_info[i].prio,
-                       10);
+                       task_test_info[i].prio);
         eos_task_startup(task_test_info[i].task);
     }
 
@@ -154,7 +153,7 @@ static void task_func_e_give1(void *parameter)
     
     while (1)
     {
-        eos_test.time = eos_tick_get_millisecond();
+        eos_test.time = eos_tick_get_ms();
         eos_test.send_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
         eos_test.send_give1_count ++;
@@ -170,7 +169,7 @@ static void task_func_e_give2(void *parameter)
     
     while (1)
     {
-        eos_test.time = eos_tick_get_millisecond();
+        eos_test.time = eos_tick_get_ms();
         eos_test.send_count ++;
         eos_test.send_speed = eos_test.send_count / eos_test.time;
         eos_test.send_give2_count ++;
@@ -219,7 +218,7 @@ static void task_func_high(void *parameter)
         eos_test.high_count ++;
         eos_event_publish("Event_One");
         eos_event_publish("Event_Two");
-        eos_task_mdelay(1);
+        eos_task_delay_ms(1);
     }
 }
 
@@ -233,7 +232,7 @@ static void task_func_middle(void *parameter)
         eos_test.middle_count += 2;
         eos_event_publish("Event_One");
         eos_event_publish("Event_Two");
-        eos_task_mdelay(2);
+        eos_task_delay_ms(2);
     }
 }
 

@@ -39,14 +39,14 @@ eos_hw_interrupt_enable    PROC
     ENDP
 
 ;/*
-; * void eos_hw_context_switch(eos_uint32 from, eos_uint32 to);
+; * void eos_task_switch(eos_uint32 from, eos_uint32 to);
 ; * r0 --> from
 ; * r1 --> to
 ; */
-eos_hw_context_switch_interrupt
-    EXPORT eos_hw_context_switch_interrupt
-eos_hw_context_switch    PROC
-    EXPORT eos_hw_context_switch
+eos_task_switch_interrupt
+    EXPORT eos_task_switch_interrupt
+eos_task_switch    PROC
+    EXPORT eos_task_switch
 
     ; set eos_thread_switch_interrupt_flag to 1
     LDR     r2, =eos_thread_switch_interrupt_flag
@@ -146,12 +146,12 @@ pendsv_exit
     ENDP
 
 ;/*
-; * void eos_hw_context_switch_to(eos_uint32 to);
+; * void eos_task_switch_to(eos_uint32 to);
 ; * r0 --> to
 ; * this fucntion is used to perform the first thread switch
 ; */
-eos_hw_context_switch_to    PROC
-    EXPORT eos_hw_context_switch_to
+eos_task_switch_to    PROC
+    EXPORT eos_task_switch_to
     ; set to thread
     LDR     r1, =eos_interrupt_to_thread
     STR     r0, [r1]

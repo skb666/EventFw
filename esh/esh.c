@@ -360,7 +360,7 @@ static void esh_task_funcntion(void *parameter)
     esh_start();
     
     while (1) {
-        uint64_t time_ms = eos_tick_get_millisecond();
+        uint64_t time_ms = eos_tick_get_ms();
         
         switch (esh.state)
         {

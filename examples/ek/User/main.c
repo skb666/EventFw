@@ -84,7 +84,7 @@ static void main_thread_entry(void *parameter)
     while (1)
     {
         count_cpu ++;
-        eos_task_mdelay(10);
+        eos_task_delay_ms(10);
     }
 }
 

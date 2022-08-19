@@ -1,6 +1,6 @@
 /* include ------------------------------------------------------------------ */
 #include "eos_led.h"
-#include "eventos.h"
+#include "eos.h"
 #include <stdio.h>
 #include "test.h"
 #include <stdint.h>

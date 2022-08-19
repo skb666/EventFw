@@ -1,6 +1,6 @@
 /* include ------------------------------------------------------------------ */
 #include "eos_led.h"
-#include "eventos.h"
+#include "eos.h"
 #include <stdio.h>
 #include "test.h"
 #include <stdint.h>
@@ -50,11 +50,11 @@ static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * cons
         evt_count ++;
         eos_reactor_count();
 
-        time1 = eos_tick_get_millisecond();
+        time1 = eos_tick_get_ms();
         me->status = (me->status == 0) ? 1 : 0;
-        eos_task_mdelay(500);
+        eos_task_delay_ms(500);
         
-        time2 = eos_tick_get_millisecond();
+        time2 = eos_tick_get_ms();
         me->status = (me->status == 0) ? 1 : 0;
     }
 }

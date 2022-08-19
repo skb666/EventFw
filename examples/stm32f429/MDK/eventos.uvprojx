@@ -434,9 +434,9 @@
           <GroupName>EventOS</GroupName>
           <Files>
             <File>
-              <FileName>eventos.c</FileName>
+              <FileName>eos.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\eventos\eventos.c</FilePath>
+              <FilePath>..\..\..\eventos\eos.c</FilePath>
             </File>
             <File>
               <FileName>eos_kernel.c</FileName>

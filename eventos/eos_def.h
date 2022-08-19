@@ -34,6 +34,8 @@
 #ifndef EVENTOS_DEF_H__
 #define EVENTOS_DEF_H__
 
+#include <stdbool.h>
+
 /* basic data type ---------------------------------------------------------- */
 typedef unsigned int                    eos_u32_t;
 typedef signed int                      eos_s32_t;
@@ -50,11 +52,7 @@ typedef signed int                      eos_err_t;       /**< Type for error num
 typedef unsigned long long              eos_u64_t;
 typedef signed long long                eos_s64_t;
 
-typedef enum eos_bool
-{
-    EOS_False = 0,
-    EOS_True = 1,
-} eos_bool_t;
+typedef bool                            eos_bool_t;
 
 #define EOS_NULL                        ((void *)0)
 
@@ -70,10 +68,6 @@ typedef enum eos_bool
 #define EOS_U8_MIN                      (0U)
 
 #define EOS_TICK_MAX                    EOS_U32_MAX     /**< Maximum number of tick */
-
-#define EOS_HEAP_MAX                    (0x7fffU)
-
-#define EOS_TIME_FOREVER                (-1)
 
 #define EOS_UNUSED(x)                   ((void)x)
 
@@ -110,7 +104,6 @@ typedef enum eos_bool
     #define ALIGN(n)                    __attribute__((aligned(n)))
 #endif
 
-
 /*
  * task state definitions
  */
@@ -137,13 +130,10 @@ typedef enum eos_task_state
 #define EOS_EINTR                       -9              /**< Interrupted system call */
 #define EOS_EINVAL                      -10             /**< Invalid argument */
 
-
 /* maximum value of ipc type */
 #define EOS_SEM_VALUE_MAX               EOS_U16_MAX     /**< Maximum number of semaphore .value */
 #define EOS_MUTEX_VALUE_MAX             EOS_U16_MAX     /**< Maximum number of mutex .value */
 #define EOS_MUTEX_HOLD_MAX              EOS_U8_MAX      /**< Maximum number of mutex .hold */
-#define EOS_MB_ENTRY_MAX                EOS_U16_MAX     /**< Maximum number of mailbox .entry */
-#define EOS_MQ_ENTRY_MAX                EOS_U16_MAX     /**< Maximum number of message queue .entry */
 
 /**
  * @ingroup BasicDef

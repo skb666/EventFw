@@ -1,5 +1,5 @@
 /* include ------------------------------------------------------------------ */
-#include "eventos.h"
+#include "eos.h"
 #include <string.h>
 #include <stdint.h>
 #include "test.h"
