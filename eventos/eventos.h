@@ -228,8 +228,6 @@ typedef struct eos_task
 
     eos_u32_t task_handle;
     eos_sem_t sem;
-
-    eos_u16_t t_id;                          // task ID
     eos_u16_t index;
     bool event_recv_disable;
     bool wait_specific_event;
@@ -261,21 +259,8 @@ eos_err_t eos_task_suspend(eos_task_handle_t task);
 eos_err_t eos_task_resume(eos_task_handle_t task);
 eos_task_state_t eos_task_get_state(eos_task_handle_t task);
 eos_u8_t eos_task_get_priority(eos_task_handle_t task);
-
-// 启动任务，main函数或者任务函数中调用。
-void eos_task_start(eos_task_t * const me,
-                    const char *name,
-                    eos_func_t func,
-                    eos_u8_t priority,
-                    void *stack_addr,
-                    eos_u32_t stack_size,
-                    void *parameter);
-// 退出当前任务，任务函数中调用。
-void eos_task_exit(void);
-// 任务等待某特定事件，其他事件均忽略。
-bool eos_task_wait_specific_event(  eos_event_t * const e_out,
+bool eos_task_wait_specific_event(eos_event_t * const e_out,
                                     const char *topic, eos_s32_t time_ms);
-// 任务阻塞式等待事件
 bool eos_task_wait_event(eos_event_t * const e_out, eos_s32_t time_ms);
 /* defunct */
 void eos_task_defunct_enqueue(eos_task_handle_t task);
@@ -421,7 +406,6 @@ typedef eos_ret_t (* eos_state_handler)(struct eos_sm *const me,
 #endif
 
 #if (EOS_USE_SM_MODE != 0)
-// 状态机类
 typedef struct eos_sm
 {
     eos_task_t super;
@@ -479,19 +463,6 @@ Assert
 #define EOS_ASSERT_INFO(test_, ...) ((test_)                                   \
     ? (void)0 : elog_assert_info(___tag_name, __VA_ARGS__))
 
-#endif
-
-/* -----------------------------------------------------------------------------
-Log
------------------------------------------------------------------------------ */
-#if (EOS_USE_LOG != 0)
-#include "elog.h"
-
-#define EOS_PRINT(...)            elog_printf(__VA_ARGS__)
-#define EOS_DEBUG(...)            elog_debug(___tag_name, __VA_ARGS__)
-#define EOS_INFO(...)             elog_info(___tag_name, __VA_ARGS__)
-#define EOS_WARN(...)             elog_warn(___tag_name, __VA_ARGS__)
-#define EOS_ERROR(...)            elog_error(___tag_name, __VA_ARGS__)
 #endif
 
 /* -----------------------------------------------------------------------------
