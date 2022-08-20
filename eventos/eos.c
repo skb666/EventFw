@@ -288,7 +288,7 @@ extern void eos_kernel_init(void);
 void eos_init(void)
 {
     eos.e_queue = EOS_NULL;
-    for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i ++)
+    for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i++)
     {
         eos.t_id[i] = EOS_MAX_OBJECTS;
     }
@@ -301,7 +301,7 @@ void eos_init(void)
     for (eos_s32_t i = EOS_MAX_OBJECTS; i > 0; i --)
     {
         bool is_prime = true;
-        for (eos_u32_t j = 2; j < EOS_MAX_OBJECTS; j ++)
+        for (eos_u32_t j = 2; j < EOS_MAX_OBJECTS; j++)
         {
             if (i <= j)
             {
@@ -321,7 +321,7 @@ void eos_init(void)
     }
     
     /* Initialize the hash table. */
-    for (eos_u32_t i = 0; i < EOS_MAX_OBJECTS; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_OBJECTS; i++)
     {
         eos.object[i].key = (const char *)0;
     }
@@ -353,7 +353,7 @@ eos_err_t eos_task_init(eos_task_t *task,
     eos.object[t_id].type = EOS_TASK_ATTRIBUTE_TASK;
     eos.object[t_id].ocb.task.tcb = task;
     task->index = EOS_MAX_TASKS;
-    for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i ++)
+    for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i++)
     {
         if (eos.t_id[i] == EOS_MAX_OBJECTS)
         {
@@ -789,7 +789,7 @@ static void eos_sm_enter(eos_sm_t *const me)
         HSM_TRIG_(me->state, Event_Null);
         while (me->state != t)
         {
-            ++ ip;
+           ++ ip;
             EOS_ASSERT(ip < EOS_MAX_HSM_NEST_DEPTH);
             path[ip] = me->state;
             HSM_TRIG_(me->state, Event_Null);
@@ -906,7 +906,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
         memcpy(&g_owner, &eos.object[e_id].ocb.event.e_sub, sizeof(eos_owner_t));
 
         /* The suspended task does not receive any event. */
-        for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i ++)
+        for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i++)
         {
             if (eos.t_id[i] != EOS_MAX_OBJECTS)
             {
@@ -1009,7 +1009,7 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
     }
 
     /* Check if the related tasks are waiting for the specific event or not. */
-    for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i ++)
+    for (eos_u16_t i = 0; i < EOS_MAX_TASKS; i++)
     {
         if (eos.t_id[i] != EOS_MAX_OBJECTS)
         {
@@ -1401,7 +1401,7 @@ eos_inline void eos_db_write_(eos_u8_t type, const char *key,
     if (type == EOS_EVENT_ATTRIBUTE_VALUE)
     {
         /* Update the event's value. */
-        for (eos_u32_t i = 0; i < eos.object[e_id].size; i ++)
+        for (eos_u32_t i = 0; i < eos.object[e_id].size; i++)
         {
             ((eos_u8_t *)(eos.object[e_id].data.value))[i] = ((eos_u8_t *)memory)[i];
         }
@@ -1440,7 +1440,7 @@ eos_inline eos_s32_t eos_db_read_(eos_u8_t type,
     if (type == EOS_EVENT_ATTRIBUTE_VALUE)
     {
         /* Update the event's value. */
-        for (eos_u32_t i = 0; i < eos.object[e_id].size; i ++)
+        for (eos_u32_t i = 0; i < eos.object[e_id].size; i++)
         {
             ((eos_u8_t *)memory)[i] =
                 ((eos_u8_t *)(eos.object[e_id].data.value))[i];
@@ -1562,7 +1562,7 @@ static void eos_sm_dispath(eos_sm_t *const me, eos_event_t const * const e)
         (void)HSM_TRIG_(me->state, Event_Null);
         while (me->state != t)
         {
-            ip ++;
+            ip++;
             path[ip] = me->state;
             (void)HSM_TRIG_(me->state, Event_Null);
         }
@@ -1638,7 +1638,7 @@ static eos_s32_t eos_sm_tran(eos_sm_t *const me,
     r = HSM_TRIG_(path[1], Event_Null);
     while (r == EOS_Ret_Super)
     {
-        ++ ip;
+       ++ ip;
         path[ip] = me->state; /* store the entry path */
         if (me->state == s)
         { /* is it the source? */
@@ -1864,7 +1864,7 @@ static eos_u32_t eos_hash_time33(char ch_type, const char *string)
     hash += (hash << 5) + ch_type;
     while (*string)
     {
-        hash += (hash << 5) + (*string ++);
+        hash += (hash << 5) + (*string++);
     }
 
     return (eos_u32_t)(hash & (0x7fffffff));
@@ -1878,7 +1878,7 @@ static eos_u16_t eos_hash_insert(eos_u8_t obj_type, const char *string)
     eos_u32_t hash = eos_hash_time33(ch_type[obj_type], string);
     eos_u16_t index_init = hash % eos.prime_max;
 
-    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
+    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i++)
     {
         for (eos_s8_t j = -1; j <= 1; j += 2)
         {
@@ -1918,7 +1918,7 @@ static eos_u16_t eos_hash_get_index(eos_u8_t obj_type, const char *string)
     eos_u32_t hash = eos_hash_time33(ch_type[obj_type], string);
     eos_u16_t index_init = hash % eos.prime_max;
 
-    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
+    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i++)
     {
         for (eos_s8_t j = -1; j <= 1; j += 2)
         {
@@ -1953,7 +1953,7 @@ static bool eos_hash_existed(eos_u8_t obj_type, const char *string)
     eos_u32_t hash = eos_hash_time33(ch_type[obj_type], string);
     eos_u16_t index_init = hash % eos.prime_max;
 
-    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i ++)
+    for (eos_u16_t i = 0; i < (EOS_MAX_OBJECTS / 2 + 1); i++)
     {
         for (eos_s8_t j = -1; j <= 1; j += 2)
         {
@@ -2004,7 +2004,7 @@ static eos_s32_t eos_stream_push(eos_stream_t *const me, void * data, eos_u32_t 
     }
 
     eos_u8_t *stream = (eos_u8_t *)me->data;
-    for (int i = 0; i < size; i ++)
+    for (int i = 0; i < size; i++)
     {
         stream[me->head] = ((eos_u8_t *)data)[i];
         me->head = ((me->head + 1) % me->capacity);
@@ -2025,7 +2025,7 @@ static eos_s32_t eos_stream_pull_pop(eos_stream_t *const me, void * data, eos_u3
     size = (size_stream < size) ? size_stream : size;
 
     eos_u8_t *stream = (eos_u8_t *)me->data;
-    for (int i = 0; i < size; i ++)
+    for (int i = 0; i < size; i++)
     {
         ((eos_u8_t *)data)[i] = stream[me->tail];
         me->tail = (me->tail + 1) % me->capacity;
@@ -2088,7 +2088,7 @@ static inline bool owner_is_occupied(eos_owner_t *owner, eos_u32_t t_index)
 
 static inline void owner_or(eos_owner_t *g_owner, eos_owner_t *owner)
 {
-    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i++)
     {
         g_owner->data[i] |= owner->data[i];
     }
@@ -2109,7 +2109,7 @@ static inline void owner_set_bit(eos_owner_t *owner, eos_u32_t t_id, bool status
 static inline bool owner_all_cleared(eos_owner_t *owner)
 {
     bool all_cleared = true;
-    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i ++)
+    for (eos_u32_t i = 0; i < EOS_MAX_OWNER; i++)
     {
         if (owner->data[i] != 0)
         {
