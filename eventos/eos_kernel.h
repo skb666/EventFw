@@ -71,7 +71,7 @@ typedef struct ek_task
     /* eos object */
     eos_u8_t type;                              /**< type of object */
     eos_u8_t flags;                             /**< task's flags */
-
+    
     ek_list_t list;                            /**< the object list */
     ek_list_t tlist;                           /**< the task list */
 

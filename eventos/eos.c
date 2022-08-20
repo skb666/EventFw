@@ -27,8 +27,8 @@
  * 
  * Change Logs:
  * Date           Author        Notes
- * 2021-11-23     DogMing       V0.0.2
- * 2021-03-20     DogMing       V0.2.0
+ * 2021-11-23     DogMing       V0.0.2          The hsm framework.
+ * 2022-03-20     DogMing       V0.2.0          Add the complete eventos kernel.
  */
 
 /* include ------------------------------------------------------------------ */
