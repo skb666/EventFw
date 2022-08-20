@@ -114,13 +114,6 @@ Task
 #define EOS_TIMER_FLAG_HARD_TIMER        0x0             /**< hard timer,the timer's callback function will be called in tick isr. */
 #define EOS_TIMER_FLAG_SOFT_TIMER        0x4             /**< soft timer,the timer's callback function will be called in timer task. */
 
-#define EOS_TIMER_CTRL_SET_TIME          0x0             /**< set timer control command */
-#define EOS_TIMER_CTRL_GET_TIME          0x1             /**< get timer control command */
-#define EOS_TIMER_CTRL_SET_ONESHOT       0x2             /**< change timer to one shot */
-#define EOS_TIMER_CTRL_SET_PERIODIC      0x3             /**< change timer to periodic */
-#define EOS_TIMER_CTRL_GET_STATE         0x4             /**< get timer run state active or deactive*/
-#define EOS_TIMER_CTRL_GET_REMAIN_TIME   0x5             /**< get the remaining hang time */
-
 /* 1 or 3 */
 #ifndef EOS_TIMER_SKIP_LIST_MASK
 #define EOS_TIMER_SKIP_LIST_MASK         0x3
@@ -197,6 +190,7 @@ eos_err_t eos_task_init(eos_task_t *task,
                         eos_u32_t stack_size,
                         eos_u8_t priority);
 eos_err_t eos_task_detach(eos_task_handle_t task);
+eos_err_t eos_task_exit(void);
 eos_task_handle_t eos_task_self(void);
 eos_err_t eos_task_startup(eos_task_handle_t task);
 eos_err_t eos_task_close(eos_task_handle_t task);
@@ -204,7 +198,6 @@ eos_err_t eos_task_yield(void);
 eos_err_t eos_task_delay(eos_u32_t tick);
 eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick);
 eos_err_t eos_task_delay_ms(eos_s32_t ms);
-eos_err_t eos_task_control(eos_task_handle_t task, int cmd, void *arg);
 eos_err_t eos_task_suspend(eos_task_handle_t task);
 eos_err_t eos_task_resume(eos_task_handle_t task);
 eos_task_state_t eos_task_get_state(eos_task_handle_t task);
@@ -233,7 +226,6 @@ eos_u32_t eos_timer_remaining_time(eos_timer_handle_t timer);
 eos_err_t eos_timer_set_time(eos_timer_handle_t timer, eos_u32_t time);
 eos_u32_t eos_timer_get_time(eos_timer_handle_t timer);
 eos_err_t eos_timer_reset(eos_timer_handle_t timer);
-eos_err_t eos_timer_control(eos_timer_handle_t timer, int cmd, void *arg);
 
 eos_u32_t eos_timer_next_timeout_tick(void);
 void eos_timer_check(void);
