@@ -77,7 +77,6 @@ typedef bool                            eos_bool_t;
     #define EOS_SECTION(x)              __attribute__((section(x)))
     #define EOS_USED                    __attribute__((used))
     #define ALIGN(n)                    __attribute__((aligned(n)))
-    #define EOS_WEAK                    __attribute__((weak))
     #define eos_inline                  static __inline
 #elif defined (__IAR_SYSTEMS_ICC__)     /* for IAR Compiler */
     #include <stdarg.h>
@@ -85,7 +84,6 @@ typedef bool                            eos_bool_t;
     #define EOS_USED                    __root
     #define PRAGMA(x)                   _Pragma(#x)
     #define ALIGN(n)                    PRAGMA(data_alignment=n)
-    #define EOS_WEAK                     __weak
     #define eos_inline                   static inline
 #elif defined (__GNUC__)                /* GNU GCC Compiler */
     /* the version of GNU GCC must be greater than 4.x */
@@ -97,7 +95,6 @@ typedef bool                            eos_bool_t;
     #define EOS_SECTION(x)              __attribute__((section(x)))
     #define EOS_USED                    __attribute__((used))
     #define ALIGN(n)                    __attribute__((aligned(n)))
-    #define EOS_WEAK                    __attribute__((weak))
     #define eos_inline                  static __inline
 #else
     #define eos_inline                  static inline
@@ -111,9 +108,10 @@ typedef enum eos_task_state
 {
     EOS_TASK_INIT                = 0x00,                /**< Initialized status */
     EOS_TASK_READY               = 0x01,                /**< Ready status */
-    EOS_TASK_SUSPEND             = 0x02,                /**< Suspend status */
-    EOS_TASK_RUNNING             = 0x03,                /**< Running status */
-    EOS_TASK_CLOSE               = 0x04,                /**< Closed status */
+    EOS_TASK_BLOCK               = 0x02,                /**< block status */
+    EOS_TASK_SUSPEND             = 0x03,
+    EOS_TASK_RUNNING             = 0x04,                /**< Running status */
+    EOS_TASK_CLOSE               = 0x05,                /**< Closed status */
     EOS_TASK_STAT_MASK           = 0x07,
 } eos_task_state_t;
 
@@ -122,13 +120,6 @@ typedef enum eos_task_state
 #define EOS_ERROR                       -1              /**< A generic error happens */
 #define EOS_ETIMEOUT                    -2              /**< Timed out */
 #define EOS_EFULL                       -3              /**< The resource is full */
-#define EOS_EEMPTY                      -4              /**< The resource is empty */
-#define EOS_ENOMEM                      -5              /**< No memory */
-#define EOS_ENOSYS                      -6              /**< No system */
-#define EOS_EBUSY                       -7              /**< Busy */
-#define EOS_EIO                         -8              /**< IO error */
-#define EOS_EINTR                       -9              /**< Interrupted system call */
-#define EOS_EINVAL                      -10             /**< Invalid argument */
 
 /* maximum value of ipc type */
 #define EOS_SEM_VALUE_MAX               EOS_U16_MAX     /**< Maximum number of semaphore .value */

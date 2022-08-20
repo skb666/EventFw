@@ -53,6 +53,9 @@ void eos_schedule_remove_task(ek_task_t *task);
 
 static eos_u32_t eos_tick_from_millisecond(eos_s32_t ms);
 static eos_err_t eos_timer_control(eos_timer_handle_t timer_, int cmd, void *arg);
+static void eos_task_defunct_enqueue(eos_task_handle_t task);
+static eos_task_handle_t eos_task_defunct_dequeue(void);
+static eos_err_t eos_task_block(eos_task_handle_t task);
 
 eos_u8_t *eos_hw_stack_init(void *entry,
                             void *parameter,
@@ -810,7 +813,7 @@ static void _task_timeout(void *parameter)
 
     /* parameter check */
     EOS_ASSERT(task != EOS_NULL);
-    EOS_ASSERT((task->status & EOS_TASK_STAT_MASK) == EOS_TASK_SUSPEND);
+    EOS_ASSERT((task->status & EOS_TASK_STAT_MASK) == EOS_TASK_BLOCK);
     EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Task);
 
     /* disable interrupt */
@@ -957,7 +960,7 @@ eos_err_t eos_task_startup(eos_task_handle_t task)
     task_->number_mask = 1L << task_->current_priority;
 
     /* change task stat */
-    task_->status = EOS_TASK_SUSPEND;
+    task_->status = EOS_TASK_BLOCK;
     /* then resume it */
     eos_task_resume(task);
     if (eos_task_self() != EOS_NULL)
@@ -1061,8 +1064,8 @@ eos_err_t eos_task_sleep(eos_u32_t tick)
     /* reset task error */
     task->error = EOS_EOK;
 
-    /* suspend task */
-    eos_task_suspend((eos_task_handle_t)task);
+    /* make the task into sleep state */
+    eos_task_block((eos_task_handle_t)task);
 
     /* reset the timeout of task timer and start it */
     eos_timer_control((eos_timer_handle_t)&(task->task_timer),
@@ -1128,7 +1131,7 @@ eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick)
         left_tick = *tick - cur_tick;
 
         /* suspend task */
-        eos_task_suspend((eos_task_handle_t)task);
+        eos_task_block((eos_task_handle_t)task);
 
         /* reset the timeout of task timer and start it */
         eos_timer_control((eos_timer_handle_t)&(task->task_timer),
@@ -1252,6 +1255,45 @@ eos_err_t eos_task_control(eos_task_handle_t task_, int cmd, void *arg)
 }
 
 /**
+ * @brief   This function will block the specified task and change it to block state.
+ * @param   task is the task to be blocked.
+ * @return  Return the operation status. If the return value is EOS_EOK, the function is successfully executed.
+ *          If the return value is any other values, it means this operation failed.
+ */
+static eos_err_t eos_task_block(eos_task_handle_t task_)
+{
+    ek_task_handle_t task = (ek_task_handle_t)task_;
+    register eos_base_t stat;
+    register eos_base_t temp;
+
+    /* parameter check */
+    EOS_ASSERT(task != EOS_NULL);
+    EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Task);
+    EOS_ASSERT(task == (ek_task_handle_t)eos_task_self());
+
+    stat = task->status & EOS_TASK_STAT_MASK;
+    if ((stat != EOS_TASK_READY) && (stat != EOS_TASK_RUNNING))
+    {
+        return EOS_ERROR;
+    }
+
+    /* disable interrupt */
+    temp = eos_hw_interrupt_disable();
+
+    /* change task stat */
+    eos_schedule_remove_task(task);
+    task->status = EOS_TASK_BLOCK | (task->status & ~EOS_TASK_STAT_MASK);
+
+    /* stop task timer anyway */
+    eos_timer_stop((eos_timer_handle_t)&(task->task_timer));
+
+    /* enable interrupt */
+    eos_hw_interrupt_enable(temp);
+
+    return EOS_EOK;
+}
+
+/**
  * @brief   This function will suspend the specified task and change it to suspend state.
  * @note    This function ONLY can suspend current task itself.
  *          Do not use the eos_task_suspend and eos_task_resume functions to synchronize the activities of tasks.
@@ -1311,7 +1353,8 @@ eos_err_t eos_task_resume(eos_task_handle_t task_)
     EOS_ASSERT(task != EOS_NULL);
     EOS_ASSERT(eos_object_get_type((ek_obj_handle_t)task) == EOS_Object_Task);
 
-    if ((task->status & EOS_TASK_STAT_MASK) != EOS_TASK_SUSPEND)
+    if ((task->status & EOS_TASK_STAT_MASK) != EOS_TASK_BLOCK &&
+        (task->status & EOS_TASK_STAT_MASK) != EOS_TASK_SUSPEND)
     {
         return EOS_ERROR;
     }
@@ -1371,7 +1414,7 @@ eos_inline eos_err_t _ipc_object_init(struct ek_ipc_object *ipc)
 eos_inline eos_err_t _ipc_list_suspend(ek_list_t *list, ek_task_handle_t task)
 {
     /* suspend task */
-    eos_task_suspend((eos_task_handle_t)task);
+    eos_task_block((eos_task_handle_t)task);
     
     struct ek_list_node *n;
     ek_task_handle_t stask;
@@ -1601,7 +1644,6 @@ eos_err_t eos_sem_take(eos_sem_handle_t sem_, eos_s32_t time)
             /* has waiting time, start task timer */
             if (time > 0)
             {
-
                 /* reset the timeout of task timer and start it */
                 eos_timer_control((eos_timer_handle_t)&(task->task_timer),
                                  EOS_TIMER_CTRL_SET_TIME,
@@ -2542,7 +2584,7 @@ eos_err_t eos_timer_start(eos_timer_handle_t timer_)
     {
         /* check whether timer task is ready */
         if ((_soft_timer_status == EOS_SOFT_TIMER_IDLE) &&
-           ((_timer_task.status & EOS_TASK_STAT_MASK) == EOS_TASK_SUSPEND))
+           ((_timer_task.status & EOS_TASK_STAT_MASK) == EOS_TASK_BLOCK))
         {
             /* resume timer task to check soft timer */
             eos_task_resume((eos_task_handle_t)&_timer_task);
@@ -2895,7 +2937,7 @@ static void _timer_task_entry(void *parameter)
         if (_timer_list_next_timeout(_soft_timer_list, &next_timeout) != EOS_EOK)
         {
             /* no software timer exist, suspend self. */
-            eos_task_suspend(eos_task_self());
+            eos_task_block(eos_task_self());
             eos_schedule();
         }
         else

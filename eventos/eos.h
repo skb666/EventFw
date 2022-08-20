@@ -198,6 +198,7 @@ eos_err_t eos_task_yield(void);
 eos_err_t eos_task_delay(eos_u32_t tick);
 eos_err_t eos_task_delay_until(eos_u32_t *tick, eos_u32_t inc_tick);
 eos_err_t eos_task_delay_ms(eos_s32_t ms);
+eos_err_t eos_task_delay_no_event(eos_u32_t tick);
 eos_err_t eos_task_suspend(eos_task_handle_t task);
 eos_err_t eos_task_resume(eos_task_handle_t task);
 eos_task_state_t eos_task_get_state(eos_task_handle_t task);
@@ -206,9 +207,6 @@ eos_u8_t eos_task_get_priority(eos_task_handle_t task);
 bool eos_task_wait_specific_event(eos_event_t * const e_out,
                                     const char *topic, eos_s32_t time_ms);
 bool eos_task_wait_event(eos_event_t * const e_out, eos_s32_t time_ms);
-/* defunct */
-void eos_task_defunct_enqueue(eos_task_handle_t task);
-eos_task_handle_t eos_task_defunct_dequeue(void);
 
 /* -----------------------------------------------------------------------------
 Timer
@@ -226,9 +224,6 @@ eos_u32_t eos_timer_remaining_time(eos_timer_handle_t timer);
 eos_err_t eos_timer_set_time(eos_timer_handle_t timer, eos_u32_t time);
 eos_u32_t eos_timer_get_time(eos_timer_handle_t timer);
 eos_err_t eos_timer_reset(eos_timer_handle_t timer);
-
-eos_u32_t eos_timer_next_timeout_tick(void);
-void eos_timer_check(void);
 
 /* -----------------------------------------------------------------------------
 Semaphore
