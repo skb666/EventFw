@@ -399,16 +399,36 @@ static bool equeue_no_current_task_event(eos_u16_t t_index)
     return ret;
 }
 
+eos_err_t eos_task_delay_no_event(eos_u32_t tick)
+{
+    eos_task_handle_t task = eos_task_self();
+    register eos_base_t level;
+
+    level = eos_hw_interrupt_disable();
+    task->event_recv_disable = true;
+    eos_hw_interrupt_enable(level);
+
+    eos_task_delay(tick);
+
+    level = eos_hw_interrupt_disable();
+    task->event_recv_disable = false;
+    eos_hw_interrupt_enable(level);
+
+    return EOS_EOK;
+}
+
 bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
 {
     eos_task_handle_t task = eos_task_self();
     eos_err_t ret = eos_sem_take(&task->sem, time_ms);
     
+    /* disable interrupt */
     register eos_base_t level = eos_hw_interrupt_disable();
 
     if (ret == EOS_EOK)
     {
         EOS_ASSERT(eos.e_queue != EOS_NULL);
+
         /* Find the first event data in e-queue and set it as handled. */
         eos_event_data_t *e_item = eos.e_queue;
         while (e_item != EOS_NULL)
@@ -460,6 +480,7 @@ bool eos_task_wait_event(eos_event_t *const e_out, eos_s32_t time_ms)
         }
     }
 
+    /* enable interrupt */
     eos_hw_interrupt_enable(level);
 
     return false;
@@ -557,6 +578,7 @@ Event
 ----------------------------------------------------------------------------- */
 void eos_event_attribute_global(const char *topic)
 {
+    /* disable interrupt */
     register eos_base_t level = eos_hw_interrupt_disable();
 
     eos_u16_t e_id;
@@ -568,11 +590,13 @@ void eos_event_attribute_global(const char *topic)
     EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
     eos.object[e_id].attribute |= EOS_EVENT_ATTRIBUTE_GLOBAL;
     
+    /* enable interrupt */
     eos_hw_interrupt_enable(level);
 }
 
 void eos_event_attribute_unblocked(const char *topic)
 {
+    /* disable interrupt */
     register eos_base_t level = eos_hw_interrupt_disable();
 
     eos_u16_t e_id;
@@ -584,6 +608,7 @@ void eos_event_attribute_unblocked(const char *topic)
     EOS_ASSERT(eos.object[e_id].type == EosObj_Event);
     eos.object[e_id].attribute |= EOS_EVENT_ATTRIBUTE_UNBLOCKED;
 
+    /* enable interrupt */
     eos_hw_interrupt_enable(level);
 }
 
@@ -629,9 +654,11 @@ static void eos_task_function(void *parameter)
 
 static void eos_e_queue_delete_(eos_event_data_t const *item)
 {
+    /* parameter check */
     EOS_ASSERT(eos.e_queue != EOS_NULL);
     EOS_ASSERT(item != EOS_NULL);
 
+    /* disable interrupt */
     register eos_base_t level = eos_hw_interrupt_disable();
     
     /* If the event data is only one in queue. */
@@ -662,6 +689,7 @@ static void eos_e_queue_delete_(eos_event_data_t const *item)
     /* free the event data. */
     eos_heap_free(&eos.heap, (void *)item);
 
+    /* enable interrupt */
     eos_hw_interrupt_enable(level);
 }
 
@@ -862,6 +890,14 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
         {
             goto exit;
         }
+        if (eos_task_get_state(tcb) == EOS_TASK_SUSPEND)
+        {
+            goto exit;
+        }
+        if (tcb->event_recv_disable == true)
+        {
+            goto exit;
+        }
         g_owner.data[tcb->index / 8] = (1 << (tcb->index % 8));
     }
     /* The publish-type event. */
@@ -878,6 +914,10 @@ static eos_s8_t eos_event_give_(const char *task, eos_u32_t task_id,
                 eos_object_t *obj = &eos.object[_t_id];
 
                 if (obj->ocb.task.tcb->event_recv_disable == true)
+                {
+                    owner_set_bit(&g_owner, i, false);
+                }
+                if (eos_task_get_state(obj->ocb.task.tcb) == EOS_TASK_SUSPEND)
                 {
                     owner_set_bit(&g_owner, i, false);
                 }

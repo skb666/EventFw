@@ -1,8 +1,6 @@
 
 #include <eos.h>
 
-EOS_TAG("CpuPort")
-
 #if               /* ARMCC */ (  (defined ( __CC_ARM ) && defined ( __TARGET_FPU_VFP ))    \
                   /* Clang */ || (defined ( __clang__ ) && defined ( __VFP_FP__ ) && !defined(__SOFTFP__)) \
                   /* IAR */   || (defined ( __ICCARM__ ) && defined ( __ARMVFP__ ))        \
@@ -179,22 +177,6 @@ void eos_hw_hard_fault_exception(struct exception_info *exception_info)
     (void)exception_info;
 
     while (1);
-}
-
-/**
- * shutdown CPU
- */
-EOS_WEAK void eos_hw_cpu_shutdown(void)
-{
-    EOS_ASSERT(0);
-}
-
-/**
- * reset CPU
- */
-EOS_WEAK void eos_hw_cpu_reset(void)
-{
-    SCB_AIRCR = SCB_RESET_VALUE;
 }
 
 #ifdef RT_USING_CPU_FFS
