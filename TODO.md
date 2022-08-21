@@ -11,7 +11,8 @@
 + 简要文档
 + 将所有的return变为goto风格
 + 给EOS代码中添加详细的注释
++ 将sem的API不对外开放。
 
 ------------------
-DB定义为一个新概念为channel，类似于Go语言中CSP，值事件，就是一个深度为1，且不阻塞的channel，
-流事件就是一个可阻塞的Channel。
+DB定义为一个新概念为channel，类似于Go语言中CSP，值事件，就是一个深度为1，且不阻塞的
+channel，流事件就是一个可阻塞的Channel。
