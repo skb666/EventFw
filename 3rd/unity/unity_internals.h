@@ -1,11 +1,13 @@
 /* ==========================================
     Unity Project - A Test Framework for C
-    Copyright (c) 2007-19 Mike Karlesky, Mark VanderVoord, Greg Williams
+    Copyright (c) 2007-21 Mike Karlesky, Mark VanderVoord, Greg Williams
     [Released under MIT License. Please refer to license.txt for details]
 ========================================== */
 
 #ifndef UNITY_INTERNALS_H
 #define UNITY_INTERNALS_H
+
+#define UNITY_INCLUDE_CONFIG_H
 
 #ifdef UNITY_INCLUDE_CONFIG_H
 #include "unity_config.h"
@@ -38,6 +40,12 @@
 
 #ifndef UNITY_EXCLUDE_LIMITS_H
 #include <limits.h>
+#endif
+
+#if defined __GNUC__
+#    define UNITY_FUNCTION_ATTR(a) __attribute__((a))
+#else
+#    define UNITY_FUNCTION_ATTR(a) /* ignore */
 #endif
 
 /*-------------------------------------------------------
@@ -611,8 +619,14 @@ void UnityAssertNumbersArrayWithin(const UNITY_UINT delta,
                                    const UNITY_DISPLAY_STYLE_T style,
                                    const UNITY_FLAGS_T flags);
 
+#ifndef UNITY_EXCLUDE_SETJMP_H
+void UnityFail(const char* message, const UNITY_LINE_TYPE line) UNITY_FUNCTION_ATTR(noreturn);
+void UnityIgnore(const char* message, const UNITY_LINE_TYPE line) UNITY_FUNCTION_ATTR(noreturn);
+#else
 void UnityFail(const char* message, const UNITY_LINE_TYPE line);
 void UnityIgnore(const char* message, const UNITY_LINE_TYPE line);
+#endif
+
 void UnityMessage(const char* message, const UNITY_LINE_TYPE line);
 
 #ifndef UNITY_EXCLUDE_FLOAT
@@ -701,11 +715,8 @@ extern const char UnityStrErrShorthand[];
 #endif
 #endif
 #ifdef UNITY_SUPPORT_VARIADIC_MACROS
-#define RUN_TEST(...) UnityDefaultTestRun(RUN_TEST_FIRST(__VA_ARGS__), RUN_TEST_SECOND(__VA_ARGS__))
-#define RUN_TEST_FIRST(...) RUN_TEST_FIRST_HELPER(__VA_ARGS__, throwaway)
-#define RUN_TEST_FIRST_HELPER(first, ...) (first), #first
-#define RUN_TEST_SECOND(...) RUN_TEST_SECOND_HELPER(__VA_ARGS__, __LINE__, throwaway)
-#define RUN_TEST_SECOND_HELPER(first, second, ...) (second)
+#define RUN_TEST(...) RUN_TEST_AT_LINE(__VA_ARGS__, __LINE__, throwaway)
+#define RUN_TEST_AT_LINE(func, line, ...) UnityDefaultTestRun(func, #func, line)
 #endif
 #endif
 
