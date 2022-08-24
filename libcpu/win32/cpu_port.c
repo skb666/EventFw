@@ -97,8 +97,8 @@ static MMRESULT     OSTick_TimerID;
 /*
  * flag in interrupt handling
  */
-eos_u32_t rt_interrupt_from_thread, rt_interrupt_to_thread;
-eos_u32_t rt_thread_switch_interrupt_flag;
+eos_u32_t eos_interrupt_from_thread, eos_interrupt_to_thread;
+eos_u32_t eos_switch_interrupt_flag;
 
 /*
 *********************************************************************************************************
@@ -137,7 +137,7 @@ static void SetThreadName(DWORD dwThreadID, char* threadName)
 * Description : Initialize stack of thread
 * Argument(s) : void *pvEntry,void *pvParam,eos_u8_t *pStackAddr,void *pvExit
 * Return(s)   : eos_u8_t*
-* Caller(s)   : rt_thread_init or rt_thread_create
+* Caller(s)   : eos_init or eos_create
 * Note(s)     : none
 *********************************************************************************************************
 */
@@ -240,7 +240,7 @@ void eos_hw_interrupt_enable(eos_base_t level)
 
 /*
 *********************************************************************************************************
-*                                            eos_hw_context_switch_interrupt()
+*                                            eos_task_switch_interrupt()
 * Description : switch thread's contex
 * Argument(s) : void
 * Return(s)   : void
@@ -248,45 +248,43 @@ void eos_hw_interrupt_enable(eos_base_t level)
 * Note(s)     : none
 *********************************************************************************************************
 */
-void eos_hw_context_switch_interrupt(eos_u32_t from,
-                                    eos_u32_t to)
+void eos_task_switch_interrupt(eos_u32_t from, eos_u32_t to)
 {
-    if(rt_thread_switch_interrupt_flag != 1)
+    if(eos_switch_interrupt_flag != 1)
     {
-        rt_thread_switch_interrupt_flag = 1;
+        eos_switch_interrupt_flag = 1;
 
-        // set rt_interrupt_from_thread
-        rt_interrupt_from_thread = *((eos_u32_t *)(from));
+        // set eos_interrupt_from_thread
+        eos_interrupt_from_thread = *((eos_u32_t *)(from));
     }
 
-    rt_interrupt_to_thread = *((eos_u32_t *)(to));
+    eos_interrupt_to_thread = *((eos_u32_t *)(to));
 
     //trigger YIELD exception(cause context switch)
     TriggerSimulateInterrupt(CPU_INTERRUPT_YIELD);
-} /*** eos_hw_context_switch_interrupt ***/
+} /*** eos_task_switch_interrupt ***/
 
 
 
-void eos_hw_context_switch(eos_u32_t from,
-                          eos_u32_t to)
+void eos_task_switch(eos_u32_t from, eos_u32_t to)
 {
-    if(rt_thread_switch_interrupt_flag != 1)
+    if(eos_switch_interrupt_flag != 1)
     {
-        rt_thread_switch_interrupt_flag  = 1;
+        eos_switch_interrupt_flag  = 1;
 
-        // set rt_interrupt_from_thread
-        rt_interrupt_from_thread = *((eos_u32_t *)(from));
+        // set eos_interrupt_from_thread
+        eos_interrupt_from_thread = *((eos_u32_t *)(from));
 
     }
 
-    // set rt_interrupt_to_thread
-    rt_interrupt_to_thread = *((eos_u32_t *)(to));
+    // set eos_interrupt_to_thread
+    eos_interrupt_to_thread = *((eos_u32_t *)(to));
 
     //trigger YIELD exception(cause contex switch)
     TriggerSimulateInterrupt(CPU_INTERRUPT_YIELD);
 
     // make sure the event is not already signaled
-    win_thread_t *WinThread = (win_thread_t *)rt_interrupt_from_thread;
+    win_thread_t *WinThread = (win_thread_t *)eos_interrupt_from_thread;
     ResetEvent(WinThread->YieldEvent);
 
     /*
@@ -298,28 +296,28 @@ void eos_hw_context_switch(eos_u32_t from,
 
     // wait to suspend.
     WaitForSingleObject(WinThread->YieldEvent, INFINITE);
-} /*** eos_hw_context_switch ***/
+} /*** eos_task_switch ***/
 
 /*
 *********************************************************************************************************
-*                                            eos_hw_context_switch_to()
+*                                            eos_task_switch_to()
 * Description : switch to new thread
 * Argument(s) : eos_u32_t to              //the stack address of the thread which will switch to
 * Return(s)   : void
-* Caller(s)   : rt_thread schecale
+* Caller(s)   : eos schecale
 * Note(s)     : this function is used to perform the first thread switch
 *********************************************************************************************************
 */
-void eos_hw_context_switch_to(eos_u32_t to)
+void eos_task_switch_to(eos_u32_t to)
 {
     //set to thread
-    rt_interrupt_to_thread = *((eos_u32_t *)(to));
+    eos_interrupt_to_thread = *((eos_u32_t *)(to));
 
     //clear from thread
-    rt_interrupt_from_thread = 0;
+    eos_interrupt_from_thread = 0;
 
     //set interrupt to 1
-    rt_thread_switch_interrupt_flag = 1;
+    eos_switch_interrupt_flag = 1;
 
     //start WinThreadScheduler
     WinThreadScheduler();
@@ -327,7 +325,7 @@ void eos_hw_context_switch_to(eos_u32_t to)
     //never reach here!
     return;
 
-} /*** eos_hw_context_switch_to ***/
+} /*** eos_task_switch_to ***/
 
 
 
@@ -593,8 +591,8 @@ void RegisterSimulateInterrupt(eos_u32_t IntIndex,eos_u32_t (*IntHandler)(void))
 
         if(SwitchRequiredMask != 0)
         {
-            WinThreadFrom = (win_thread_t *)rt_interrupt_from_thread;
-            WinThreadTo = (win_thread_t *)rt_interrupt_to_thread;
+            WinThreadFrom = (win_thread_t *)eos_interrupt_from_thread;
+            WinThreadTo = (win_thread_t *)eos_interrupt_to_thread;
 
             if ((WinThreadFrom != NULL) && (WinThreadFrom->ThreadHandle != NULL))
             {
@@ -687,11 +685,11 @@ eos_u32_t YieldInterruptHandle(void)
 {
 
     /*
-     * if rt_thread_switch_interrupt_flag = 1 yield already handled
+     * if eos_switch_interrupt_flag = 1 yield already handled
      */
-    if(rt_thread_switch_interrupt_flag != 0)
+    if(eos_switch_interrupt_flag != 0)
     {
-        rt_thread_switch_interrupt_flag = 0;
+        eos_switch_interrupt_flag = 0;
 
         /* return thread switch request = 1 */
         return 1;
