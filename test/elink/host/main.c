@@ -29,19 +29,24 @@ int main(int argc, char ** argv)
 
     elink_init();
 
-    osThreadNew(func_read_mcu, NULL, NULL);
-    osThreadNew(func_write_mcu, NULL, NULL);
+    osThreadId_t task_read = osThreadNew(func_read_mcu, NULL, NULL);
+    osThreadId_t task_write = osThreadNew(func_write_mcu, NULL, NULL);
 
     ex_shell_run();
 
-    while (elink_running());
+    /* Kill all related threads. */
+    osThreadTerminate(task_read);
+    osThreadTerminate(task_write);
+    elink_exit();
+
+    printf("Main function exit.\n");
     
     return 0;
 }
 
 static void exsh_func_exit(void *paras)
 {
-    printf("Func exit.\n");
+    
 }
 
 static void func_read_mcu(void *paras)

@@ -9,11 +9,11 @@
 
 /* config ------------------------------------------------------------------- */
 #define ELINK_DEBUG_SWD_EN                          1
-// #define ELINK_MCU_NAME                              "STM32F429IG"
-// #define ELINK_BLOCK_ADDRESS                         0x20000000
+#define ELINK_MCU_NAME                              "STM32F429IG"
+#define ELINK_BLOCK_ADDRESS                         0x20000000
 
-#define ELINK_MCU_NAME                              "STM32H743XI"
-#define ELINK_BLOCK_ADDRESS                         0x24000000
+// #define ELINK_MCU_NAME                              "STM32H743XI"
+// #define ELINK_BLOCK_ADDRESS                         0x20000000
 
 /* private define ----------------------------------------------------------- */
 #define elink_err(...) do {                                                    \
@@ -73,7 +73,6 @@ static func_read_memory_t rtt_read_memory;
 
 static void *lib = NULL;
 
-static bool elink_started = false;
 static osMessageQueueId_t mq_write;
 static osMessageQueueId_t mq_read;
 static osThreadId_t thread;
@@ -123,7 +122,6 @@ void elink_init(void)
     elink_info("elink init ...");
     elink_hw_init();
     elink_info("elink_hw_init end.");
-    elink_started = true;
 
     // Connect to the elink MCU.
     if (elink_is_connected() == 0)
@@ -290,9 +288,13 @@ exit:
     return ret;
 }
 
-bool elink_running(void)
+void elink_exit(void)
 {
-    return elink_started;
+    _set_mcu_state(ElinkState_Stop);
+    elink_close();
+    elink_err("Exit the E-Terminal.");
+
+    state_host = ElinkState_Stopped;
 }
 
 /* private function --------------------------------------------------------- */
@@ -547,15 +549,10 @@ static void func_elink_host(void *para)
 
 exit:
     _set_mcu_state(ElinkState_Stop);
-
     elink_close();
-
     elink_err("Exit the E-Terminal.");
-    fflush(stdout);
 
     state_host = ElinkState_Stopped;
-
-    elink_started = false;
 }
 
 static void _set_mcu_state(uint8_t state)
