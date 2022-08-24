@@ -7,9 +7,8 @@
 #include <stdint.h>
 
 /* private variables -------------------------------------------------------- */
-
-uint32_t test_count = 0;
 uint32_t str_size = 0;
+uint32_t test_count = 0;
 
 uint32_t time_ms = 0;
 uint32_t speed = 0;
@@ -89,7 +88,6 @@ void SysTick_Handler(void)
     eos_interrupt_leave();
     
     time_ms ++;
-    speed = test_count * 34 / (time_ms / 1000);
 }
 
 /* private function --------------------------------------------------------- */
@@ -105,8 +103,7 @@ static void entry_elink_write_test(void *paras)
 
         elink_write(str, str_size);
         write_byte_count += str_size;
-        
-        eos_task_delay_ms(1);
+        speed = write_byte_count / time_ms;
     }
 
 }

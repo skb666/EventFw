@@ -454,9 +454,9 @@
           <GroupName>elink</GroupName>
           <Files>
             <File>
-              <FileName>elink_mcu.c</FileName>
+              <FileName>elink.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\service\elink\elink_mcu.c</FilePath>
+              <FilePath>..\..\..\..\service\elink\elink.c</FilePath>
             </File>
           </Files>
         </Group>

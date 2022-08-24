@@ -4,26 +4,17 @@
 #include "eos.h"
 #include <stdlib.h>
 
-/* private define ----------------------------------------------------------- */
-#define ELINK_WAIT_FOREVER                  (0xffffffff)
-#define ELINK_REFRESH_PRIORITY              (1)
-
 /* private variable --------------------------------------------------------- */
 elink_block_t elink;
 
 /* MCU write, Host read */
-static uint8_t buff_tx[ELINK_BUFFER_RX_SIZE];
-
-static eos_sem_t sem_tx;
-static eos_sem_t sem_refresh;
-static eos_task_t task_refresh;
-static uint32_t stack_refresh[128];
+static uint8_t buff_tx[ELINK_BUFFER_TX_SIZE];
 
 /* MCU read, Host write */
-static uint8_t buff_rx[ELINK_BUFFER_TX_SIZE];
+static uint8_t buff_rx[ELINK_BUFFER_RX_SIZE];
 
 /* private function --------------------------------------------------------- */
-static void task_entry_buffer_refresh(void *parameters);
+static uint16_t _buff_tx_free_size(void);
 
 /* public function ---------------------------------------------------------- */
 void elink_init(void)
@@ -61,43 +52,29 @@ void elink_init(void)
 
     elink.tx_read_lock = 0;
     elink.rx_write_lock = 0;
-
-    eos_sem_init(&sem_tx, (ELINK_BUFFER_TX_SIZE - 1));
-    eos_sem_init(&sem_refresh, 0);
-
-    eos_task_init(&task_refresh, "elink_refresh",
-                    task_entry_buffer_refresh,
-                    NULL, stack_refresh, sizeof(stack_refresh),
-                    ELINK_REFRESH_PRIORITY);
 }
 
 uint16_t elink_write(void *data, uint16_t size)
 {
     uint16_t ret = size;
+    uint16_t size_free;
     uint32_t level = eos_hw_interrupt_disable();
 
     // Get the remaining size of the tx buffer
-    uint32_t size_free = 0;
-    if (elink.head_tx >= elink.tail_tx)
-    {
-        size_free = elink.capacity_tx - (elink.head_tx - elink.tail_tx) - 1;
-    }
-    else
-    {
-        size_free = (elink.tail_tx - elink.head_tx) - 1;
-    }
+    size_free = _buff_tx_free_size();
 
     // Copy the data into buffer.
     elink.tx_read_lock = 1;
     for (uint16_t i = 0; i < size; i ++)
     {
-        eos_sem_take(&sem_tx, EOS_WAIT_FOREVER);
-        if (i >= size_free)
+        while (i >= size_free)
         {
-            eos_sem_release(&sem_refresh);
+            elink.tx_read_lock = 0;
             eos_hw_interrupt_enable(level);
+            eos_task_delay_ms(1);
             level = eos_hw_interrupt_disable();
-            break;
+            elink.tx_read_lock = 1;
+            size_free = _buff_tx_free_size();
         }
         elink.buff_tx[elink.head_tx] = ((uint8_t *)data)[i];
         elink.head_tx = (elink.head_tx + 1) % elink.capacity_tx;
@@ -147,35 +124,18 @@ exit:
 }
 
 /* private function --------------------------------------------------------- */
-static void task_entry_buffer_refresh(void *parameters)
+static uint16_t _buff_tx_free_size(void)
 {
-    while (1)
+    uint16_t size_free = 0;
+
+    if (elink.head_tx >= elink.tail_tx)
     {
-        eos_sem_take(&sem_refresh, EOS_WAIT_FOREVER);
-
-        while (1)
-        {
-            // Get the remaining size of the tx buffer
-            uint32_t size_free = 0;
-            if (elink.head_tx >= elink.tail_tx)
-            {
-                size_free = elink.capacity_tx - (elink.head_tx - elink.tail_tx) - 1;
-            }
-            else
-            {
-                size_free = (elink.tail_tx - elink.head_tx) - 1;
-            }
-
-            // If size_free is not 0.
-            if (size_free == 0)
-            {
-                eos_task_delay_ms(1);
-            }
-            else
-            {
-                eos_sem_reset(&sem_tx, size_free);
-                break;
-            }
-        }
+        size_free = elink.capacity_tx - (elink.head_tx - elink.tail_tx) - 1;
     }
+    else
+    {
+        size_free = (elink.tail_tx - elink.head_tx) - 1;
+    }
+
+    return size_free;
 }

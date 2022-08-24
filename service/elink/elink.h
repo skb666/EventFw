@@ -45,7 +45,4 @@ void elink_init(void);
 uint16_t elink_write(void *data, uint16_t size);
 uint16_t elink_read(void *data, uint16_t size);
 
-/* port --------------------------------------------------------------------- */
-void elink_port_isr_enable(bool enable);
-
 #endif

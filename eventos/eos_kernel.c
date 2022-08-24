@@ -1605,7 +1605,10 @@ eos_err_t eos_sem_take(eos_sem_handle_t sem_, eos_s32_t time)
 
     /* parameter check */
     EOS_ASSERT(sem != EOS_NULL);
+    if (eos_object_get_type(&sem->super.super) != EOS_Object_Semaphore)
+    {
     EOS_ASSERT(eos_object_get_type(&sem->super.super) == EOS_Object_Semaphore);
+    }
 
     /* disable interrupt */
     temp = eos_hw_interrupt_disable();
@@ -1744,7 +1747,10 @@ eos_err_t eos_sem_reset(eos_sem_handle_t sem_, eos_ubase_t value)
     ek_sem_handle_t sem = (ek_sem_handle_t)sem_;
 
     EOS_ASSERT(sem != EOS_NULL);
+    if (eos_object_get_type(&sem->super.super) != EOS_Object_Semaphore)
+    {
     EOS_ASSERT(eos_object_get_type(&sem->super.super) == EOS_Object_Semaphore);
+    }
 
     eos_ubase_t level;
 
