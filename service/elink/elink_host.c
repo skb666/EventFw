@@ -9,7 +9,11 @@
 
 /* config ------------------------------------------------------------------- */
 #define ELINK_DEBUG_SWD_EN                          1
-#define ELINK_MCU_NAME                              "STM32F429IG"
+// #define ELINK_MCU_NAME                              "STM32F429IG"
+// #define ELINK_BLOCK_ADDRESS                         0x20000000
+
+#define ELINK_MCU_NAME                              "STM32H743XI"
+#define ELINK_BLOCK_ADDRESS                         0x24000000
 
 /* private define ----------------------------------------------------------- */
 #define elink_err(...) do {                                                    \
@@ -160,17 +164,20 @@ void elink_init(void)
         elink_info("elink is alrady open. Sn: %d.", elink_get_sn());
     }
 
+#if 1
     // Find the elink block in MCU.
     bool eblock_found = false;
     uint8_t buff_read[EBLOCK_READ_BUFF_SIZE];
-    while (1)
+    while (ex_shell_is_running())
     {
         for (uint32_t i = 0; i < 100; i ++)
         {
+            do {
             ret_read = elink_read_memory(
-                (0x20000000 + i * EBLOCK_READ_BUFF_SIZE),
+                (ELINK_BLOCK_ADDRESS + i * EBLOCK_READ_BUFF_SIZE),
                 EBLOCK_READ_BUFF_SIZE,
                 buff_read);
+            } while (ret_read != 0);
 
             for (uint32_t j = 0; j < (EBLOCK_READ_BUFF_SIZE - 16); j ++)
             {
@@ -181,7 +188,7 @@ void elink_init(void)
 
                 if (strcmp((char *)&buff_read[j], "^+elink.block@$") == 0)
                 {
-                    addr_elink = (0x20000000 + i * 4096 + j);
+                    addr_elink = (ELINK_BLOCK_ADDRESS + i * 4096 + j);
                     eblock_found = true;
                     break;
                 }
@@ -201,6 +208,7 @@ void elink_init(void)
         elink_info("Elink block not found. Continue !\n");
         osDelay(10);
     }
+#endif
 
     addr_elink -= 4;
     elink_info("Elink address 0x%08x.", addr_elink);
@@ -208,10 +216,11 @@ void elink_init(void)
     // Check the magic is covered or not.
     uint32_t size_buff_tx, size_buff_rx;
     ret_read = elink_read_memory(addr_elink, sizeof(elink_block_t), &eblock);
+    printf("elink_read_memory ret_read = %u.\n", ret_read);
     if (eblock.magic != 0xdeadbeef)
     {
-        elink_err("elink block magic 0xdeadbeef is covered. Value: %08x.",
-                    eblock.magic);
+        elink_err("elink block magic 0xdeadbeef is covered. Value: %08x. %s",
+                    eblock.magic, eblock.label);
         goto exit;
     }
     elink_info("Elink magic checking end.");
@@ -365,7 +374,11 @@ static int32_t elink_set_tif(int interface)
 
 static int32_t elink_read_memory(uint32_t addr, uint32_t count, void *data)
 {
-    return rtt_read_memory(addr, count, data);
+    int32_t ret = 0;
+    do {
+        ret = rtt_read_memory(addr, count, data);
+    } while (ret != 0);
+    return 0;
 }
 
 static int32_t elink_set_memory(uint32_t addr, uint32_t count, const void *data)
