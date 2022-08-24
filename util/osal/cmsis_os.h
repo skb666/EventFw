@@ -125,6 +125,7 @@ typedef struct
 
 osThreadId_t osThreadNew(osThreadFunc_t func, void *argument, const osThreadAttr_t *attr);
 osThreadId_t osThreadGetId(void);
+osStatus_t osThreadTerminate(osThreadId_t thread_id);
 void osThreadExit(void);
 
 /* -----------------------------------------------------------------------------

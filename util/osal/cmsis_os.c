@@ -155,9 +155,16 @@ osThreadId_t osThreadGetId(void)
     return (osThreadId_t)pthread_self();
 }
 
+osStatus_t osThreadTerminate(osThreadId_t thread_id)
+{
+    pthread_cancel((pthread_t)thread_id);
+
+    return osOK;
+}
+
 void osThreadExit(void)
 {
-    // NULL
+    pthread_exit(NULL);
 }
 
 /* -----------------------------------------------------------------------------
