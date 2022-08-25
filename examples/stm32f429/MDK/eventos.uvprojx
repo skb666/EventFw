@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F429_439xx, EOS_MCU, USE_STDPERIPH_DRIVER,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\test;..\MCU\inc;..\User</IncludePath>
+              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\test\eos;..\MCU\inc;..\User</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -461,72 +461,72 @@
             <File>
               <FileName>eos_led_reactor.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos_led_reactor.c</FilePath>
+              <FilePath>..\..\..\test\eos\eos_led_reactor.c</FilePath>
             </File>
             <File>
               <FileName>eos_led_sm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos_led_sm.c</FilePath>
+              <FilePath>..\..\..\test\eos\eos_led_sm.c</FilePath>
             </File>
             <File>
               <FileName>test_01_0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_01_0.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_01_0.c</FilePath>
             </File>
             <File>
               <FileName>test_05_0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_05_0.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_05_0.c</FilePath>
             </File>
             <File>
               <FileName>test_01_1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_01_1.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_01_1.c</FilePath>
             </File>
             <File>
               <FileName>test_05_1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_05_1.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_05_1.c</FilePath>
             </File>
             <File>
               <FileName>test_02_0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_02_0.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_02_0.c</FilePath>
             </File>
             <File>
               <FileName>test_02_1.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_02_1.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_02_1.c</FilePath>
             </File>
             <File>
               <FileName>test_02_2.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_02_2.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_02_2.c</FilePath>
             </File>
             <File>
               <FileName>test_03.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_03.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_03.c</FilePath>
             </File>
             <File>
               <FileName>test_04.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_04.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_04.c</FilePath>
             </File>
             <File>
               <FileName>test_06.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_06.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_06.c</FilePath>
             </File>
             <File>
               <FileName>test_07.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_07.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_07.c</FilePath>
             </File>
             <File>
               <FileName>test_09.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\test\test_09.c</FilePath>
+              <FilePath>..\..\..\test\eos\test_09.c</FilePath>
             </File>
           </Files>
         </Group>
