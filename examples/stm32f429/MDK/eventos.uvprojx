@@ -446,12 +446,12 @@
             <File>
               <FileName>cpuport.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\libcpu\arm\cortex-m4\cpuport.c</FilePath>
+              <FilePath>..\..\..\portable\arm\cortex-m4\cpuport.c</FilePath>
             </File>
             <File>
               <FileName>context_rvds.S</FileName>
               <FileType>2</FileType>
-              <FilePath>..\..\..\libcpu\arm\cortex-m4\context_rvds.S</FilePath>
+              <FilePath>..\..\..\portable\arm\cortex-m4\context_rvds.S</FilePath>
             </File>
           </Files>
         </Group>
