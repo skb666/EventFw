@@ -1,11 +1,10 @@
 /* =========================================================================
     Unity Project - A Test Framework for C
-    Copyright (c) 2007-21 Mike Karlesky, Mark VanderVoord, Greg Williams
+    Copyright (c) 2007-19 Mike Karlesky, Mark VanderVoord, Greg Williams
     [Released under MIT License. Please refer to license.txt for details]
 ============================================================================ */
 
 #include "unity.h"
-
 #include <stddef.h>
 
 #ifdef AVR
@@ -68,10 +67,9 @@ static const char PROGMEM UnityStrBreaker[]                = "------------------
 static const char PROGMEM UnityStrResultsTests[]           = " Tests ";
 static const char PROGMEM UnityStrResultsFailures[]        = " Failures ";
 static const char PROGMEM UnityStrResultsIgnored[]         = " Ignored ";
-#ifndef UNITY_EXCLUDE_DETAILS
 static const char PROGMEM UnityStrDetail1Name[]            = UNITY_DETAIL1_NAME " ";
 static const char PROGMEM UnityStrDetail2Name[]            = " " UNITY_DETAIL2_NAME " ";
-#endif
+
 /*-----------------------------------------------
  * Pretty Printers & Test Result Output Handlers
  *-----------------------------------------------*/
@@ -1003,7 +1001,7 @@ void UnityAssertFloatSpecial(const UNITY_FLOAT actual,
             is_trait = !isinf(actual) && !isnan(actual);
             break;
 
-        default: /* including UNITY_FLOAT_INVALID_TRAIT */
+        default:
             trait_index = 0;
             trait_names[0] = UnityStrInvalidFloatTrait;
             break;
@@ -1143,7 +1141,7 @@ void UnityAssertDoubleSpecial(const UNITY_DOUBLE actual,
             is_trait = !isinf(actual) && !isnan(actual);
             break;
 
-        default: /* including UNITY_FLOAT_INVALID_TRAIT */
+        default:
             trait_index = 0;
             trait_names[0] = UnityStrInvalidFloatTrait;
             break;

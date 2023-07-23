@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F429_439xx, EOS_MCU, USE_STDPERIPH_DRIVER,</Define>
               <Undefine></Undefine>
-              <IncludePath>..\APP;..\MCU;..\..\..\eventos;..\..\..\test\eos;..\MCU\inc;..\User</IncludePath>
+              <IncludePath>..\User;..\..\..\eventos;..\MCU\inc;..\MCU</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -389,14 +389,19 @@
               <FilePath>..\User\main.c</FilePath>
             </File>
             <File>
-              <FileName>hook.c</FileName>
+              <FileName>eos_led_reactor.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\hook.c</FilePath>
+              <FilePath>..\User\eos_led_reactor.c</FilePath>
             </File>
             <File>
-              <FileName>bsp.c</FileName>
+              <FileName>eos_led_sm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\bsp.c</FilePath>
+              <FilePath>..\User\eos_led_sm.c</FilePath>
+            </File>
+            <File>
+              <FileName>port_stm32f429.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\port_stm32f429.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -434,99 +439,9 @@
           <GroupName>EventOS</GroupName>
           <Files>
             <File>
-              <FileName>eos.c</FileName>
+              <FileName>eventos.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\eventos\eos.c</FilePath>
-            </File>
-            <File>
-              <FileName>eos_kernel.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\eventos\eos_kernel.c</FilePath>
-            </File>
-            <File>
-              <FileName>cpuport.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\portable\arm\cortex-m4\cpuport.c</FilePath>
-            </File>
-            <File>
-              <FileName>context_rvds.S</FileName>
-              <FileType>2</FileType>
-              <FilePath>..\..\..\portable\arm\cortex-m4\context_rvds.S</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Test</GroupName>
-          <Files>
-            <File>
-              <FileName>eos_led_reactor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\eos_led_reactor.c</FilePath>
-            </File>
-            <File>
-              <FileName>eos_led_sm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\eos_led_sm.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_01_0.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_01_0.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_05_0.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_05_0.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_01_1.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_01_1.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_05_1.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_05_1.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_02_0.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_02_0.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_02_1.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_02_1.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_02_2.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_02_2.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_03.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_03.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_04.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_04.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_06.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_06.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_07.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_07.c</FilePath>
-            </File>
-            <File>
-              <FileName>test_09.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\test\eos\test_09.c</FilePath>
+              <FilePath>..\..\..\eventos\eventos.c</FilePath>
             </File>
           </Files>
         </Group>

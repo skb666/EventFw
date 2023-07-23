@@ -13,6 +13,7 @@
 *.d
 *.exe
 
+eos
 posix
 core
 
@@ -26,11 +27,12 @@ Output
 Debug
 Exe
 Obj
+fusiondata
+mapdata
 cmake-build-debug
-CubeMx
 
 # File
 JLinkLog.txt
-setting.ini
+imxrt105x.uvguix.*
 .sconsign.dblite
 __pycache__

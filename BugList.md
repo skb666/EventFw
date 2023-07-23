@@ -1,3 +1,3 @@
 # BugList
 -------
-+ EventOS，触发Event_Null，这是不正常的。
++ 【解决】当不使用Heap库，单元测试不能通过。
