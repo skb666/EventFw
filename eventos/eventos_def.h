@@ -34,6 +34,7 @@
 #ifndef EVENTOS_DEF_H__
 #define EVENTOS_DEF_H__
 
+#include <stdint.h>
 #include "eventos_config.h"
 
 /* basic data type ---------------------------------------------------------- */

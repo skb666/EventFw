@@ -109,7 +109,8 @@ typedef enum eos_ret {
 #endif
 
 // 事件类
-typedef struct eos_event {
+typedef struct eos_event
+{
     eos_topic_t topic;                      // 事件主题
     void *data;                             // 事件数据
     eos_u16_t size;                         // 数据长度
@@ -147,7 +148,8 @@ typedef struct eos_actor {
 } eos_actor_t;
 
 // React类
-typedef struct eos_reactor {
+typedef struct eos_reactor
+{
     eos_actor_t super;
     eos_event_handler event_handler;
 } eos_reactor_t;
@@ -224,17 +226,24 @@ void eos_event_unsub(eos_actor_t * const me, eos_topic_t topic);
 // 注：只有下面两个函数能在中断服务函数中使用，其他都没有必要。如果使用，可能会导致崩溃问题。
 // 发布事件（仅主题）
 void eos_event_pub_topic(eos_topic_t topic);
+void eos_event_pub_para(eos_topic_t topic, uint32_t para);
+void eos_event_pub_para2(eos_topic_t topic, uint32_t para1, uint32_t para2);
+void eos_event_pub_block(eos_topic_t topic, void *data, eos_u32_t size);
+/* Publish one event with static data */
+void eos_event_pub_no_copy(eos_topic_t topic, void *data, eos_u32_t size);
 #if (EOS_USE_EVENT_DATA != 0)
-// 发布事件（携带数据）
-void eos_event_pub(eos_topic_t topic, void *data, eos_u32_t size);
+/* Publish one event with dynamic data from the heap */
+void eos_event_pub_copy(eos_topic_t topic, void *data, eos_u32_t size);
 #endif
 
 #if (EOS_USE_TIME_EVENT != 0)
-// 发布延时事件
+/* Publish one delayed event. */
 void eos_event_pub_delay(eos_topic_t topic, eos_u32_t delay_time_ms);
-// 发布周期事件
+/* Publish one period event. */
 void eos_event_pub_period(eos_topic_t topic, eos_u32_t peroid_ms);
-// 取消延时事件或者周期事件的发布
+/* Publish one general time event. */
+void eos_event_pub_time(eos_topic_t topic, eos_u32_t delay_ms, eos_u32_t peroid_ms);
+/* Cancel one time event publishing */
 void eos_event_time_cancel(eos_topic_t topic);
 #endif
 
@@ -252,6 +261,8 @@ void eos_hook_stop(void);
 
 // 启动EventOS Nano的时候，所调用的回调函数
 void eos_hook_start(void);
+
+/* lengcy ------------------------------------------------------------------- */
 
 #ifdef __cplusplus
 }
