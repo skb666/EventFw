@@ -1,113 +1,228 @@
+/*
+ * eLab Project
+ * Copyright (c) 2023, EventOS Team, <event-os@outlook.com>
+ */
 
-#ifndef __DEVF_H__
-#define __DEVF_H__
+#ifndef ELAB_DEVICE_H
+#define ELAB_DEVICE_H
+
+/* includes ----------------------------------------------------------------- */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include "../common/elab_def.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// include ---------------------------------------------------------------------
-#include "devf_cfg.h"
-#include "stdbool.h"
-#include "stdint.h"
+/* public config ------------------------------------------------------------ */
+#define ELAB_DEV_NUM_MAX                (64)
+#define ELAB_DEV_PALTFORM               ELAB_PALTFORM_POLL
 
-// data struct definition ------------------------------------------------------
-typedef enum dev_err_tag {
-    Dev_OK = 0,                                 // 00 There is no error
-    Dev_Error,                                  // 01 A generic error happens
-    Dev_Err_Timeout,                            // 02 Timed out
-    Dev_Err_Full,                               // 03 The resource is full
-    Dev_Err_Empty,                              // 04 The resource is empty
-    Dev_Err_Busy,                               // 05 Busy
-    Dev_Err_WrongArg,                           // 06 Wrong Arguments
-    Dev_Err_WrongCmd,                           // 07 Wrong Cmd
-    Dev_Err_EndlessLoop,                        // 08 Endless Loop
-    Dev_Err_Repeated,                           // 09 Repeated
-    Dev_Err_NonExistent,                        // 10 不存在的
-    Dev_Err_Disabled,                           // 11 Disabled
-    Dev_Err_OpenFail,                           // 12 打开失败
-} dev_err_t;
+/* public define ------------------------------------------------------------ */
+enum elab_device_type
+{
+    ELAB_DEVICE_NULL = 0,
 
-// 设备类型分为两类
-// 一种是在一个工程中，仅有一个驱动的设备，如SPI，Serail，CAN，统称为DevType_Null
-// 一种是存在多个驱动的设备，需要进行选择的设备，如Motor
+    ELAB_DEVICE_PIN,
+    ELAB_DEVICE_PWM,
+    ELAB_DEVICE_ADC,
+    ELAB_DEVICE_DAC,
+    ELAB_DEVICE_UART,
+    ELAB_DEVICE_I2C_BUS,
+    ELAB_DEVICE_I2C,
+    ELAB_DEVICE_SPI_BUS,
+    ELAB_DEVICE_SPI,
+    ELAB_DEVICE_CAN,
+    ELAB_DEVICE_WATCHDOG,
+    ELAB_DEVICE_RTC,
+    ELAB_DEVICE_UNKNOWN,
 
-// IMU暂定为DevType_Null，因为在绝大部分情况下，使用板载IMU即可满足需要，无需外接IMU设备。
-typedef enum dev_type_tag {
-    DevType_Normal = 0,
-    DevType_UseOneTime,                         // 只能使用一次（物理接口）
-} dev_type_t;
+    ELAB_DEVICE_NORMAL_MAX,
+};
 
-typedef void (* device_drv_t)(void);
+enum elab_device_layer
+{
+    ELAB_DEV_LAYER_NORAML = 0,                  /* On-chip device mode */
+    ELAB_DEV_LAYER_USER,                        /* User defined device mode */
+};
 
-struct device_tag;
-typedef void (* dev_poll_t)(struct device_tag * dev, uint64_t time_system_ms);
+enum elab_device_boot_level
+{
+    ELAB_DEV_BOOT_L0 = 0,                       /* The lowest */
+    ELAB_DEV_BOOT_L1,
+    ELAB_DEV_BOOT_L2,
+    ELAB_DEV_BOOT_L3,
+    ELAB_DEV_BOOT_L4,
+    ELAB_DEV_BOOT_L5,
+    ELAB_DEV_BOOT_L6,
+    ELAB_DEV_BOOT_L7,
+};
 
-typedef struct device_tag {
-    struct device_tag * next;
-    uint32_t magic;
-    const char * name;
-    dev_type_t type;
-    uint64_t atype_reg;
-    bool is_used;
-    bool en;
-    // poll
-    bool en_poll;
-    uint64_t time_tgt_ms;
-    int time_poll_ms;
-    // 通用接口
-    dev_err_t (* enable)(struct device_tag * dev, bool enable);
-    dev_poll_t poll;
-    void (* ask)(struct device_tag * dev);
-    // 用户数据
-    void * user_data;
-} device_t;
+/* public typedef ----------------------------------------------------------- */
+typedef struct elab_device_attr
+{
+    const char *name;
+    bool sole;
+    uint8_t type;
+} elab_device_attr_t;
 
-// 框架初始化
-void devf_init(int atype);
-// 清除一个设备的所有数据
-void device_clear(device_t * dev);
-// 给一个设备注册一个特定的名字
-dev_err_t device_reg(device_t * dev, const char * name, dev_type_t type);
-// 通过名字查找设备
-device_t * device_find(const char * name);
-// 使用此设备，用此方法阻止同一个物理接口被两次使用
-void device_use(device_t * dev);
-// 打开设备
-dev_err_t device_en(device_t * dev, bool enable);
-// 询问设备
-void device_ask(device_t * dev);
-// 关闭设备轮询
-dev_err_t device_poll_en(device_t * dev, bool enable, int time_poll_ms);
-// 为了加快设备轮询的实时性，设备轮询机制将确定为：
-// 01 当CPU处于Idle时，对设备进行轮询。
-// 02 以获取的实时时间进行轮询，不再以时间片进行轮询。
-void devf_poll(uint64_t time_system_ms);
-// 使能或者关闭全部设备
-void device_all_en(bool enable);
-// 将当前设备注册到所有型号（最大支持64个型号）
-void device_atype_reg(device_t * dev, int atype);
-// 将当前设备注册到所有型号（最大支持64个型号）
-void device_alltype_reg(device_t * dev);
+typedef struct elab_device
+{
+    elab_device_attr_t attr;
 
-// port ------------------------------------------------------------------------
-void devf_port_evt_pub(int evt_id);                 // 发送事件
-uint64_t devf_port_get_time_ms(void);               // 获取时间
-void devf_port_irq_disable(void);                   // 关中断
-void devf_port_irq_enable(void);                    // 开中断
-void devf_port_regitry_init(void);                  // 设备注册机制
+    uint8_t enable_count;
 
-// assert ----------------------------------------------------------------------
-#define DEV_ASSERT_MEOW
-#ifdef DEV_ASSERT_MEOW
+    /* common device interface */
+    const struct elab_dev_ops *ops;
+    void *user_data;
+} elab_device_t;
 
-#else
-    #include "assert.h"
-    #define Dev_Assert assert
+typedef struct elab_dev_ops
+{
+    elab_err_t (* enable)(elab_device_t *me, bool status);
+    int32_t (* read)(elab_device_t *me, uint32_t pos, void *buffer, uint32_t size);
+    int32_t (* write)(elab_device_t *me, uint32_t pos, const void *buffer, uint32_t size);
+#if (ELAB_DEV_PALTFORM == ELAB_PALTFORM_POLL)
+    void (* poll)(elab_device_t *me);
+    elab_err_t (* isr_enable)(elab_device_t *me, bool status);
 #endif
+} elab_dev_ops_t;
 
-#ifdef __cplusplus    
+#define ELAB_DEVICE_CAST(_dev)      ((elab_device_t *)_dev)
+
+/* public functions --------------------------------------------------------- */
+/**
+ * @brief This function registers a device with its atttibutes.
+ * @param me    Device handle
+ * @param attr  the device driver's atttibute.
+ * @return None.
+ */
+void elab_device_register(elab_device_t *me, elab_device_attr_t *attr);
+
+/**
+ * @brief This function finds a device driver by specified name.
+ * @param name  Device name.
+ * @param attr  the device driver's atttibute.
+ * @return Device handle. If not found, return NULL.
+ */
+elab_device_t *elab_device_find(const char *name);
+
+/**
+ * This function check the given name is the device's name or not.
+ * @param me    Device handle.
+ * @param name  Device name.
+ * @return True or false.
+ */
+bool elab_device_of_name(elab_device_t *me, const char *name);
+
+/**
+ * @brief This function check one device name is valid or not.
+ * @param name  Device name.
+ * @return Valid if true and invalid if false.
+ */
+bool elab_device_valid(const char *name);
+
+/**
+ * @brief This function check one device name is sole or not.
+ * @param name  Device name.
+ * @return Valid if true and invalid if false.
+ */
+bool elab_device_is_sole(elab_device_t *me);
+
+/**
+ * @brief Check the device is in test mode or not.
+ * @param dev       the pointer of device driver structure
+ * @retval True or false.
+ */
+bool elab_device_is_test_mode(elab_device_t *me);
+
+/**
+ * @brief Set the test mode for the device.
+ * @param dev       The pointer of device driver structure
+ * @retval None.
+ */
+void elab_device_set_test_mode(elab_device_t *me);
+
+/**
+ * @brief Set the normal mode for the device.
+ * @param dev       the pointer of device driver structure
+ * @retval None.
+ */
+void elab_device_set_normal_mode(elab_device_t *me);
+
+/**
+ * @brief This function check one device is enabled or not.
+ * @param name  Device name.
+ * @return Valid if true and invalid if false.
+ */
+bool elab_device_is_enabled(elab_device_t *me);
+
+/**
+ * @brief Device general reading function.
+ * @param me        Device handle.
+ * @param pos       Reading position
+ * @param buffer    Reading buffer.
+ * @param size      Expected read size.
+ * @return if > 0, actual reading size; if < 0, error ID.
+ */
+int32_t elab_device_read(elab_device_t *me,
+                            uint32_t pos, void *buffer, uint32_t size);
+
+/**
+ * @brief Device general writting function.
+ * @param me        Device handle.
+ * @param pos       Writting position
+ * @param buffer    Writting buffer.
+ * @param size      Expected writting size.
+ * @return if > 0, actual writting size; if < 0, error ID.
+ */
+int32_t elab_device_write(elab_device_t *me,
+                            uint32_t pos, const void *buffer, uint32_t size);
+
+/**
+ * @brief Open the given device.
+ * @param _dev  Device handle.
+ * @return None.
+ */
+#define elab_device_open(_dev)              __device_enable(ELAB_DEVICE_CAST(_dev), true)
+
+/**
+ * @brief Close the given device.
+ * @param _dev  Device handle.
+ * @return None.
+ */
+#define elab_device_close(_dev)             __device_enable(ELAB_DEVICE_CAST(_dev), false)
+
+/**
+ * @brief Lock the device to ensure its thread-safety.
+ * @param _dev  Device handle.
+ * @return None.
+ */
+#define elab_device_lock(_dev)              do {} while (0)
+
+/**
+ * @brief Unlock the device to ensure its thread-safety.
+ * @param _dev  Device handle.
+ * @return None.
+ */
+#define elab_device_unlock(_dev)            do {} while (0)
+
+/* private function --------------------------------------------------------- */
+void __device_mutex_lock(elab_device_t *me, bool status);
+elab_err_t __device_enable(elab_device_t *me, bool status);
+
+/* private define ----------------------------------------------------------- */
+/* eLab platform */
+#define ELAB_PALTFORM_RTOS                  (0)
+#define ELAB_PALTFORM_POLL                  (1)
+#define ELAB_PALTFORM_BASIC_OS              (2)
+
+#ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* ELAB_DEVICE_H */
+
+/* ----------------------------- end of file -------------------------------- */
