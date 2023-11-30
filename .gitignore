@@ -8,6 +8,7 @@
 *.emProject
 *.emSession
 .vscode
+.idea
 .vs
 *.o
 *.d
