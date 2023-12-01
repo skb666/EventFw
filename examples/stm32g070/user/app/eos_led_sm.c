@@ -4,7 +4,7 @@
 #include "event_def.h"
 #include "stm32g070xx.h"
 #include "stm32g0xx_hal.h"
-#include <stdio.h>
+#include "elab_export.h"
 
 #if (EOS_USE_SM_MODE != 0)
 /* data structure ----------------------------------------------------------- */
@@ -29,6 +29,7 @@ void eos_sm_led_init(void)
 
     sm_led.status = 0;
 }
+INIT_EXPORT(eos_sm_led_init, EXPORT_APP);
 
 /* static state function ---------------------------------------------------- */
 static eos_ret_t state_init(eos_sm_led_t * const me, eos_event_t const * const e)
