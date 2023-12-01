@@ -4,8 +4,10 @@
  */
 
 /* includes ----------------------------------------------------------------- */
+#include <stdio.h>
 #include "elab_common.h"
 #include "elib_queue.h"
+#include "elab_export.h"
 #include "stm32g0xx_hal.h"
 
 /* private config ----------------------------------------------------------- */
@@ -74,6 +76,12 @@ void elab_debug_uart_init(uint32_t baudrate)
     elib_queue_init(&queue_rx, buffer_rx, ELAB_DEBUG_UART_BUFFER_RX);
     elib_queue_init(&queue_tx, buffer_tx, ELAB_DEBUG_UART_BUFFER_TX);
 }
+
+void debug_uart_init(void)
+{
+    elab_debug_uart_init(115200);
+}
+INIT_EXPORT(debug_uart_init, EXPORT_DRIVER);
 
 /**
   * @brief  Send data to the debug uart.
