@@ -7,6 +7,7 @@
 /* includes ----------------------------------------------------------------- */
 #include "bsp.h"
 #include "stm32g0xx_hal.h"
+#include "elab_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +45,8 @@ void bsp_init(void)
                       GPIO_PIN_9,
                       GPIO_PIN_RESET);
 }
+
+INIT_EXPORT(bsp_init, EXPORT_LEVEL_BSP);
 
 /* private functions -------------------------------------------------------- */
 /**

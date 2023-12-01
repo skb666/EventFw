@@ -135,10 +135,10 @@ static void signal_handler(int sig)
 #endif
 
 /**
-  * @brief  eLab startup function.
+  * @brief  module init function.
   * @retval None
   */
-void elab_run(void)
+void module_init(void)
 {
 #if defined(__linux__) || defined(_WIN32)
     signal(SIGINT, signal_handler);                 /* Ctrl + C*/
@@ -154,7 +154,6 @@ void elab_run(void)
     /* Start polling function in metal eLab, or start the RTOS kernel in RTOS 
        eLab. */
     _get_init_export_table();
-    _get_poll_export_table();
 #if (ELAB_RTOS_CMSIS_OS_EN != 0 || ELAB_RTOS_BASIC_OS_EN != 0)
     osKernelInitialize();
 #endif
@@ -170,15 +169,9 @@ void elab_run(void)
     eos_run();
 #else
     /* Initialize all module in eLab. */
-    for (uint8_t level = 0; level < export_level_max; level ++)
+    for (uint8_t level = 0; level <= export_level_max; level ++)
     {
         _init_func_execute(level);
-    }
-
-    /* Start polling function in metal eLab. */
-    while (1)
-    {
-        _poll_func_execute();
     }
 #endif
 }

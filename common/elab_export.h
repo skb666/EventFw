@@ -25,9 +25,9 @@ enum elab_export_level
     EXPORT_POLL                         = -2,
     EXPORT_UNIT_TEST                    = -1,
     EXPORT_LEVEL_BSP                    = 0,
-    EXPORT_LEVEL_HW_INDEPNEDENT         = 0,
-    EXPORT_DRVIVER                      = 1,
-    EXPORT_MIDWARE                      = 2,
+    EXPORT_LEVEL_HW_INDEPENDENT         = 0,
+    EXPORT_DRIVER                       = 1,
+    EXPORT_MIDDLEWARE                   = 2,
     EXPORT_DEVICE                       = 3,
     EXPORT_APP                          = 4,
     EXPORT_USER                         = 5,
@@ -59,7 +59,7 @@ typedef struct elab_export
 
 /* private function --------------------------------------------------------- */
 void elab_unit_test(void);
-void elab_run(void);
+void module_init(void);
 
 /* public export ------------------------------------------------------------ */
 /**

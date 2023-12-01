@@ -4,6 +4,7 @@
 #include "event_def.h"
 #include "stm32g0xx_hal.h"
 #include <stdio.h>
+#include "elab_export.h"
 
 /* data structure ----------------------------------------------------------- */
 typedef struct eos_reactor_led_tag {
@@ -32,12 +33,14 @@ void eos_reactor_led_init(void)
     eos_event_pub_period(Event_Time_1000ms, 1000);
 #endif
 }
+INIT_EXPORT(eos_reactor_led_init, EXPORT_APP);
 
 /* static state function ---------------------------------------------------- */
 static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * const e)
 {
     if (e->topic == Event_Time_1000ms) {
         HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_9);
+        printf("led status: %d\r\n", me->status);
         me->status = (me->status == 0) ? 1 : 0;
     }
 }
