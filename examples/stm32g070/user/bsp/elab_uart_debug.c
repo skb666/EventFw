@@ -49,6 +49,7 @@ static uint8_t buffer_rx[ELAB_DEBUG_UART_BUFFER_RX];
 static elib_queue_t queue_tx;
 static uint8_t buffer_tx[ELAB_DEBUG_UART_BUFFER_TX];
 static uint8_t byte_recv;
+static bool busy_flag = false;
 
 /* public functions --------------------------------------------------------- */
 /**
@@ -72,7 +73,7 @@ void elab_debug_uart_init(uint32_t baudrate)
 
     HAL_UART_Init(&huart);
     HAL_UART_Receive_IT(&huart, &byte_recv, 1);
-    
+
     elib_queue_init(&queue_rx, buffer_rx, ELAB_DEBUG_UART_BUFFER_RX);
     elib_queue_init(&queue_tx, buffer_tx, ELAB_DEBUG_UART_BUFFER_TX);
 }
@@ -83,34 +84,53 @@ void debug_uart_init(void)
 }
 INIT_EXPORT(debug_uart_init, EXPORT_DRIVER);
 
-/**
-  * @brief  Send data to the debug uart.
-  * @param  buffer  this pointer
-  * @retval Free size.
-  */
-int16_t elab_debug_uart_send(void *buffer, uint16_t size)
+// /**
+//   * @brief  Send data to the debug uart.
+//   * @param  buffer  this pointer
+//   * @retval Free size.
+//   */
+// int16_t elab_debug_uart_send(void *buffer, uint16_t size)
+// {
+//     int16_t ret = 0;
+//     static uint8_t byte;
+
+//     HAL_NVIC_DisableIRQ(USART3_4_IRQn);
+//     if (elib_queue_is_empty(&queue_tx))
+//     {
+//         ret = elib_queue_push(&queue_tx, buffer, size);
+//         if (elib_queue_pull(&queue_tx, &byte, 1) == 1)
+//         {
+//             HAL_UART_Transmit_IT(&huart, &byte, 1);
+//         }
+//     }
+//     else
+//     {
+//         ret = elib_queue_push(&queue_tx, buffer, size);
+//     }
+//     HAL_NVIC_EnableIRQ(USART3_4_IRQn);
+
+//     return ret;
+// }
+int32_t elab_log_port_output(const void *log, uint16_t size)
 {
-    int16_t ret = 0;
-    static uint8_t byte;
-
-    HAL_NVIC_DisableIRQ(USART3_4_IRQn);
-    if (elib_queue_is_empty(&queue_tx))
-    {
-        ret = elib_queue_push(&queue_tx, buffer, size);
-        if (elib_queue_pull(&queue_tx, &byte, 1) == 1)
-        {
-            HAL_UART_Transmit_IT(&huart, &byte, 1);
-        }
-    }
-    else
-    {
-        ret = elib_queue_push(&queue_tx, buffer, size);
-    }
-    HAL_NVIC_EnableIRQ(USART3_4_IRQn);
-
-    return ret;
+    return elib_queue_push(&queue_tx, log, size);
 }
 
+void elab_debug_uart_tx_trig(void)
+{
+    uint8_t byte = 0;
+    
+    if (!busy_flag)
+    {
+        if (elib_queue_pull(&queue_tx, &byte, 1) == 1)
+        {
+            busy_flag = true;
+                
+            HAL_UART_Transmit_IT(&huart, &byte, 1);
+        }
+        
+    }
+}
 /**
   * @brief  Initialize the elab debug uart.
   * @param  buffer  this pointer
@@ -151,13 +171,17 @@ void elab_debug_uart_buffer_clear(void)
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
 {
     static uint8_t byte = 0;
-    
+
     if (UartHandle->Instance == USARTx)
     {
         elib_queue_pop(&queue_tx, 1);
         if (elib_queue_pull(&queue_tx, &byte, 1))
         {
             HAL_UART_Transmit_IT(&huart, &byte, 1);
+        }
+        else
+        {
+            busy_flag = false;
         }
     }
 }
@@ -193,8 +217,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
         /** USART GPIO Configuration
             PD9     ------> USART3_RX
             PD8     ------> USART3_TX
-            
-            or 
+
+            or
 
             PC11     ------> USART4_RX
             PC10     ------> USART4_TX
@@ -219,5 +243,4 @@ void USART3_4_IRQHandler(void)
 {
     HAL_UART_IRQHandler(&huart);
 }
-
 /* ----------------------------- end of file -------------------------------- */
