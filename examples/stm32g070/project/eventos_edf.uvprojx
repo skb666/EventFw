@@ -10,7 +10,8 @@
       <TargetName>eventos_edf</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::.\ARMCC</pCCUsed>
+      <pArmCC>5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7</pArmCC>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -340,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32G070xx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\eventos;..\mcu\stm32g070\CMSIS;..\mcu\stm32g070\STM32G0xx_HAL_Driver\Inc;..\mcu\stm32g070\STM32G070;..\user;..\user\app;..\user\bsp;..\user\config;..\..\..\common;..\..\..\elib</IncludePath>
+              <IncludePath>..\..\..\eventos;..\mcu\stm32g070\CMSIS;..\mcu\stm32g070\STM32G0xx_HAL_Driver\Inc;..\mcu\stm32g070\STM32G070;..\user;..\user\app;..\user\bsp;..\user\config;..\..\..\common;..\..\..\common\log\inc;..\..\..\elib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -614,10 +615,20 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\common\elab_export.c</FilePath>
             </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>common.log</GroupName>
+          <Files>
             <File>
               <FileName>elab_log.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\common\elab_log.c</FilePath>
+              <FilePath>..\..\..\common\log\src\elab_log.c</FilePath>
+            </File>
+            <File>
+              <FileName>elab_log_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\common\log\src\elab_log_port.c</FilePath>
             </File>
           </Files>
         </Group>

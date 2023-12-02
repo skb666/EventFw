@@ -290,7 +290,7 @@ static void _init_func_execute(int8_t level)
             {
                 if (level != EXPORT_UNIT_TEST)
                 {
-                    printf("Export init %s." STR_ENTER, export_init_table[i].name);
+//                    printf("Export init %s." STR_ENTER, export_init_table[i].name);
                 }
                 ((void (*)(void))export_init_table[i].func)();
             }
