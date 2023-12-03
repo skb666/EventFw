@@ -2,6 +2,7 @@
 #include "eventos.h"                                // EventOS Nano头文件
 #include "event_def.h"                              // 事件主题的枚举
 #include "elab_export.h"
+#include "elab_log.h"
 
 /* define ------------------------------------------------------------------- */
 #if (EOS_USE_PUB_SUB != 0)
@@ -15,6 +16,8 @@ void eos_module_init(void)
 #if (EOS_USE_PUB_SUB != 0)
     eos_sub_init(eos_sub_table, Event_Max);         // 订阅表初始化
 #endif
+	elab_log_init();
+    elab_log_enable();
 }
 INIT_EXPORT(eos_module_init, EXPORT_MIDDLEWARE);
 

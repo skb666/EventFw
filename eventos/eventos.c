@@ -437,6 +437,7 @@ void eos_run(void)
 #endif
             eos_hook_idle();
         }
+        elab_debug_uart_tx_trig();
     }
 
     while (1) {

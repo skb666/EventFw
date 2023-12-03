@@ -5,6 +5,7 @@
 #include "stm32g0xx_hal.h"
 #include <stdio.h>
 #include "elab_export.h"
+#include "elab_log.h"
 
 /* data structure ----------------------------------------------------------- */
 typedef struct eos_reactor_led_tag {
@@ -40,7 +41,7 @@ static void led_e_handler(eos_reactor_led_t * const me, eos_event_t const * cons
 {
     if (e->topic == Event_Time_1000ms) {
         HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_9);
-        printf("led status: %d\r\n", me->status);
+        ELAB_LOG_PRINTF("led status: %d\r\n", me->status);
         me->status = (me->status == 0) ? 1 : 0;
     }
 }
