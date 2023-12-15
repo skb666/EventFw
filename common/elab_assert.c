@@ -6,6 +6,7 @@
 /* include ------------------------------------------------------------------ */
 #include "elab_def.h"
 #include "elab_assert.h"
+#include "elab_log.h"
 #ifdef __linux__
 #include "assert.h"
 #endif
@@ -42,12 +43,12 @@ ELAB_WEAK void elab_assert_func(void)
  */
 void _assert(const char *str_, uint32_t id_, const char *tag, uint32_t location)
 {
-//    printf("\033[1;31m" "Assert failure!\r\n");
-//    printf("Location: %s %d.\r\n", tag, location);
-//    if (str_ != NULL)
-//        printf("Assert info: %s.\r\n", str_);
-//    else
-//        printf("Assert info: %d.\r\n", id_);
+    printf("\033[1;31m" "Assert failure!\r\n");
+    printf("Location: %s %d.\r\n", tag, location);
+    if (str_ != NULL)
+        printf("Assert info: %s.\r\n", str_);
+    else
+        printf("Assert info: %d.\r\n", id_);
     elab_assert_func();
 }
 

@@ -6,6 +6,7 @@
 
 enum {
     Event_Test = Event_User,
+    Event_Input_Char,
     Event_Time_500ms,
     Event_Time_1000ms,
 

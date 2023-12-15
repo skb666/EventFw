@@ -1,157 +1,333 @@
+/*
+ * eLab Project
+ * Copyright (c) 2023, EventOS Team, <event-os@outlook.com>
+ */
 
-// include ---------------------------------------------------------------------
+/* includes ----------------------------------------------------------------- */
 #include "devf.h"
-#include "string.h"
-#include "mlog/mlog.h"
-#include "stdio.h"
+//#include "elab_device_def.h"
+#include "elab_assert.h"
+#include "elab_log.h"
 
-M_TAG("Devf")
+ELAB_TAG("EdfDevice");
 
-// define ----------------------------------------------------------------------
-#define DEV_MAGIC                       0x37A563C8
+/* private function prototypes ---------------------------------------------- */
+static void _add_device(elab_device_t *me);
 
-// list ------------------------------------------------------------------------
-device_t * dev_list = (device_t *)0;
-static int a_type = 0;
+/* private variables -------------------------------------------------------- */
+static uint32_t _edf_device_count = 0;
+static elab_device_t *_edf_table[ELAB_DEV_NUM_MAX];
 
-// static function -------------------------------------------------------------
-static dev_err_t enable_null(device_t * dev, bool enable);
-static void poll_null(device_t * dev, uint64_t time_system_ms);
-static void ask_null(device_t * dev);
-
-// api -------------------------------------------------------------------------
-void devf_init(int atype)
+/* public function ---------------------------------------------------------- */
+/**
+ * This function registers a device driver with specified name.
+ * @param dev the pointer of device driver structure
+ * @param name the device driver's name
+ * @return None.
+ */
+void elab_device_register(elab_device_t *me, elab_device_attr_t *attr)
 {
-    dev_list = (device_t *)0;
-    a_type = atype;
-    
+    assert(me != NULL);
+    assert(attr != NULL);
+    assert(attr->name != NULL);
+    assert_name(elab_device_find(attr->name) == NULL, attr->name);
+
+    /* Set the device data. */
+    memcpy(&me->attr, attr, sizeof(elab_device_attr_t));
+    me->enable_count = 0;
+
+    /* Add the device the edf table. */
+    memcpy(&me->attr, attr, sizeof(elab_device_attr_t));
+    _add_device(me);
+
 }
 
-// 清除一个设备的所有数据
-void device_clear(device_t * dev)
+/**
+ * @brief This function unregisters a device with the device handle.
+ * @param me   the pointer of device driver structure
+ * @retval None.
+ */
+void elab_device_unregister(elab_device_t *me)
 {
-    dev->name = "?";
-    dev->atype_reg = 0;
-    dev->type = DevType_Normal;
-    dev->next = (device_t *)0;
-    dev->enable = false;
-    dev->en_poll = false;
-    dev->is_used = false;
-    dev->time_tgt_ms = 0;
-    dev->time_poll_ms = 0;
-    dev->magic = DEV_MAGIC;
-    // interface
-    dev->enable = enable_null;
-    dev->poll = poll_null;
-    dev->ask = ask_null;
+    elab_assert(me != NULL);
+    elab_assert(!elab_device_is_enabled(me));
 
-    dev->user_data = (void *)0;
-}
-
-// 给一个设备注册一个特定的名字
-dev_err_t device_reg(device_t * dev, const char * name, dev_type_t type)
-{
-    dev->name = name;
-    dev->next = dev_list;
-    dev->type = type;
-    dev_list = dev;
-    dev->magic = DEV_MAGIC;
-    
-    return Dev_OK;
-}
-
-// 通过名字查找设备
-device_t * device_find(const char * name)
-{
-    for (device_t * dev = dev_list; dev != (void *)0; dev = dev->next) {
-        if (strncmp(dev->name, name, DEV_NAME_MAX) == 0)
-            return dev;
+    for (uint32_t i = 0; i < ELAB_DEV_NUM_MAX; i ++)
+    {
+        if (_edf_table[i] == me)
+        {
+            _edf_table[i] = NULL;
+            _edf_device_count --;
+            break;
+        }
     }
 
-    return (device_t *)0;
 }
 
-// 使用此设备，用此方法阻止同一个物理接口被两次使用
-void device_use(device_t * dev)
+/**
+ * @brief Get the count number in device framework management.
+ * @retval Count number of devices.
+ */
+uint32_t elab_device_get_number(void)
 {
-    if (dev->type == DevType_UseOneTime) {
-        M_ASSERT_NAME(dev->is_used == false, dev->name);
+    uint32_t num = 0;
+
+    num = _edf_device_count;
+
+    return num;
+}
+
+/**
+ * This function check the given name is the device's name or not.
+ * @param me    Device handle.
+ * @param name  Device name.
+ * @return True or false.
+ */
+bool elab_device_of_name(elab_device_t *me, const char *name)
+{
+    bool of_the_name = false;
+
+    elab_device_lock(me);
+    if (strcmp(me->attr.name, name) == 0)
+    {
+        of_the_name = true;
     }
-    
-    dev->is_used = true;
+    elab_device_unlock(me);
+
+    return of_the_name;
 }
 
-// 打开设备
-dev_err_t device_en(device_t * dev, bool enable)
+/**
+ * This function finds a device driver by specified name.
+ * @param name  Device name.
+ * @return Device handle. If not found, return NULL.
+ */
+elab_device_t *elab_device_find(const char *name)
 {
-    dev->en = enable;
-    dev->enable(dev, enable);
-    
-    return Dev_OK;
-}
+    if (_edf_table[0] != NULL)
+        assert_name(_edf_table[0]->attr.name != NULL, name);
+    assert(name != NULL);
 
-// 关闭设备轮询
-dev_err_t device_poll_en(device_t * dev, bool enable, int time_poll_ms)
-{
-    dev->en_poll = enable;
-    dev->time_poll_ms = time_poll_ms;
-    if (dev->en_poll == true)
-        dev->time_tgt_ms = devf_port_get_time_ms() + dev->time_poll_ms;
-    
-    return Dev_OK;
-}
-
-// 设备轮询
-void devf_poll(uint64_t time_system_ms)
-{
-    for (device_t * dev = dev_list; dev != (void *)0; dev = dev->next) {
-        M_ASSERT(dev->magic == DEV_MAGIC);
-        if ((dev->atype_reg & (1 << a_type)) == 0 || dev->en == false || dev->en_poll == false)
-            continue;
-        dev->poll(dev, time_system_ms);
+    /* Find the device */
+    elab_device_t *me = NULL;
+    for (uint32_t i = 0; i < ELAB_DEV_NUM_MAX; i++)
+    {
+        /* No device yet in the device table. */
+        if (_edf_table[i] == NULL)
+        {
+            break;
+        }
+        elab_assert(_edf_table[i]->attr.name != NULL);
+        /* Device matching */
+        if (strcmp(_edf_table[i]->attr.name, name) == 0)
+        {
+            me = _edf_table[i];
+            break;
+        }
     }
+
+    return me;
 }
 
-void device_ask(device_t * dev)
+/**
+ * This function check one device name is valid or not.
+ * @param name  Device name.
+ * @return Valid if true and invalid if false.
+ */
+bool elab_device_valid(const char *name)
 {
-    if ((dev->atype_reg & (1 << a_type)) == 0 || dev->en == false)
-        return;
-    dev->ask(dev);
+    return elab_device_find(name) == NULL ? false : true;
 }
 
-// 使能或者关闭全部设备
-void device_all_en(bool enable)
+/**
+ * @brief This function check one device name is sole or not.
+ * @param name  Device name.
+ * @return Valid if true and invalid if false.
+ */
+bool elab_device_is_sole(elab_device_t *me)
 {
-    for (device_t * dev = dev_list; dev != (void *)0; dev = dev->next)
-        dev->en = enable;
+    elab_device_lock(me);
+    bool enable_status = me->attr.sole;
+    elab_device_unlock(me);
+
+    return enable_status;
 }
 
-void device_atype_reg(device_t * dev, int atype)
+/**
+ * @brief Check the device is in test mode or not.
+ * @param dev       the pointer of device driver structure
+ * @retval True or false.
+ */
+bool elab_device_is_test_mode(elab_device_t *dev)
 {
-    dev->atype_reg |= (1 << atype);
+    return dev->test_mode;
 }
 
-void device_alltype_reg(device_t * dev)
+/**
+ * @brief Set the test mode for the device.
+ * @param dev       The pointer of device driver structure
+ * @retval None.
+ */
+void elab_device_set_test_mode(elab_device_t *dev)
 {
-    dev->atype_reg = 0xffffffffffffffff;
+    elab_assert(dev != NULL);
+
+    elab_device_lock(dev);
+    dev->test_mode = true;
+    elab_device_unlock(dev);
 }
 
-// static function -------------------------------------------------------------
-static dev_err_t enable_null(device_t * dev, bool enable)
+/**
+ * @brief Set the normal mode for the device.
+ * @param dev       the pointer of device driver structure
+ * @retval None.
+ */
+void elab_device_set_normal_mode(elab_device_t *dev)
 {
-    (void)dev;
-    (void)enable;
+    elab_assert(dev != NULL);
 
-    return Dev_OK;
+    elab_device_lock(dev);
+    dev->test_mode = false;
+    elab_device_unlock(dev);
 }
 
-static void poll_null(device_t * dev, uint64_t time_system_ms)
+/**
+ * @brief This function check one device is enabled or not.
+ * @param name  Device name.
+ * @return Valid if true and invalid if false.
+ */
+bool elab_device_is_enabled(elab_device_t *me)
 {
-    (void)dev;
-    (void)time_system_ms;
+    assert(me != NULL);
+
+    elab_device_lock(me);
+    bool enable_status = me->enable_count > 0 ? true : false;
+    elab_device_unlock(me);
+
+    return enable_status;
 }
 
-static void ask_null(device_t * dev)
+
+/**
+ * This function will enable or disable a device
+ * @param me        Device handle.
+ * @param status    The locking status.
+ * @return the result
+ */
+elab_err_t __device_enable(elab_device_t *me, bool status)
 {
-    (void)dev;
+    assert(me != NULL);
+    assert(me->ops != NULL);
+    assert(me->ops->enable != NULL);
+
+    elab_device_lock(me);
+
+    if (me->attr.sole)
+    {
+        if (status)
+        {
+            assert_name(me->enable_count == 0, me->attr.name);
+        }
+        else
+        {
+            assert_name(me->enable_count > 0, me->attr.name);
+        }
+    }
+    else
+    {
+        assert_name(me->enable_count < UINT8_MAX, me->attr.name);
+    }
+
+    elab_err_t ret = ELAB_OK;
+    if (status && me->enable_count == 0)
+    {
+        ret = me->ops->enable(me, true);
+    }
+    else if (!status && me->enable_count == 1)
+    {
+        ret = me->ops->enable(me, false);
+    }
+    me->enable_count = status ? (me->enable_count + 1) : (me->enable_count - 1);
+
+    elab_device_unlock(me);
+
+    return ret;
 }
+
+/**
+ * This function will read some data from a device.
+ *
+ * @param dev       the pointer of device driver structure
+ * @param buffer    the data buffer to save read data
+ * @param size      the size of buffer
+ *
+ * @return the actually read size on successful, otherwise negative returned.
+ *
+ */
+int32_t elab_device_read(elab_device_t *me,
+                         uint32_t pos, void *buffer, uint32_t size)
+{
+    assert(me != NULL);
+    assert(me->enable_count != 0);
+    assert(me->ops != NULL);
+    assert(me->ops->read != NULL);
+
+    int32_t ret = 0;
+    if (elab_device_is_test_mode(me))
+    {
+        ret = ELAB_OK;
+        goto exit;
+    }
+
+    ret = me->ops->read(me, pos, buffer, size);
+
+    exit:
+    return ret;
+}
+
+/**
+ * This function will write some data to a device.
+ *
+ * @param me        the pointer of device driver structure.
+ * @param buffer    the data buffer to be written to device
+ * @param size      the size of buffer
+ *
+ * @return The actually written size on successful, otherwise negative returned.
+ *
+ */
+int32_t elab_device_write(elab_device_t *me,
+                          uint32_t pos, const void *buffer, uint32_t size)
+{
+    assert(me != NULL);
+    assert(me->enable_count != 0);
+    assert(me->ops != NULL);
+    assert(me->ops->write != NULL);
+
+    int32_t ret = 0;
+    if (elab_device_is_test_mode(me))
+    {
+        ret = ELAB_OK;
+        goto exit;
+    }
+
+    ret = me->ops->write(me, pos, buffer, size);
+
+    exit:
+    return ret;
+}
+
+static void _add_device(elab_device_t *me)
+{
+    assert(_edf_device_count < ELAB_DEV_NUM_MAX);
+
+    if (_edf_device_count == 0)
+    {
+        for (uint32_t i = 0; i < ELAB_DEV_NUM_MAX; i ++)
+        {
+            _edf_table[i] = NULL;
+        }
+    }
+    _edf_table[_edf_device_count ++] = me;
+}
+
+/* ----------------------------- end of file -------------------------------- */

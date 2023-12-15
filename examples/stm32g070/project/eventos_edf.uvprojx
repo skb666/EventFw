@@ -10,8 +10,8 @@
       <TargetName>eventos_edf</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pArmCC>5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7</pArmCC>
-      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7</pCCUsed>
+      <pArmCC>5060750::V5.06 update 6 (build 750)::.\ARMCC</pArmCC>
+      <pCCUsed>5060750::V5.06 update 6 (build 750)::.\ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -135,11 +135,11 @@
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
             <Capability>1</Capability>
-            <DriverSelection>-1</DriverSelection>
+            <DriverSelection>4096</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -315,7 +315,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -330,8 +330,8 @@
             <uC99>1</uC99>
             <uGnu>1</uGnu>
             <useXO>0</useXO>
-            <v6Lang>4</v6Lang>
-            <v6LangP>3</v6LangP>
+            <v6Lang>3</v6Lang>
+            <v6LangP>5</v6LangP>
             <vShortEn>1</vShortEn>
             <vShortWch>1</vShortWch>
             <v6Lto>0</v6Lto>
@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32G070xx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\eventos;..\mcu\stm32g070\CMSIS;..\mcu\stm32g070\STM32G0xx_HAL_Driver\Inc;..\mcu\stm32g070\STM32G070;..\user;..\user\app;..\user\bsp;..\user\config;..\..\..\common;..\..\..\common\log\inc;..\..\..\elib</IncludePath>
+              <IncludePath>..\..\..\eventos;..\mcu\stm32g070\CMSIS;..\mcu\stm32g070\STM32G0xx_HAL_Driver\Inc;..\mcu\stm32g070\STM32G070;..\user;..\user\app;..\user\bsp;..\user\config;..\..\..\common;..\..\..\elib;..\..\..\common\log\inc;.;..\..\..\edf\devf;..\..\..\edf\dev\serial;..\..\..\3rd\Shell</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -565,6 +565,11 @@
               <FileType>1</FileType>
               <FilePath>..\user\app\port_stm32g070.c</FilePath>
             </File>
+            <File>
+              <FileName>eos_shell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\app\eos_shell.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -581,11 +586,6 @@
               <FilePath>..\user\bsp\elab_time.c</FilePath>
             </File>
             <File>
-              <FileName>elab_uart_debug.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\user\bsp\elab_uart_debug.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32g0xx_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\user\bsp\stm32g0xx_it.c</FilePath>
@@ -594,6 +594,11 @@
               <FileName>system_stm32g0xx.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\user\bsp\system_stm32g0xx.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\driver\drv_uart.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -615,11 +620,6 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\common\elab_export.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>common.log</GroupName>
-          <Files>
             <File>
               <FileName>elab_log.c</FileName>
               <FileType>1</FileType>
@@ -649,6 +649,51 @@
               <FileName>hash_table.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\elib\hash_table.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>edf.framework</GroupName>
+          <Files>
+            <File>
+              <FileName>devf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\edf\devf\devf.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>edf.device</GroupName>
+          <Files>
+            <File>
+              <FileName>elab_serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\edf\dev\serial\elab_serial.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>3rd.shell</GroupName>
+          <Files>
+            <File>
+              <FileName>shell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\3rd\Shell\shell.c</FilePath>
+            </File>
+            <File>
+              <FileName>shell_cmd_list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\3rd\Shell\shell_cmd_list.c</FilePath>
+            </File>
+            <File>
+              <FileName>shell_companion.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\3rd\Shell\shell_companion.c</FilePath>
+            </File>
+            <File>
+              <FileName>shell_ext.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\3rd\Shell\shell_ext.c</FilePath>
             </File>
           </Files>
         </Group>
