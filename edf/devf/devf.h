@@ -18,7 +18,7 @@ extern "C" {
 
 /* public config ------------------------------------------------------------ */
 #define ELAB_DEV_NUM_MAX                (64)
-#define ELAB_DEV_PALTFORM               ELAB_PALTFORM_POLL
+#define ELAB_DEV_PALTFORM               3 // ELAB_PALTFORM_POLL
 
 /* public define ------------------------------------------------------------ */
 enum elab_device_type
@@ -76,6 +76,7 @@ typedef struct elab_device
 
     /* common device interface */
     const struct elab_dev_ops *ops;
+    uint8_t test_mode;
     void *user_data;
 } elab_device_t;
 
@@ -210,7 +211,6 @@ int32_t elab_device_write(elab_device_t *me,
 #define elab_device_unlock(_dev)            do {} while (0)
 
 /* private function --------------------------------------------------------- */
-void __device_mutex_lock(elab_device_t *me, bool status);
 elab_err_t __device_enable(elab_device_t *me, bool status);
 
 /* private define ----------------------------------------------------------- */
