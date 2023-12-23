@@ -3,7 +3,6 @@
 #include "eventos.h"
 #include "event_def.h"
 #include "stm32g0xx_hal.h"
-#include <stdio.h>
 #include "elab_export.h"
 #include "elab_log.h"
 

@@ -5,6 +5,7 @@
 #include "stm32g070xx.h"
 #include "stm32g0xx_hal.h"
 #include "elab_export.h"
+#include "elab_serial.h"
 
 #if (EOS_USE_SM_MODE != 0)
 /* data structure ----------------------------------------------------------- */

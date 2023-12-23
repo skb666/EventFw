@@ -80,7 +80,7 @@ typedef struct elab_event
 #define container_of(pointer, type, member)                                    \
     ({                                                                         \
         void *__pointer = (void *)(pointer);                                   \
-        ((type *)(__pointer - offsetof(type, member)));                        \
+        ((type *)((char *)__pointer - offsetof(type, member)));                        \
     })
 #endif
 

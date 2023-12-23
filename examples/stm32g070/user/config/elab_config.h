@@ -16,6 +16,9 @@
 #define ELAB_EVENT_DATA_SIZE                    (16)
 #define ELAB_EVENT_POOL_SIZE                    (8)
 
+#define ELAB_USING_SERIAL
+#define BSP_USING_UART3
+#define BSP_USING_UART4
 #endif /* ELAB_CONFIG_H */
 
 /* ----------------------------- end of file -------------------------------- */
