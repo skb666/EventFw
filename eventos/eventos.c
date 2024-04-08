@@ -557,9 +557,9 @@ void eos_sm_start(eos_sm_t * const me, eos_state_handler state_init)
     t = eos_state_top;
     // 由初始状态转移，引发的各层状态的进入
     // 每一个循环，都代表着一个Event_Init的执行
-    eos_s32_t ip = 0;
     ret = EOS_Ret_Null;
     do {
+        eos_s32_t ip = 0;
         // 由当前层，探测需要进入的各层父状态
         path[0] = me->state;
         // 一层一层的探测，一直探测到原状态
@@ -854,7 +854,7 @@ static void eos_sm_dispath(eos_sm_t * const me, eos_event_t const * const e)
 
         // retrace the entry path in reverse (correct) order...
         do {
-            HSM_TRIG_(path[ip], Event_Enter);       // 进入path[ip]
+            HSM_TRIG_(path[ip--], Event_Enter);       // 进入path[ip]
         } while (ip >= 0);
 
         t = path[0];
